@@ -1,1 +1,159 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-Black.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-ExtraBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-MediumItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bodoni Moda";
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  src: url("./assets/Fonts/BodoniModa_9pt-Italic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Inter-Regular_2.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-Black.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-ExtraBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-MediumItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Poppins";
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  src: url("./assets/Fonts/Poppins-Italic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Satoshi";
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/Fonts/Satoshi-Variable.ttf") format("truetype");
+}
+
+.font-bodoni-black { font-family: "Bodoni Moda", serif; font-weight: 900; font-style: normal; }
+.font-bodoni-extra-bold { font-family: "Bodoni Moda", serif; font-weight: 800; font-style: normal; }
+.font-bodoni-bold { font-family: "Bodoni Moda", serif; font-weight: 700; font-style: normal; }
+.font-bodoni-semi-bold { font-family: "Bodoni Moda", serif; font-weight: 600; font-style: normal; }
+.font-bodoni-medium { font-family: "Bodoni Moda", serif; font-weight: 500; font-style: normal; }
+.font-bodoni-medium-italic { font-family: "Bodoni Moda", serif; font-weight: 500; font-style: italic; }
+.font-bodoni-regular { font-family: "Bodoni Moda", serif; font-weight: 400; font-style: normal; }
+.font-bodoni-italic { font-family: "Bodoni Moda", serif; font-weight: 400; font-style: italic; }
+
+.font-inter { font-family: "Inter", sans-serif; font-weight: 400; font-style: normal; }
+
+.font-poppins-black { font-family: "Poppins", sans-serif; font-weight: 900; font-style: normal; }
+.font-poppins-extra-bold { font-family: "Poppins", sans-serif; font-weight: 800; font-style: normal; }
+.font-poppins-bold { font-family: "Poppins", sans-serif; font-weight: 700; font-style: normal; }
+.font-poppins-semi-bold { font-family: "Poppins", sans-serif; font-weight: 600; font-style: normal; }
+.font-poppins-medium { font-family: "Poppins", sans-serif; font-weight: 500; font-style: normal; }
+.font-poppins-medium-italic { font-family: "Poppins", sans-serif; font-weight: 500; font-style: italic; }
+.font-poppins-regular { font-family: "Poppins", sans-serif; font-weight: 400; font-style: normal; }
+.font-poppins-italic { font-family: "Poppins", sans-serif; font-weight: 400; font-style: italic; }
+
+.font-satoshi { font-family: "Satoshi", sans-serif; font-style: normal; }
+
+
+
+.primary-bg{
+    background-color: #0f2e3f;
+}
