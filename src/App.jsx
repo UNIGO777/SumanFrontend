@@ -1,6 +1,6 @@
 import './index.css'
 import Userpanel from './Userpanel/index.jsx'
-import AdminPanel from './AdminPanel/index.jsx'
+import AdminPanel from './AdminPanel/dashbord/index.jsx'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 function App() {

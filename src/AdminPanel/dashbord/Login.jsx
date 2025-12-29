@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import LOGO from '../assets/LOGO.png'
-import { adminLoginInit, adminLoginVerify } from './services/adminAuth.js'
-import { getApiBase } from './services/apiClient.js'
+import LOGO from '../../assets/LOGO.png'
+import { adminLoginInit, adminLoginVerify } from '../services/adminAuth.js'
+import { getApiBase } from '../services/apiClient.js'
 
 export default function AdminLogin() {
   const navigate = useNavigate()

@@ -1,9 +1,9 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listCategories } from './services/categories.js'
-import { uploadImages, uploadVideo } from './services/files.js'
-import { deleteProduct, listProducts, updateProduct } from './services/products.js'
-import { listSubcategories } from './services/subcategories.js'
+import { listCategories } from '../services/categories.js'
+import { uploadImages, uploadVideo } from '../services/files.js'
+import { deleteProduct, listProducts, updateProduct } from '../services/products.js'
+import { listSubcategories } from '../services/subcategories.js'
 
 export default function AdminProductsList({ activeOnly = false }) {
   const navigate = useNavigate()
@@ -111,6 +111,7 @@ export default function AdminProductsList({ activeOnly = false }) {
       baseVariants.map((v, idx) => ({
         title: v.title || `Variant ${idx + 1}`,
         sku: v.sku || '',
+        grams: v.grams !== undefined && v.grams !== null ? String(v.grams) : '',
         makingCost: v.makingCost?.amount !== undefined ? String(v.makingCost.amount) : String(v.makingCost ?? ''),
         otherCharges: v.otherCharges?.amount !== undefined ? String(v.otherCharges.amount) : String(v.otherCharges ?? ''),
         stock: v.stock !== undefined && v.stock !== null ? String(v.stock) : '0',
@@ -165,6 +166,16 @@ export default function AdminProductsList({ activeOnly = false }) {
       const out = { title, stock: stockNum, isActive: v.isActive !== false }
       const sku = (v.sku || '').trim()
       if (sku) out.sku = sku
+
+      if (String(v.grams || '').trim()) {
+        const n = Number(v.grams)
+        if (!Number.isFinite(n) || n < 0) {
+          setError(`Variant ${i + 1}: Grams must be a valid number`)
+          return
+        }
+        out.grams = n
+      }
+
       const image = (v.image || '').trim()
       if (image) out.image = image
       if (Array.isArray(v.images) && v.images.length) out.images = v.images.map((s) => String(s)).filter(Boolean)
@@ -437,6 +448,7 @@ export default function AdminProductsList({ activeOnly = false }) {
                                   {
                                     title: `Variant ${v.length + 1}`,
                                     sku: '',
+                                    grams: '',
                                     makingCost: '',
                                     otherCharges: '',
                                     stock: '0',
@@ -491,6 +503,19 @@ export default function AdminProductsList({ activeOnly = false }) {
                                       className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
                                       inputMode="numeric"
                                       placeholder="0"
+                                      disabled={loading}
+                                    />
+                                  </div>
+                                  <div className="md:col-span-1">
+                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Grams</label>
+                                    <input
+                                      value={v.grams}
+                                      onChange={(e) =>
+                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, grams: e.target.value } : row)))
+                                      }
+                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                      inputMode="decimal"
+                                      placeholder="Optional"
                                       disabled={loading}
                                     />
                                   </div>

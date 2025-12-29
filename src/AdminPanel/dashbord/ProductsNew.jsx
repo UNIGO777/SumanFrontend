@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { listCategories } from './services/categories.js'
-import { getApiBase } from './services/apiClient.js'
-import { uploadImages, uploadVideo } from './services/files.js'
-import { createProduct } from './services/products.js'
-import { listSubcategories } from './services/subcategories.js'
+import { listCategories } from '../services/categories.js'
+import { getApiBase } from '../services/apiClient.js'
+import { uploadImages, uploadVideo } from '../services/files.js'
+import { createProduct } from '../services/products.js'
+import { listSubcategories } from '../services/subcategories.js'
 
 export default function AdminProductsNew() {
   const navigate = useNavigate()
@@ -23,11 +23,12 @@ export default function AdminProductsNew() {
   const [categoryId, setCategoryId] = useState('')
   const [subCategoryId, setSubCategoryId] = useState('')
   const [description, setDescription] = useState('')
-  const [attributesJson, setAttributesJson] = useState('')
+  const [attributesPairs, setAttributesPairs] = useState([{ key: '', value: '' }])
   const [variants, setVariants] = useState([
     {
       title: '',
       sku: '',
+      grams: '',
       makingCost: '',
       otherCharges: '',
       stock: '0',
@@ -141,13 +142,14 @@ export default function AdminProductsNew() {
     }
 
     let attributes
-    if (attributesJson.trim()) {
-      try {
-        attributes = JSON.parse(attributesJson)
-      } catch {
-        setError('Attributes must be valid JSON')
-        return
+    if (Array.isArray(attributesPairs) && attributesPairs.length) {
+      const obj = {}
+      for (let i = 0; i < attributesPairs.length; i += 1) {
+        const k = String(attributesPairs[i]?.key || '').trim()
+        if (!k) continue
+        obj[k] = String(attributesPairs[i]?.value ?? '').trim()
       }
+      if (Object.keys(obj).length) attributes = obj
     }
 
     const payload = {
@@ -174,6 +176,16 @@ export default function AdminProductsNew() {
       if (title) out.title = title
       const sku = (v.sku || '').trim()
       if (sku) out.sku = sku
+
+      if (String(v.grams || '').trim()) {
+        const n = Number(v.grams)
+        if (!Number.isFinite(n) || n < 0) {
+          setError(`Variant ${i + 1}: Grams must be a valid number`)
+          return
+        }
+        out.grams = n
+      }
+
       const image = (v.image || '').trim()
       if (image) out.image = image
       if (Array.isArray(v.images) && v.images.length) out.images = v.images.map((s) => String(s)).filter(Boolean)
@@ -237,14 +249,6 @@ export default function AdminProductsNew() {
       setError('Description is required')
       return
     }
-    if (attributesJson.trim()) {
-      try {
-        JSON.parse(attributesJson)
-      } catch {
-        setError('Attributes must be valid JSON')
-        return
-      }
-    }
     setCurrentStep((s) => Math.min(totalSteps, s + 1))
   }
 
@@ -256,13 +260,13 @@ export default function AdminProductsNew() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-9">
       <div>
         <div className="text-sm font-semibold text-gray-900">Add New Product</div>
         <div className="mt-1 text-sm text-gray-600">Create a product in your catalog</div>
       </div>
 
-      <form onSubmit={onSubmit} className="rounded-xl bg-white p-5 shadow-sm">
+      <form onSubmit={onSubmit} className="rounded-xl bg-white p-5 shadow-md ">
         {error ? (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : null}
@@ -367,14 +371,64 @@ export default function AdminProductsNew() {
                   />
                 </div>
                 <div className="md:col-span-3">
-                  <label className="mb-2 block text-xs font-semibold text-gray-600">Attributes (JSON)</label>
-                  <textarea
-                    value={attributesJson}
-                    onChange={(e) => setAttributesJson(e.target.value)}
-                    className="min-h-[112px] w-full rounded-lg border border-gray-200 px-3 py-2 font-mono text-xs outline-none focus:border-gray-300"
-                    placeholder='{"metal":"silver","size":"6"}'
-                    disabled={loading}
-                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="block text-xs font-semibold text-gray-600">Attributes</label>
+                    <button
+                      type="button"
+                      onClick={() => setAttributesPairs((arr) => [...(Array.isArray(arr) ? arr : []), { key: '', value: '' }])}
+                      disabled={loading}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                    >
+                      Add Attribute
+                    </button>
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {(Array.isArray(attributesPairs) ? attributesPairs : []).map((p, idx) => (
+                      <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-12">
+                        <div className="sm:col-span-5">
+                          <input
+                            value={p?.key || ''}
+                            onChange={(e) =>
+                              setAttributesPairs((arr) =>
+                                (Array.isArray(arr) ? arr : []).map((row, i) => (i === idx ? { ...row, key: e.target.value } : row))
+                              )
+                            }
+                            className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                            placeholder="Key"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div className="sm:col-span-6">
+                          <input
+                            value={p?.value ?? ''}
+                            onChange={(e) =>
+                              setAttributesPairs((arr) =>
+                                (Array.isArray(arr) ? arr : []).map((row, i) => (i === idx ? { ...row, value: e.target.value } : row))
+                              )
+                            }
+                            className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                            placeholder="Value"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttributesPairs((arr) => {
+                                const next = (Array.isArray(arr) ? arr : []).filter((_, i) => i !== idx)
+                                return next.length ? next : [{ key: '', value: '' }]
+                              })
+                            }
+                            disabled={loading}
+                            className="h-10 w-full rounded-lg border border-gray-200 bg-white text-xs font-semibold text-red-700 disabled:opacity-60"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -400,6 +454,7 @@ export default function AdminProductsNew() {
                         {
                           title: `Variant ${v.length + 1}`,
                           sku: '',
+                          grams: '',
                           makingCost: '',
                           otherCharges: '',
                           stock: '0',
@@ -458,6 +513,19 @@ export default function AdminProductsNew() {
                             className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
                             inputMode="numeric"
                             placeholder="0"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div className="md:col-span-1">
+                          <label className="mb-2 block text-xs font-semibold text-gray-600">Grams</label>
+                          <input
+                            value={v.grams}
+                            onChange={(e) =>
+                              setVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, grams: e.target.value } : row)))
+                            }
+                            className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                            inputMode="decimal"
+                            placeholder="Optional"
                             disabled={loading}
                           />
                         </div>

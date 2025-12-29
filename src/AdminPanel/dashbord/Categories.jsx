@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createCategory, deleteCategory, listCategories, updateCategory } from './services/categories.js'
+import { createCategory, deleteCategory, listCategories, updateCategory } from '../services/categories.js'
 
 export default function AdminCategories() {
   const [q, setQ] = useState('')

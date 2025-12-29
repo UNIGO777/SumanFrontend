@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { listCategories } from './services/categories.js'
-import { createSubcategory, deleteSubcategory, listSubcategories, updateSubcategory } from './services/subcategories.js'
+import { listCategories } from '../services/categories.js'
+import { createSubcategory, deleteSubcategory, listSubcategories, updateSubcategory } from '../services/subcategories.js'
 
 export default function AdminSubcategories() {
   const [q, setQ] = useState('')
