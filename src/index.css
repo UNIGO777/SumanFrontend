@@ -157,3 +157,12 @@
 .primary-bg{
     background-color: #0f2e3f;
 }
+
+.no-scrollbar{
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar{
+  display: none;
+}
