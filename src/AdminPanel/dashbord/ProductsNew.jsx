@@ -69,6 +69,8 @@ export default function AdminProductsNew() {
     ;(urls || []).forEach((u) => safeRevokeUrl(u))
   }
 
+  const maxUploadBytes = 5 * 1024 * 1024
+
   useEffect(() => {
     listCategories({ page: 1, limit: 250 })
       .then((c) => {
@@ -557,17 +559,17 @@ export default function AdminProductsNew() {
                         <div className="md:col-span-3">
                           <div className="flex items-center justify-between gap-2">
                             <label className="block text-xs font-semibold text-gray-600">Images</label>
-                            <label
-                              htmlFor={`variant-images-${idx}`}
-                              onClick={(e) => {
-                                if (loading) e.preventDefault()
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (loading) return
+                                document.getElementById(`variant-images-${idx}`)?.click()
                               }}
-                              className={`rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 ${
-                                loading ? 'pointer-events-none opacity-60' : ''
-                              }`}
+                              disabled={loading}
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
                             >
-                              Upload Images
-                            </label>
+                              Select Images
+                            </button>
                           </div>
                           {v.image || (Array.isArray(v.localImages) && v.localImages.length) ? (
                             <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
@@ -593,6 +595,13 @@ export default function AdminProductsNew() {
                               if (!fileList || fileList.length === 0) return
                               const files = Array.from(fileList)
                               e.target.value = ''
+
+                              const tooLarge = files.find((f) => (f?.size || 0) > maxUploadBytes)
+                              if (tooLarge) {
+                                setError(`"${tooLarge.name}" is larger than 5 MB`)
+                                return
+                              }
+
                               const localUrls = files.map((f) => URL.createObjectURL(f))
                               setVariants((arr) =>
                                 arr.map((row, i) => {
@@ -675,17 +684,17 @@ export default function AdminProductsNew() {
                         <div className="md:col-span-3">
                           <div className="flex items-center justify-between gap-2">
                             <label className="block text-xs font-semibold text-gray-600">Video (optional)</label>
-                            <label
-                              htmlFor={`variant-video-${idx}`}
-                              onClick={(e) => {
-                                if (loading) e.preventDefault()
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (loading) return
+                                document.getElementById(`variant-video-${idx}`)?.click()
                               }}
-                              className={`rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 ${
-                                loading ? 'pointer-events-none opacity-60' : ''
-                              }`}
+                              disabled={loading}
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
                             >
-                              Upload Video
-                            </label>
+                              Select Video
+                            </button>
                           </div>
                           <input
                             id={`variant-video-${idx}`}
@@ -696,6 +705,12 @@ export default function AdminProductsNew() {
                               const file = e.target.files?.[0]
                               e.target.value = ''
                               if (!file) return
+
+                              if ((file?.size || 0) > maxUploadBytes) {
+                                setError(`"${file.name}" is larger than 5 MB`)
+                                return
+                              }
+
                               const localUrl = URL.createObjectURL(file)
                               setVariants((arr) =>
                                 arr.map((row, i) => {

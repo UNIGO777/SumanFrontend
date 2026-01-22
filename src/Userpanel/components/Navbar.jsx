@@ -1,5 +1,22 @@
 import { ChevronDown, Heart, MapPin, Menu, Search, ShoppingCart, Store, User } from 'lucide-react'
 import LOGO from '../../assets/LOGO.png'
+import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+
+const CART_KEY = 'sj_cart_v1'
+
+const readCartCount = () => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const raw = window.localStorage.getItem(CART_KEY)
+    if (!raw) return 0
+    const parsed = JSON.parse(raw)
+    const items = Array.isArray(parsed?.items) ? parsed.items : []
+    return items.reduce((sum, it) => sum + (Number.parseInt(it?.qty, 10) || 1), 0)
+  } catch {
+    return 0
+  }
+}
 
 const desktopLinks = [
   { label: 'Shop by Category', href: '#' },
@@ -18,10 +35,27 @@ const desktopLinks = [
 export default function Navbar({
   promoText = 'Flat 150 Off on Silver Jewellery. Use: FLAT150',
   brandText = 'GIV',
-  cartCount = 2,
+  cartCount,
 }) {
-  const showBadge = Number.isFinite(cartCount) && cartCount > 0
-  const badgeText = cartCount > 9 ? '9+' : String(cartCount)
+  const initialCount = useMemo(() => (Number.isFinite(cartCount) ? cartCount : readCartCount()), [cartCount])
+  const [count, setCount] = useState(initialCount)
+
+  useEffect(() => {
+    const onCustom = () => setCount(readCartCount())
+    const onStorage = (e) => {
+      if (e?.key && e.key !== CART_KEY) return
+      setCount(readCartCount())
+    }
+    window.addEventListener('sj_cart_updated', onCustom)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('sj_cart_updated', onCustom)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
+  const showBadge = Number.isFinite(count) && count > 0
+  const badgeText = count > 9 ? '9+' : String(count)
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
@@ -47,17 +81,17 @@ export default function Navbar({
               <button type="button" className="p-2">
                 <Store className="h-6 w-6" />
               </button>
-              <button type="button" className="p-2">
+              <Link to="/wishlist" className="p-2">
                 <Heart className="h-6 w-6" />
-              </button>
-              <button type="button" className="relative p-2">
+              </Link>
+              <Link to="/cart" className="relative p-2">
                 <ShoppingCart className="h-6 w-6" />
                 {showBadge ? (
                   <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-pink-500 px-1 text-xs font-semibold text-white">
                     {badgeText}
                   </span>
                 ) : null}
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -86,7 +120,9 @@ export default function Navbar({
 
           <div className="hidden md:block">
             <div className="flex h-20 items-center gap-6">
-              <img src={LOGO} alt={brandText} className="h-16 w-auto" />
+              <Link to="/" className="flex items-center gap-3">
+                <img src={LOGO} alt={brandText} className="h-16 w-auto" />
+              </Link>
 
               
 
@@ -105,11 +141,11 @@ export default function Navbar({
               <div className="flex items-center gap-6">
                 
                 
-                <button type="button" className="flex flex-col items-center gap-1 text-gray-800">
+                <Link to="/wishlist" className="flex flex-col items-center gap-1 text-gray-800">
                   <Heart className="h-6 w-6" />
                   <span className="text-[10px] font-semibold tracking-wider">WISHLIST</span>
-                </button>
-                <button type="button" className="relative flex flex-col items-center gap-1 text-gray-800">
+                </Link>
+                <Link to="/cart" className="relative flex flex-col items-center gap-1 text-gray-800">
                   <ShoppingCart className="h-6 w-6" />
                   <span className="text-[10px] font-semibold tracking-wider">CART</span>
                   {showBadge ? (
@@ -117,7 +153,7 @@ export default function Navbar({
                       {badgeText}
                     </span>
                   ) : null}
-                </button>
+                </Link>
               </div>
             </div>
           </div>
