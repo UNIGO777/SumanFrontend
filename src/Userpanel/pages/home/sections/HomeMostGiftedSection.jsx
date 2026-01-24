@@ -67,8 +67,8 @@ export default function HomeMostGiftedSection() {
       <section className="w-full">
         <div className="mb-6 text-center text-3xl font-bold text-gray-900">Most Gifted</div>
 
-        <div className="mx-auto max-w-[92vw]">
-          <div className="no-scrollbar flex gap-8 overflow-x-auto px-1 py-2 md:px-10">
+        <div className="w-full px-4 md:px-10">
+          <div className="no-scrollbar flex gap-8 overflow-x-auto py-2">
             {mostGiftedProducts.map((p) => (
               <div key={p.id} className="w-[280px] shrink-0">
                 <ProductCard {...p} className="max-w-none" />

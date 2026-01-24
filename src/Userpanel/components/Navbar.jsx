@@ -1,6 +1,6 @@
 import { ChevronDown, Heart, MapPin, Menu, Search, ShoppingCart, Store, User } from 'lucide-react'
 import LOGO from '../../assets/LOGO.png'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 
 const CART_KEY = 'sj_cart_v1'
@@ -37,8 +37,15 @@ export default function Navbar({
   brandText = 'GIV',
   cartCount,
 }) {
+  const navigate = useNavigate()
   const initialCount = useMemo(() => (Number.isFinite(cartCount) ? cartCount : readCartCount()), [cartCount])
   const [count, setCount] = useState(initialCount)
+  const [searchText, setSearchText] = useState('')
+
+  const goSearch = () => {
+    const q = String(searchText || '').trim()
+    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search')
+  }
 
   useEffect(() => {
     const onCustom = () => setCount(readCartCount())
@@ -110,10 +117,20 @@ export default function Navbar({
                 <input
                   className="h-12 w-full rounded-md border border-gray-300 bg-white px-4 pr-12 text-base text-gray-900 outline-none focus:border-gray-400"
                   placeholder='Search "Gifts For Her"'
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') goSearch()
+                  }}
                 />
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-700">
+                <button
+                  type="button"
+                  onClick={goSearch}
+                  className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-gray-700 hover:bg-gray-50"
+                  aria-label="Search"
+                >
                   <Search className="h-5 w-5" />
-                </span>
+                </button>
               </div>
             </div>
           </div>
@@ -131,10 +148,20 @@ export default function Navbar({
                   <input
                     className="h-11 w-full rounded-md border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-900 outline-none focus:border-gray-400"
                     placeholder='Search "Pure Gold Jewellery"'
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') goSearch()
+                    }}
                   />
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-700">
+                  <button
+                    type="button"
+                    onClick={goSearch}
+                    className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-gray-700 hover:bg-gray-50"
+                    aria-label="Search"
+                  >
                     <Search className="h-5 w-5" />
-                  </span>
+                  </button>
                 </div>
               </div>
 

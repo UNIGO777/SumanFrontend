@@ -8,6 +8,7 @@ import CartPage from './Userpanel/pages/CartPage.jsx'
 import Wishlist from './Userpanel/pages/Wishlist.jsx'
 import ProductProfile from './Userpanel/pages/ProductProfile.jsx'
 import Checkout from './Userpanel/pages/Checkout.jsx'
+import SearchPage from './Userpanel/pages/SearchPage.jsx'
 
 function UserLayout() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="wishlist" element={<Wishlist />} />
         <Route path="product/:productKey" element={<ProductProfile />} />
         <Route path="checkout" element={<Checkout />} />
+        <Route path="search" element={<SearchPage />} />
       </Route>
       <Route path="/admin/*" element={<AdminPanel />} />
       <Route path="*" element={<Navigate to="/" replace />} />
