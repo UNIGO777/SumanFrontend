@@ -1,7 +1,6 @@
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import Footer from '../components/Footer.jsx'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
 
 const CART_KEY = 'sj_cart_v1'
@@ -128,7 +127,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col">
       <div className="flex-1">
         <div className="mx-auto  px-10 py-8">
         <div className="mb-6 flex items-center justify-between gap-4">
@@ -260,21 +259,18 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="mt-5 w-full rounded-xl bg-[#0f2e40] px-4 py-3 text-sm font-semibold text-white hover:bg-[#13384d]"
+                <Link
+                  to="/checkout"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#0f2e40] px-4 py-3 text-sm font-semibold text-white hover:bg-[#13384d]"
                 >
                   Checkout
-                </button>
+                </Link>
                 <div className="mt-3 text-center text-xs font-semibold text-gray-500">Dummy checkout for now</div>
               </div>
             </div>
           </div>
         )}
         </div>
-      </div>
-      <div className="mt-auto">
-        <Footer />
       </div>
     </div>
   )

@@ -1,7 +1,6 @@
 import { Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Footer from '../components/Footer.jsx'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
 
 const WISHLIST_KEY = 'sj_wishlist_v1'
@@ -117,7 +116,7 @@ export default function Wishlist() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col">
       <div className="flex-1">
         <div className="mx-auto  px-10  py-8">
         <div className="mb-6 flex items-center justify-between gap-4">
@@ -224,9 +223,6 @@ export default function Wishlist() {
           </div>
         )}
         </div>
-      </div>
-      <div className="mt-auto">
-        <Footer />
       </div>
     </div>
   )

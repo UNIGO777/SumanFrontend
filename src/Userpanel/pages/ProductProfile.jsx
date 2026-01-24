@@ -1,7 +1,6 @@
 import { Heart, Minus, Plus, Star } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import Footer from '../components/Footer.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 
 const CART_KEY = 'sj_cart_v1'
@@ -503,7 +502,6 @@ const ProductProfile = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   )
 }
