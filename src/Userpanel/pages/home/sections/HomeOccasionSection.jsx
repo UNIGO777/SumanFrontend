@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import occasionImg1 from '../../../../assets/876 × 1628-1.png'
+import occasionImg2 from '../../../../assets/876 × 1628-2.png'
+import occasionImg3 from '../../../../assets/876 × 1628-3.png'
+import occasionImg4 from '../../../../assets/876 × 1628-4.png'
 
 export default function HomeOccasionSection() {
   const occasionRef = useRef(null)
@@ -7,43 +11,43 @@ export default function HomeOccasionSection() {
   const occasions = [
     {
       label: "Valentine's Day",
-      img: 'https://www.giva.co/cdn/shop/files/V_Day_1200x.webp?v=1768473589',
+      img: occasionImg1,
     },
     {
       label: 'Temple Date',
-      img: 'https://www.giva.co/cdn/shop/files/Mandir_1200x.webp?v=1768473589',
+      img: occasionImg2,
     },
     {
       label: 'Propose Day',
-      img: 'https://www.giva.co/cdn/shop/files/Purpose_1200x.webp?v=1768473588',
+      img: occasionImg3,
     },
     {
       label: 'Date Night Ready',
-      img: 'https://www.giva.co/cdn/shop/files/Raat_ka_1200x.webp?v=1768473589',
+      img: occasionImg4,
     },
     {
       label: "Galentine's",
-      img: 'https://www.giva.co/cdn/shop/files/Gal_1200x.webp?v=1768473589',
+      img: occasionImg1,
     },
     {
       label: 'Birthday',
-      img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80',
+      img: occasionImg2,
     },
     {
       label: 'Anniversary',
-      img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80',
+      img: occasionImg3,
     },
     {
       label: 'Wedding',
-      img: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=1200&q=80',
+      img: occasionImg4,
     },
     {
       label: 'Self Love',
-      img: 'https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?auto=format&fit=crop&w=1200&q=80',
+      img: occasionImg1,
     },
     {
       label: 'Festive',
-      img: 'https://images.unsplash.com/photo-1506634572416-48cdfe530110?auto=format&fit=crop&w=1200&q=80',
+      img: occasionImg2,
     },
   ]
 
@@ -111,13 +115,13 @@ export default function HomeOccasionSection() {
           </div>
         </div>
 
-        <div className="relative mx-auto max-w-[92vw]">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#f2f7f9] to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#f2f7f9] to-transparent" />
+        <div className="relative mx-auto max-w-[96vw] sm:max-w-[92vw] lg:max-w-[86vw]">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#f2f7f9] to-transparent sm:w-20 md:w-24 lg:w-28" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#f2f7f9] to-transparent sm:w-20 md:w-24 lg:w-28" />
 
           <div
             ref={occasionRef}
-            className="no-scrollbar flex min-h-[430px] snap-x snap-mandatory items-end gap-10 overflow-x-auto px-12 py-10"
+            className="no-scrollbar flex min-h-[480px] snap-x snap-mandatory items-end gap-12 overflow-x-auto px-8 py-10 sm:px-12 md:px-16 lg:px-20 scroll-px-8 sm:scroll-px-12 md:scroll-px-16 lg:scroll-px-20"
           >
             {occasions.map((it, idx) => {
               const distance = Math.abs(idx - activeIdx)
@@ -132,16 +136,16 @@ export default function HomeOccasionSection() {
                   className={`shrink-0 snap-center transition-transform duration-300 ${opacityClass} ${scaleClass}`}
                 >
                   <div
-                    className="relative h-[340px] w-[230px] overflow-hidden rounded-[36px] border-4 border-white bg-white shadow-lg ring-1 ring-[#0f2e40]/10"
+                    className="relative h-[390px] w-[230px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10"
                   >
                     <img
                       src={it.img}
                       alt={it.label}
-                      className="h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full scale-[1.32] object-cover object-[center_35%]"
                       loading="lazy"
                     />
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-white/95 px-6 py-2 text-sm font-bold text-[#0f2e40] shadow-sm ring-1 ring-[#0f2e40]/20">
-                      {it.label}
+                    <div className="absolute bottom-4 left-1/2 w-[calc(100%-2.5rem)] -translate-x-1/2 bg-white/95 px-4 py-2 text-xs font-bold text-[#0f2e40] shadow-sm ring-1 ring-[#0f2e40]/20 sm:text-sm">
+                      <div className="truncate text-center whitespace-nowrap">{it.label}</div>
                     </div>
                   </div>
                 </div>

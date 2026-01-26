@@ -1,15 +1,17 @@
 import { useMemo } from 'react'
+import recipientLeft from '../../assets/ShopByRecipient Left.png'
+import recipientRight from '../../assets/Shop By Recipient Right.png'
 
 export default function RecipientPanel({ title = 'Shop By Recipient' }) {
   const items = useMemo(
     () => [
       {
         label: 'Gifts for Her',
-        img: 'https://www.giva.co/cdn/shop/files/Him_11.webp?v=1767013611&width=3840',
+        img: recipientLeft,
       },
       {
         label: 'Gifts for Him',
-        img: 'https://www.giva.co/cdn/shop/files/Her_9_1.webp?v=1767013610&width=3840',
+        img: recipientRight,
       },
     ],
     []

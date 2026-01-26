@@ -1,11 +1,15 @@
 import ProductCard from '../../../components/ProductCard.jsx'
+import productImg1 from '../../../../assets/876 × 1628-1.png'
+import productImg2 from '../../../../assets/876 × 1628-2.png'
+import productImg3 from '../../../../assets/876 × 1628-3.png'
+import productImg4 from '../../../../assets/876 × 1628-4.png'
 
 export default function HomeMostGiftedSection() {
   const mostGiftedProducts = [
     {
       id: 'mg-1',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346'],
+      images: [productImg1],
       rating: 4.8,
       ratingCount: 337,
       price: 4799,
@@ -16,10 +20,7 @@ export default function HomeMostGiftedSection() {
     {
       id: 'mg-2',
       showBestseller: true,
-      images: [
-        'https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346',
-        'https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346',
-      ],
+      images: [productImg2, productImg1],
       rating: 4.9,
       ratingCount: 280,
       price: 3599,
@@ -30,7 +31,7 @@ export default function HomeMostGiftedSection() {
     {
       id: 'mg-3',
       showBestseller: false,
-      images: ['https://www.giva.co/cdn/shop/files/Personalised_Icon.webp?v=1766122556'],
+      images: [productImg3],
       rating: 4.7,
       ratingCount: 453,
       price: 1399,
@@ -41,7 +42,7 @@ export default function HomeMostGiftedSection() {
     {
       id: 'mg-4',
       showBestseller: false,
-      images: ['https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556'],
+      images: [productImg4],
       rating: 4.9,
       ratingCount: 297,
       price: 3899,
@@ -52,7 +53,7 @@ export default function HomeMostGiftedSection() {
     {
       id: 'mg-5',
       showBestseller: false,
-      images: ['https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556'],
+      images: [productImg1],
       rating: 4.8,
       ratingCount: 312,
       price: 3499,

@@ -1,9 +1,13 @@
+import heroBanner from '../../../../assets/2048 × 626.jpg'
+import promoBanner1 from '../../../../assets/1312 × 668.jpg'
+import promoBanner2 from '../../../../assets/1312 × 668-2.jpg'
+
 export default function HomeHeroPromos() {
   return (
     <section className="space-y-4">
       <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
         <img
-          src="https://www.giva.co/cdn/shop/files/Frame_1171278768.webp?v=1767081699&width=3840"
+          src={heroBanner}
           alt="Promo banner"
           className="h-full w-full object-contain "
           loading="lazy"
@@ -15,7 +19,7 @@ export default function HomeHeroPromos() {
       <div className="grid grid-cols-1 gap-10 mx-auto max-w-[90vw] sm:grid-cols-2">
         <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
           <img
-            src="https://www.giva.co/cdn/shop/files/80_Desktop.webp?v=1766124595&width=3840"
+            src={promoBanner1}
             alt="Promo card 2"
             className="h-[250px] w-full object-cover"
             loading="lazy"
@@ -28,7 +32,7 @@ export default function HomeHeroPromos() {
 
         <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
           <img
-            src="https://www.giva.co/cdn/shop/files/bogo.desktop_82adc342-b4ea-40ca-99e4-eacf5cab47d5.webp?v=1766122556&width=3840"
+            src={promoBanner2}
             alt="Promo card 1"
             className="h-[250px] w-full object-cover"
             loading="lazy"

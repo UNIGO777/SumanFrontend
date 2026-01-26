@@ -1,3 +1,11 @@
+import collectionImg1 from '../../../../assets/1312 × 668-3.jpg'
+import collectionImg2 from '../../../../assets/1312 × 668-4.jpg'
+import collectionImg3 from '../../../../assets/1312 × 668-5.jpg'
+import productImg1 from '../../../../assets/876 × 1628-1.png'
+import productImg2 from '../../../../assets/876 × 1628-2.png'
+import productImg3 from '../../../../assets/876 × 1628-3.png'
+import productImg4 from '../../../../assets/876 × 1628-4.png'
+
 export default function HomeLatestCollectionsSection() {
   const latestCollections = [
     {
@@ -5,11 +13,11 @@ export default function HomeLatestCollectionsSection() {
       title: 'FRESH DROP!',
       subtitle: 'Shiny & New Arrivals',
       tag: 'Only at GIVA',
-      img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=2400&q=80',
+      img: collectionImg1,
       items: [
-        { label: 'Bracelet', img: 'https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556' },
-        { label: 'Ring', img: 'https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556' },
-        { label: 'Chain', img: 'https://www.giva.co/cdn/shop/files/Silver_Chains_Icon.webp?v=1766122556' },
+        { label: 'Bracelet', img: productImg1 },
+        { label: 'Ring', img: productImg2 },
+        { label: 'Chain', img: productImg3 },
       ],
     },
     {
@@ -17,11 +25,11 @@ export default function HomeLatestCollectionsSection() {
       title: 'Shakti',
       subtitle: 'COLLECTION',
       tag: 'Wear your power beautifully',
-      img: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=2400&q=80',
+      img: collectionImg2,
       items: [
-        { label: 'Pendant', img: 'https://www.giva.co/cdn/shop/files/Personalised_Icon.webp?v=1766122556' },
-        { label: 'Earring', img: 'https://www.giva.co/cdn/shop/files/Earrings_Icon.webp?v=1766122556' },
-        { label: 'Ring', img: 'https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556' },
+        { label: 'Pendant', img: productImg4 },
+        { label: 'Earring', img: productImg2 },
+        { label: 'Ring', img: productImg1 },
       ],
     },
     {
@@ -29,11 +37,11 @@ export default function HomeLatestCollectionsSection() {
       title: 'Pierced',
       subtitle: 'COLLECTION',
       tag: 'Mix, match, and stack',
-      img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=2400&q=80',
+      img: collectionImg3,
       items: [
-        { label: 'Studs', img: 'https://www.giva.co/cdn/shop/files/Earrings_Icon.webp?v=1766122556' },
-        { label: 'Anklet', img: 'https://www.giva.co/cdn/shop/files/Anklets_Icon.webp?v=1766122556' },
-        { label: 'Bracelet', img: 'https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556' },
+        { label: 'Studs', img: productImg3 },
+        { label: 'Anklet', img: productImg4 },
+        { label: 'Bracelet', img: productImg1 },
       ],
     },
   ]

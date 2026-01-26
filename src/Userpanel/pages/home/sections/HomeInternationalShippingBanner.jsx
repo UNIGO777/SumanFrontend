@@ -1,3 +1,5 @@
+import shippingBanner from '../../../../assets/2048 × 626-2.jpg'
+
 export default function HomeInternationalShippingBanner() {
   return (
     <div className="mt-10">
@@ -6,7 +8,7 @@ export default function HomeInternationalShippingBanner() {
           <div className="mx-auto w-full max-w-[92vw] md:max-w-none">
             <div className="relative overflow-hidden bg-gray-100 ring-1 ring-gray-200 md:rounded-[36px]">
               <img
-                src="https://www.giva.co/cdn/shop/files/nternational_Shipping_collection_web_1.webp?v=1768817085&width=2000"
+                src={shippingBanner}
                 alt="International shipping"
                 className="h-[220px] w-full object-cover sm:h-[280px] md:h-[340px]"
                 loading="lazy"

@@ -1,11 +1,18 @@
 import ProductCard from '../../../components/ProductCard.jsx'
+import productImg1 from '../../../../assets/876 × 1628-1.png'
+import productImg2 from '../../../../assets/876 × 1628-2.png'
+import productImg3 from '../../../../assets/876 × 1628-3.png'
+import productImg4 from '../../../../assets/876 × 1628-4.png'
 
 export default function HomeValentineSpecialSection() {
+  const imagesPool = [productImg1, productImg2, productImg3, productImg4]
+  const pick = (i) => imagesPool[i % imagesPool.length]
+
   const valentineProducts = [
     {
       id: 'vs-1',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346'],
+      images: [pick(0)],
       rating: 4.8,
       ratingCount: 112,
       price: 4999,
@@ -16,7 +23,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-2',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346'],
+      images: [pick(1)],
       rating: 4.7,
       ratingCount: 175,
       price: 2899,
@@ -27,7 +34,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-3',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/Earrings_Icon.webp?v=1766122556'],
+      images: [pick(2)],
       rating: 4.8,
       ratingCount: 196,
       price: 1199,
@@ -38,7 +45,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-4',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556'],
+      images: [pick(3)],
       rating: 4.7,
       ratingCount: 189,
       price: 2699,
@@ -49,7 +56,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-5',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(4)],
       rating: 4.6,
       ratingCount: 141,
       price: 1999,
@@ -60,7 +67,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-6',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(5)],
       rating: 4.8,
       ratingCount: 221,
       price: 1599,
@@ -71,7 +78,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-7',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(6)],
       rating: 4.7,
       ratingCount: 98,
       price: 2299,
@@ -82,7 +89,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-8',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(7)],
       rating: 4.9,
       ratingCount: 164,
       price: 3199,
@@ -93,7 +100,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-9',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/Silver_Chains_Icon.webp?v=1766122556'],
+      images: [pick(8)],
       rating: 4.8,
       ratingCount: 203,
       price: 1799,
@@ -104,7 +111,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-10',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556'],
+      images: [pick(9)],
       rating: 4.7,
       ratingCount: 118,
       price: 2499,
@@ -115,7 +122,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-11',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/Personalised_Icon.webp?v=1766122556'],
+      images: [pick(10)],
       rating: 4.8,
       ratingCount: 156,
       price: 2099,
@@ -126,7 +133,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-12',
       showBestseller: true,
-      images: ['https://www.giva.co/cdn/shop/files/Anklets_Icon.webp?v=1766122556'],
+      images: [pick(11)],
       rating: 4.6,
       ratingCount: 87,
       price: 1499,
@@ -137,7 +144,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-13',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(12)],
       rating: 4.7,
       ratingCount: 132,
       price: 2699,
@@ -148,7 +155,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-14',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1535632787350-4e68ef4f0b56?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(13)],
       rating: 4.8,
       ratingCount: 201,
       price: 1899,
@@ -159,7 +166,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-15',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1603575448360-153f093fd0a1?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(14)],
       rating: 4.6,
       ratingCount: 74,
       price: 3599,
@@ -170,7 +177,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-16',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(15)],
       rating: 4.9,
       ratingCount: 148,
       price: 3899,
@@ -181,7 +188,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-17',
       showBestseller: true,
-      images: ['https://images.unsplash.com/photo-1524502397800-2eeaad7c3fe5?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(16)],
       rating: 4.8,
       ratingCount: 265,
       price: 2299,
@@ -192,7 +199,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-18',
       showBestseller: true,
-      images: ['https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(17)],
       rating: 4.7,
       ratingCount: 178,
       price: 2799,
@@ -203,7 +210,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-19',
       showBestseller: true,
-      images: ['https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(18)],
       rating: 4.8,
       ratingCount: 209,
       price: 1999,
@@ -214,7 +221,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-20',
       showBestseller: true,
-      images: ['https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(19)],
       rating: 4.7,
       ratingCount: 167,
       price: 3199,
@@ -225,7 +232,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-21',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(20)],
       rating: 4.6,
       ratingCount: 88,
       price: 1499,
@@ -236,7 +243,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-22',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(21)],
       rating: 4.8,
       ratingCount: 143,
       price: 2599,
@@ -247,7 +254,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-23',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1517457154238-44d82213020a?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(22)],
       rating: 4.7,
       ratingCount: 121,
       price: 2899,
@@ -258,7 +265,7 @@ export default function HomeValentineSpecialSection() {
     {
       id: 'vs-24',
       showBestseller: false,
-      images: ['https://images.unsplash.com/photo-1511281053572-7c5bd8fcd5df?auto=format&fit=crop&w=1400&q=80'],
+      images: [pick(23)],
       rating: 4.9,
       ratingCount: 199,
       price: 3399,

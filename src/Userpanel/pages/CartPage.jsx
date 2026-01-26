@@ -2,6 +2,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
+import productFallback from '../../assets/876 × 1628-1.png'
 
 const CART_KEY = 'sj_cart_v1'
 
@@ -178,7 +179,7 @@ export default function CartPage() {
             <div className="lg:col-span-2">
               <div className="space-y-4">
                 {items.map((it) => {
-                  const cover = it.images?.[0] || it.imageUrl || 'https://via.placeholder.com/600x600?text=Product'
+                  const cover = it.images?.[0] || it.imageUrl || productFallback
                   return (
                     <div key={it.key} className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

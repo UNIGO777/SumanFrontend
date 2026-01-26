@@ -2,6 +2,10 @@ import { Search as SearchIcon, Truck, CreditCard, Headphones } from 'lucide-reac
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
+import productImg1 from '../../assets/876 × 1628-1.png'
+import productImg2 from '../../assets/876 × 1628-2.png'
+import productImg3 from '../../assets/876 × 1628-3.png'
+import productImg4 from '../../assets/876 × 1628-4.png'
 
 const PRIMARY = '#0f2e40'
 
@@ -39,14 +43,7 @@ const dummySubcategories = [
   { id: 'layered', categoryId: 'necklaces', name: 'Layered' },
 ]
 
-const dummyImages = [
-  'https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346',
-  'https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346',
-  'https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556',
-  'https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556',
-  'https://www.giva.co/cdn/shop/files/Silver_Chains_Icon.webp?v=1766122556',
-  'https://www.giva.co/cdn/shop/files/Personalised_Icon.webp?v=1766122556',
-]
+const dummyImages = [productImg1, productImg2, productImg3, productImg4]
 
 const buildDummyProducts = () => {
   const titles = [

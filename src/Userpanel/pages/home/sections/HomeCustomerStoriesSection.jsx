@@ -1,23 +1,27 @@
+import customerImg1 from '../../../../assets/876 × 1628-1.png'
+import customerImg2 from '../../../../assets/876 × 1628-2.png'
+import customerImg3 from '../../../../assets/876 × 1628-3.png'
+
 export default function HomeCustomerStoriesSection() {
   const customerStories = [
     {
       id: 'cs-1',
       name: 'Virda',
       story: "A big shout out to you guys for improving my hubby's gifting tastes. Completely in love with my ring!",
-      img: 'https://images.unsplash.com/photo-1617038220319-2768c54d2f27?auto=format&fit=crop&w=300&q=80',
+      img: customerImg1,
     },
     {
       id: 'cs-2',
       name: 'Harshika',
       story: 'Never thought buying jewellery would be this easy, thanks for helping make my mom’s birthday special.',
-      img: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=300&q=80',
+      img: customerImg2,
     },
     {
       id: 'cs-3',
       name: 'Priya',
       story:
         'Gifted these earrings to my sister on her wedding and she loved them! I am obsessed with buying gifts from GIVA.',
-      img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=300&q=80',
+      img: customerImg3,
     },
   ]
 

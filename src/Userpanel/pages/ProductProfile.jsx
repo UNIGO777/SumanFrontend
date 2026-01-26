@@ -2,6 +2,7 @@ import { Heart, Minus, Plus, Star } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
+import productFallback from '../../assets/876 × 1628-1.png'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
@@ -62,7 +63,7 @@ const ProductProfile = () => {
     const p = location?.state?.product || {}
     const title = p.title || (productKey ? decodeURIComponent(productKey) : 'Product')
     const images = Array.isArray(p.images) ? p.images.filter(Boolean) : []
-    const cover = p.imageUrl || images[0] || 'https://via.placeholder.com/900x900?text=Product'
+    const cover = p.imageUrl || images[0] || productFallback
 
     return {
       title,
@@ -89,7 +90,7 @@ const ProductProfile = () => {
     const r = location?.state?.recommendations
     if (Array.isArray(r) && r.length) return r
 
-    const baseImages = product.images.length ? product.images : ['https://via.placeholder.com/900x900?text=Product']
+    const baseImages = product.images.length ? product.images : [productFallback]
     const pick = (i) => baseImages[i % baseImages.length]
 
     return [

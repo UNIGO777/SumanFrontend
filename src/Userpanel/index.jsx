@@ -9,6 +9,13 @@ import HomeLatestCollectionsSection from './pages/home/sections/HomeLatestCollec
 import HomeInternationalShippingBanner from './pages/home/sections/HomeInternationalShippingBanner.jsx'
 import HomeValentineSpecialSection from './pages/home/sections/HomeValentineSpecialSection.jsx'
 import HomeCustomerStoriesSection from './pages/home/sections/HomeCustomerStoriesSection.jsx'
+import heroBanner from '../assets/2048 × 626.jpg'
+import promoBanner1 from '../assets/1312 × 668.jpg'
+import promoBanner2 from '../assets/1312 × 668-2.jpg'
+import productImg1 from '../assets/876 × 1628-1.png'
+import productImg2 from '../assets/876 × 1628-2.png'
+import productImg3 from '../assets/876 × 1628-3.png'
+import productImg4 from '../assets/876 × 1628-4.png'
 
 const index = () => {
   return (
@@ -16,7 +23,7 @@ const index = () => {
       <section className="space-y-4">
         <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
           <img
-            src="https://www.giva.co/cdn/shop/files/Frame_1171278768.webp?v=1767081699&width=3840"
+            src={heroBanner}
             alt="Promo banner"
             className="h-full w-full object-contain "
             loading="lazy"
@@ -28,7 +35,7 @@ const index = () => {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 max-w-[90vw] mx-auto">
           <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
             <img
-              src="https://www.giva.co/cdn/shop/files/80_Desktop.webp?v=1766124595&width=3840"
+              src={promoBanner1}
               alt="Promo card 2"
               className="h-[250px] w-full object-cover"
               loading="lazy"
@@ -41,7 +48,7 @@ const index = () => {
 
           <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
             <img
-              src="https://www.giva.co/cdn/shop/files/bogo.desktop_82adc342-b4ea-40ca-99e4-eacf5cab47d5.webp?v=1766122556&width=3840"
+              src={promoBanner2}
               alt="Promo card 1"
               className="h-[250px] w-full object-cover"
               loading="lazy"
@@ -69,8 +76,8 @@ const index = () => {
               {
                 showBestseller: true,
                 images: [
-                  'https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346',
-                  'https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346',
+                  productImg1,
+                  productImg2,
                 ],
                 rating: 4.8,
                 ratingCount: 326,
@@ -82,8 +89,8 @@ const index = () => {
               {
                 showBestseller: true,
                 images: [
-                  'https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346',
-                  'https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346',
+                  productImg2,
+                  productImg1,
                 ],
                 rating: 4.8,
                 ratingCount: 326,
@@ -94,8 +101,8 @@ const index = () => {
               },
               {
                 images: [
-                  'https://www.giva.co/cdn/shop/files/Personalised_Icon.webp?v=1766122556',
-                  'https://www.giva.co/cdn/shop/files/Silver_Chains_Icon.webp?v=1766122556',
+                  productImg3,
+                  productImg4,
                 ],
                 rating: 4.6,
                 ratingCount: 112,
@@ -107,8 +114,8 @@ const index = () => {
               {
                 showBestseller: false,
                 images: [
-                  'https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556',
-                  'https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556',
+                  productImg4,
+                  productImg3,
                 ],
                 rating: 4.7,
                 ratingCount: 84,

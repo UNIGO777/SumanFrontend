@@ -1,27 +1,31 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useRef } from 'react'
+import panelImg1 from '../../assets/1312 × 668-2.jpg'
+import panelImg2 from '../../assets/1312 × 668-3.jpg'
+import panelImg3 from '../../assets/1312 × 668-4.jpg'
+import panelImg4 from '../../assets/1312 × 668-5.jpg'
 
 export default function ItemPanel({ title = '' }) {
   const ref = useRef(null)
 
   const items = useMemo(
     () => [
-      { label: 'Rings', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80', badge: 'Min 65% OFF' },
-      { label: 'Bracelets', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Anklets', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Sets', img: 'https://images.unsplash.com/photo-1535632787350-4e68ef4f0b56?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Men in Silver', img: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Mangalsutras', img: 'https://images.unsplash.com/photo-1603575448360-153f093fd0a1?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Silver Chains', img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Personalised', img: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1f4?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Rings', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80', badge: 'Min 65% OFF' },
-      { label: 'Bracelets', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Anklets', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Sets', img: 'https://images.unsplash.com/photo-1535632787350-4e68ef4f0b56?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Men in Silver', img: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Mangalsutras', img: 'https://images.unsplash.com/photo-1603575448360-153f093fd0a1?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Silver Chains', img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
-      { label: 'Personalised', img: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1f4?auto=format&fit=crop&w=800&q=80', badge: 'Min 60% OFF' },
+      { label: 'Rings', img: panelImg1, badge: 'Min 65% OFF' },
+      { label: 'Bracelets', img: panelImg2, badge: 'Min 60% OFF' },
+      { label: 'Anklets', img: panelImg3, badge: 'Min 60% OFF' },
+      { label: 'Sets', img: panelImg4, badge: 'Min 60% OFF' },
+      { label: 'Men in Silver', img: panelImg1, badge: 'Min 60% OFF' },
+      { label: 'Mangalsutras', img: panelImg2, badge: 'Min 60% OFF' },
+      { label: 'Silver Chains', img: panelImg3, badge: 'Min 60% OFF' },
+      { label: 'Personalised', img: panelImg4, badge: 'Min 60% OFF' },
+      { label: 'Rings', img: panelImg1, badge: 'Min 65% OFF' },
+      { label: 'Bracelets', img: panelImg2, badge: 'Min 60% OFF' },
+      { label: 'Anklets', img: panelImg3, badge: 'Min 60% OFF' },
+      { label: 'Sets', img: panelImg4, badge: 'Min 60% OFF' },
+      { label: 'Men in Silver', img: panelImg1, badge: 'Min 60% OFF' },
+      { label: 'Mangalsutras', img: panelImg2, badge: 'Min 60% OFF' },
+      { label: 'Silver Chains', img: panelImg3, badge: 'Min 60% OFF' },
+      { label: 'Personalised', img: panelImg4, badge: 'Min 60% OFF' },
     ],
     []
   )

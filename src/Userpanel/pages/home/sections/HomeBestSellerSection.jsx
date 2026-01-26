@@ -1,4 +1,8 @@
 import BestSellerPanel from '../../../components/BestSellerPanel.jsx'
+import productImg1 from '../../../../assets/876 × 1628-1.png'
+import productImg2 from '../../../../assets/876 × 1628-2.png'
+import productImg3 from '../../../../assets/876 × 1628-3.png'
+import productImg4 from '../../../../assets/876 × 1628-4.png'
 
 export default function HomeBestSellerSection() {
   return (
@@ -9,8 +13,8 @@ export default function HomeBestSellerSection() {
             {
               showBestseller: true,
               images: [
-                'https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346',
-                'https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346',
+                productImg1,
+                productImg2,
               ],
               rating: 4.8,
               ratingCount: 326,
@@ -22,8 +26,8 @@ export default function HomeBestSellerSection() {
             {
               showBestseller: true,
               images: [
-                'https://www.giva.co/cdn/shop/files/BR01247_1.jpg?v=1743681996&width=1346',
-                'https://www.giva.co/cdn/shop/files/BR01247_2.jpg?v=1743681996&width=1346',
+                productImg2,
+                productImg1,
               ],
               rating: 4.8,
               ratingCount: 326,
@@ -34,8 +38,8 @@ export default function HomeBestSellerSection() {
             },
             {
               images: [
-                'https://www.giva.co/cdn/shop/files/Personalised_Icon.webp?v=1766122556',
-                'https://www.giva.co/cdn/shop/files/Silver_Chains_Icon.webp?v=1766122556',
+                productImg3,
+                productImg4,
               ],
               rating: 4.6,
               ratingCount: 112,
@@ -47,8 +51,8 @@ export default function HomeBestSellerSection() {
             {
               showBestseller: false,
               images: [
-                'https://www.giva.co/cdn/shop/files/Rings_Icon.webp?v=1766122556',
-                'https://www.giva.co/cdn/shop/files/Bracelets_Icon.webp?v=1766122556',
+                productImg4,
+                productImg3,
               ],
               rating: 4.7,
               ratingCount: 84,

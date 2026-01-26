@@ -1,3 +1,7 @@
+import essentialImg1 from '../../../../assets/1312 × 668-6.jpg'
+import essentialImg2 from '../../../../assets/1312 × 668-7.jpg'
+import essentialImg3 from '../../../../assets/1312 × 668-8.jpg'
+
 export default function HomeEssentialsSection() {
   return (
     <div className="mt-12">
@@ -8,17 +12,17 @@ export default function HomeEssentialsSection() {
           {[
             {
               label: 'Timeless Pearls',
-              img: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=1600&q=80',
+              img: essentialImg1,
               className: 'md:w-[330px]',
             },
             {
               label: 'Stackable Collection',
-              img: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80',
+              img: essentialImg2,
               className: 'md:w-[330px]',
             },
             {
               label: 'Emerging Trends',
-              img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1800&q=80',
+              img: essentialImg3,
               className: 'md:flex-1',
             },
           ].map((it) => (

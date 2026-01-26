@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import productFallback from '../../assets/876 × 1628-1.png'
 
 const CART_KEY = 'sj_cart_v1'
 const CHECKOUT_KEY = 'sj_checkout_v1'
@@ -548,7 +549,7 @@ export default function Checkout() {
             <div className="mt-4 space-y-4">
               {items.map((it) => {
                 const qty = Math.max(1, Number.parseInt(it?.qty, 10) || 1)
-                const cover = it?.images?.[0] || it?.imageUrl || 'https://via.placeholder.com/600x600?text=Product'
+                const cover = it?.images?.[0] || it?.imageUrl || productFallback
                 return (
                   <div key={it.key} className="flex items-start gap-4">
                     <div className="h-16 w-16 overflow-hidden rounded-xl bg-gray-50 ring-1 ring-gray-200">
