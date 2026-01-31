@@ -121,7 +121,7 @@ export default function HomeOccasionSection() {
 
           <div
             ref={occasionRef}
-            className="no-scrollbar flex min-h-[480px] snap-x snap-mandatory items-end gap-12 overflow-x-auto px-8 py-10 sm:px-12 md:px-16 lg:px-20 scroll-px-8 sm:scroll-px-12 md:scroll-px-16 lg:scroll-px-20"
+            className="no-scrollbar flex min-h-[420px] snap-x snap-mandatory items-end gap-6 overflow-x-auto px-4 py-8 sm:min-h-[480px] sm:gap-12 sm:px-8 sm:py-10 md:px-12 lg:px-20 scroll-px-4 sm:scroll-px-8 md:scroll-px-12 lg:scroll-px-20"
           >
             {occasions.map((it, idx) => {
               const distance = Math.abs(idx - activeIdx)
@@ -136,15 +136,15 @@ export default function HomeOccasionSection() {
                   className={`shrink-0 snap-center transition-transform duration-300 ${opacityClass} ${scaleClass}`}
                 >
                   <div
-                    className="relative h-[390px] w-[230px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10"
+                    className="relative h-[320px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[220px] md:h-[390px] md:w-[230px]"
                   >
                     <img
                       src={it.img}
                       alt={it.label}
-                      className="absolute inset-0 h-full w-full scale-[1.32] object-cover object-[center_35%]"
+                      className="absolute inset-0 h-full w-full scale-[1.22] object-cover object-[center_35%] sm:scale-[1.32]"
                       loading="lazy"
                     />
-                    <div className="absolute bottom-4 left-1/2 w-[calc(100%-2.5rem)] -translate-x-1/2 bg-white/95 px-4 py-2 text-xs font-bold text-[#0f2e40] shadow-sm ring-1 ring-[#0f2e40]/20 sm:text-sm">
+                    <div className="absolute bottom-3 left-1/2 w-[calc(100%-2rem)] -translate-x-1/2 bg-white/95 px-3 py-2 text-xs font-bold text-[#0f2e40] shadow-sm ring-1 ring-[#0f2e40]/20 sm:bottom-4 sm:w-[calc(100%-2.5rem)] sm:px-4 sm:text-sm">
                       <div className="truncate text-center whitespace-nowrap">{it.label}</div>
                     </div>
                   </div>

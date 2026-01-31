@@ -32,7 +32,15 @@ export default function ItemPanel({ title = '' }) {
 
   const scroll = (dir) => {
     if (!ref.current) return
-    ref.current.scrollBy({ left: dir * 520, behavior: 'smooth' })
+    const container = ref.current
+    const firstChild = container.firstElementChild
+    const cardWidth = firstChild ? firstChild.getBoundingClientRect().width : 0
+
+    const styles = window.getComputedStyle(container)
+    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0
+
+    const delta = (cardWidth + gap) * 3 * dir || 520 * dir
+    container.scrollBy({ left: delta, behavior: 'smooth' })
   }
 
   return (
@@ -57,18 +65,19 @@ export default function ItemPanel({ title = '' }) {
         <ChevronRight className="h-5 w-5" />
       </button>
 
-      <div ref={ref} className="no-scrollbar flex gap-6 overflow-x-auto  px-10 py-10 ">
-        
-
+      <div ref={ref} className="no-scrollbar flex gap-6 overflow-x-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10">
         {items.map((it) => (
-          <div key={it.label} className="flex w-[150px] shrink-0 flex-col items-center hover:cursor-pointer hover:scale-[1.1] transition-transform">
-            <div className="relative h-[150px] w-[150px] overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-gray-200">
+          <div
+            key={it.label}
+            className="flex w-[120px] shrink-0 flex-col items-center transition-transform hover:cursor-pointer hover:scale-[1.1] sm:w-[150px]"
+          >
+            <div className="relative h-[120px] w-[120px] overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-gray-200 sm:h-[150px] sm:w-[150px]">
               <img src={it.img} alt={it.label} className="h-full w-full object-cover" loading="lazy" />
-              <div className="absolute left-2 top-2 rounded-full bg-indigo-500/90 px-2 py-1 text-[10px] font-bold text-white">
+              <div className="absolute left-2 top-2 rounded-full bg-gray-800 px-1.5 py-0.5 text-[9px] font-bold text-white sm:px-2 sm:py-1 sm:text-[10px]">
                 {it.badge}
               </div>
             </div>
-            <div className="mt-3 text-center text-xs  font-bold text-gray-800">{it.label}</div>
+            <div className="mt-2 text-center text-[11px] font-bold text-gray-800 sm:mt-3 sm:text-xs">{it.label}</div>
           </div>
         ))}
       </div>

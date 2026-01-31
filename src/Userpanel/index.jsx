@@ -1,6 +1,7 @@
 import ItemPanel from './components/ItemPanel.jsx'
 import RecipientPanel from './components/RecipientPanel.jsx'
 import BestSellerPanel from './components/BestSellerPanel.jsx'
+import { useEffect, useState } from 'react'
 import HomeOccasionSection from './pages/home/sections/HomeOccasionSection.jsx'
 import HomeEssentialsSection from './pages/home/sections/HomeEssentialsSection.jsx'
 import HomeLaunchBannerSection from './pages/home/sections/HomeLaunchBannerSection.jsx'
@@ -12,12 +13,64 @@ import HomeCustomerStoriesSection from './pages/home/sections/HomeCustomerStorie
 import heroBanner from '../assets/2048 × 626.jpg'
 import promoBanner1 from '../assets/1312 × 668.jpg'
 import promoBanner2 from '../assets/1312 × 668-2.jpg'
-import productImg1 from '../assets/876 × 1628-1.png'
-import productImg2 from '../assets/876 × 1628-2.png'
-import productImg3 from '../assets/876 × 1628-3.png'
-import productImg4 from '../assets/876 × 1628-4.png'
+import productFallback from '../assets/876 × 1628-1.png'
+import { getJson } from '../AdminPanel/services/apiClient.js'
+
+const getPriceAmount = (p) => {
+  const raw = typeof p === 'object' && p !== null ? p.amount : p
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 0
+}
+
+const pickPrimaryVariant = (product) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+  if (!variants.length) return null
+  const active = variants.find((v) => v?.isActive !== false)
+  return active || variants[0]
+}
 
 const index = () => {
+  const [bestSellers, setBestSellers] = useState([])
+
+  useEffect(() => {
+    let active = true
+    getJson('/api/products', { page: 1, limit: 12 })
+      .then((res) => {
+        if (!active) return
+        const rows = Array.isArray(res?.data) ? res.data : []
+        const mapped = rows.slice(0, 8).map((p, idx) => {
+          const v = pickPrimaryVariant(p) || {}
+          const images = [p?.image, ...(Array.isArray(p?.images) ? p.images : []), v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(
+            Boolean
+          )
+          const cover = images[0] || productFallback
+          const price = getPriceAmount(p?.makingCost) + getPriceAmount(p?.otherCharges) || getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+
+          return {
+            id: p?._id,
+            showBestseller: idx < 2,
+            images: images.length ? images : [cover],
+            imageUrl: cover,
+            rating: undefined,
+            ratingCount: undefined,
+            price: Number.isFinite(price) ? price : 0,
+            originalPrice: undefined,
+            title: p?.name || 'Product',
+            couponText: '',
+          }
+        })
+        setBestSellers(mapped)
+      })
+      .catch(() => {
+        if (!active) return
+        setBestSellers([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
     <div className="mx-auto px-4 py-6">
       <section className="space-y-4">
@@ -70,63 +123,11 @@ const index = () => {
       </div>
 
       <div className="mt-12">
-        <div className="mx-auto max-w-[92vw]">
-          <BestSellerPanel
-            products={[
-              {
-                showBestseller: true,
-                images: [
-                  productImg1,
-                  productImg2,
-                ],
-                rating: 4.8,
-                ratingCount: 326,
-                price: 3799,
-                originalPrice: 8399,
-                title: 'Silver Classic Solitaire Ring',
-                couponText: 'EXTRA 5% OFF with coupon',
-              },
-              {
-                showBestseller: true,
-                images: [
-                  productImg2,
-                  productImg1,
-                ],
-                rating: 4.8,
-                ratingCount: 326,
-                price: 3799,
-                originalPrice: 8399,
-                title: 'Silver Classic Solitaire Ring',
-                couponText: 'EXTRA 5% OFF with coupon',
-              },
-              {
-                images: [
-                  productImg3,
-                  productImg4,
-                ],
-                rating: 4.6,
-                ratingCount: 112,
-                price: 2199,
-                originalPrice: 3999,
-                title: 'Silver Minimal Pendant',
-                couponText: 'EXTRA 5% OFF with coupon',
-              },
-              {
-                showBestseller: false,
-                images: [
-                  productImg4,
-                  productImg3,
-                ],
-                rating: 4.7,
-                ratingCount: 84,
-                price: 1599,
-                originalPrice: 2999,
-                title: 'Silver Everyday Ring',
-                couponText: 'EXTRA 5% OFF with coupon',
-              },
-            ]}
-          />
-        </div>
+        {bestSellers.length ? (
+          <div className="mx-auto max-w-[92vw]">
+            <BestSellerPanel products={bestSellers} />
+          </div>
+        ) : null}
       </div>
 
       <HomeOccasionSection />

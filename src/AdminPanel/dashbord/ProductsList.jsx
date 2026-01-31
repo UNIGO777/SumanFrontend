@@ -139,10 +139,6 @@ export default function AdminProductsList({ activeOnly = false }) {
       setError('Name is required')
       return
     }
-    if (!Array.isArray(editVariants) || editVariants.length === 0) {
-      setError('At least one variant is required')
-      return
-    }
 
     const payload = {
       name: editName.trim(),
@@ -153,8 +149,9 @@ export default function AdminProductsList({ activeOnly = false }) {
     if (editSubCategoryId) payload.subCategoryId = editSubCategoryId
     payload.variants = []
 
-    for (let i = 0; i < editVariants.length; i += 1) {
-      const v = editVariants[i]
+    const variantsIn = Array.isArray(editVariants) ? editVariants : []
+    for (let i = 0; i < variantsIn.length; i += 1) {
+      const v = variantsIn[i]
       const title = (v.title || '').trim() || `Variant ${i + 1}`
       const stockNum = String(v.stock || '').trim() ? Number(v.stock) : 0
 
@@ -438,7 +435,7 @@ export default function AdminProductsList({ activeOnly = false }) {
                           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="text-sm font-semibold text-gray-900">Variants</div>
-                              <div className="mt-1 text-xs text-gray-500">At least one variant is required</div>
+                    <div className="mt-1 text-xs text-gray-500">Optional</div>
                             </div>
                             <button
                               type="button"
@@ -473,8 +470,8 @@ export default function AdminProductsList({ activeOnly = false }) {
                                   <div className="text-xs font-semibold text-gray-600">Variant {idx + 1}</div>
                                   <button
                                     type="button"
-                                    onClick={() => setEditVariants((arr) => (arr.length <= 1 ? arr : arr.filter((_, i) => i !== idx)))}
-                                    disabled={loading || editVariants.length <= 1}
+                                onClick={() => setEditVariants((arr) => (Array.isArray(arr) ? arr.filter((_, i) => i !== idx) : []))}
+                                disabled={loading}
                                     className="text-xs font-semibold text-red-700 disabled:opacity-60"
                                   >
                                     Remove

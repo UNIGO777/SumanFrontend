@@ -3,9 +3,44 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
+import { getJson } from '../../AdminPanel/services/apiClient.js'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
+
+const getPriceAmount = (p) => {
+  const raw = typeof p === 'object' && p !== null ? p.amount : p
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 0
+}
+
+const pickPrimaryVariant = (product) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+  if (!variants.length) return null
+  const active = variants.find((v) => v?.isActive !== false)
+  return active || variants[0]
+}
+
+const toUiProduct = (apiProduct) => {
+  const v = pickPrimaryVariant(apiProduct) || {}
+  const images = [v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(Boolean)
+  const cover = images[0] || productFallback
+  const price = getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+
+  return {
+    id: apiProduct?._id,
+    title: apiProduct?.name || 'Product',
+    images: images.length ? images : [cover],
+    imageUrl: cover,
+    price: Number.isFinite(price) ? price : 0,
+    originalPrice: undefined,
+    rating: undefined,
+    ratingCount: undefined,
+    description: apiProduct?.description || '',
+    tags: Array.isArray(apiProduct?.tags) ? apiProduct.tags : ['Jewellery'],
+    sku: v?.sku || '',
+  }
+}
 
 const readCartItems = () => {
   if (typeof window === 'undefined') return []
@@ -59,13 +94,74 @@ const ProductProfile = () => {
 
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN'), [])
 
+  const productId = useMemo(() => {
+    if (!productKey) return ''
+    try {
+      return decodeURIComponent(productKey)
+    } catch {
+      return String(productKey)
+    }
+  }, [productKey])
+
+  const [apiProduct, setApiProduct] = useState(null)
+  const [apiError, setApiError] = useState('')
+  const [apiRecommendations, setApiRecommendations] = useState([])
+
+  useEffect(() => {
+    let active = true
+    setApiError('')
+    if (!productId) return () => {}
+
+    getJson(`/api/products/${encodeURIComponent(productId)}`)
+      .then((data) => {
+        if (!active) return
+        if (data?.ok && data?.data) setApiProduct(data.data)
+        else setApiError('Product not found')
+      })
+      .catch((e) => {
+        if (!active) return
+        setApiError(e?.message || 'Failed to load product')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [productId])
+
+  useEffect(() => {
+    let active = true
+    setApiRecommendations([])
+
+    getJson('/api/products', { page: 1, limit: 12 })
+      .then((data) => {
+        if (!active) return
+        const rows = Array.isArray(data?.data) ? data.data : []
+        const mapped = rows
+          .filter((p) => String(p?._id || '') && String(p?._id || '') !== String(productId || ''))
+          .slice(0, 4)
+          .map((p) => toUiProduct(p))
+        setApiRecommendations(mapped)
+      })
+      .catch(() => {
+        if (!active) return
+        setApiRecommendations([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [productId])
+
   const product = useMemo(() => {
+    if (apiProduct) return toUiProduct(apiProduct)
+
     const p = location?.state?.product || {}
     const title = p.title || (productKey ? decodeURIComponent(productKey) : 'Product')
     const images = Array.isArray(p.images) ? p.images.filter(Boolean) : []
     const cover = p.imageUrl || images[0] || productFallback
 
     return {
+      id: p.id,
       title,
       images: images.length ? images : [cover],
       price: Number.isFinite(p.price) ? p.price : 0,
@@ -77,8 +173,9 @@ const ProductProfile = () => {
         'A timeless piece designed to elevate everyday looks. Crafted with care and finished for lasting shine.',
       tags: Array.isArray(p.tags) ? p.tags : ['Jewellery', 'New Arrival'],
       sku: p.sku || '',
+      imageUrl: cover,
     }
-  }, [location?.state?.product, productKey])
+  }, [apiProduct, location?.state?.product, productKey])
 
   const breadcrumbs = useMemo(() => {
     const b = location?.state?.breadcrumbs
@@ -89,53 +186,9 @@ const ProductProfile = () => {
   const recommendations = useMemo(() => {
     const r = location?.state?.recommendations
     if (Array.isArray(r) && r.length) return r
-
-    const baseImages = product.images.length ? product.images : [productFallback]
-    const pick = (i) => baseImages[i % baseImages.length]
-
-    return [
-      {
-        id: 'rec-1',
-        images: [pick(0), pick(1)],
-        title: 'Silver Stud Earrings',
-        price: 1999,
-        originalPrice: 2999,
-        rating: 4.6,
-        ratingCount: 118,
-        couponText: 'EXTRA 5% OFF with coupon',
-      },
-      {
-        id: 'rec-2',
-        images: [pick(1), pick(0)],
-        title: 'Minimal Pendant',
-        price: 2199,
-        originalPrice: 3999,
-        rating: 4.7,
-        ratingCount: 84,
-        couponText: 'EXTRA 5% OFF with coupon',
-      },
-      {
-        id: 'rec-3',
-        images: [pick(0), pick(1)],
-        title: 'Everyday Ring',
-        price: 1599,
-        originalPrice: 2999,
-        rating: 4.8,
-        ratingCount: 326,
-        couponText: 'EXTRA 5% OFF with coupon',
-      },
-      {
-        id: 'rec-4',
-        images: [pick(1), pick(0)],
-        title: 'Classic Bracelet',
-        price: 3799,
-        originalPrice: 8399,
-        rating: 4.5,
-        ratingCount: 206,
-        couponText: 'EXTRA 5% OFF with coupon',
-      },
-    ]
-  }, [location?.state?.recommendations, product.images])
+    if (Array.isArray(apiRecommendations) && apiRecommendations.length) return apiRecommendations
+    return []
+  }, [apiRecommendations, location?.state?.recommendations, product.images])
 
   const [activeImage, setActiveImage] = useState(0)
   const [qty, setQty] = useState(1)
@@ -151,13 +204,13 @@ const ProductProfile = () => {
   const mainUrl = product.images[Math.min(Math.max(activeImage, 0), product.images.length - 1)]
 
   const slug = useMemo(() => {
-    const raw = String(productKey || product?.sku || product?.title || 'product')
+    const raw = String(productId || productKey || product?.sku || product?.title || 'product')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
     return encodeURIComponent(raw || 'product')
-  }, [productKey, product?.sku, product?.title])
+  }, [productId, productKey, product?.sku, product?.title])
 
   const itemKey = useMemo(() => decodeURIComponent(slug || ''), [slug])
 
@@ -190,7 +243,7 @@ const ProductProfile = () => {
 
     const nextItem = {
       key,
-      id: location?.state?.product?.id,
+      id: product.id || location?.state?.product?.id,
       sku: product.sku,
       title: product.title,
       price: Number.isFinite(product.price) ? product.price : 0,
@@ -222,7 +275,7 @@ const ProductProfile = () => {
     const cover = product.images?.[0] || ''
     const nextItem = {
       key: itemKey,
-      id: location?.state?.product?.id,
+      id: product.id || location?.state?.product?.id,
       sku: product.sku,
       title: product.title,
       price: Number.isFinite(product.price) ? product.price : 0,
@@ -263,6 +316,11 @@ const ProductProfile = () => {
             )
           })}
         </div>
+        {apiError ? (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {apiError}
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
           <div>

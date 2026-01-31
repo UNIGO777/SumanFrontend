@@ -8,6 +8,11 @@ export const getApiBase = () => {
   return ''
 }
 
+const getAdminToken = () => {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem('admin_token') || window.sessionStorage.getItem('admin_token') || ''
+}
+
 const buildQuery = (query) => {
   if (!query) return ''
   const params = new URLSearchParams()
@@ -21,9 +26,14 @@ const buildQuery = (query) => {
 
 export const requestJson = async ({ method, path, query, body, headers }) => {
   const apiBase = getApiBase()
+  const token = getAdminToken()
   const res = await fetch(`${apiBase}${path}${buildQuery(query)}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...(headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(headers || {}),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   const data = await res.json().catch(() => null)
@@ -36,9 +46,10 @@ export const requestJson = async ({ method, path, query, body, headers }) => {
 
 export const requestForm = async ({ path, formData, headers }) => {
   const apiBase = getApiBase()
+  const token = getAdminToken()
   const res = await fetch(`${apiBase}${path}`, {
     method: 'POST',
-    headers: { ...(headers || {}) },
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(headers || {}) },
     body: formData,
   })
   const data = await res.json().catch(() => null)

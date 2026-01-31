@@ -2,14 +2,35 @@ import { Search as SearchIcon, Truck, CreditCard, Headphones } from 'lucide-reac
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
-import productImg1 from '../../assets/876 × 1628-1.png'
-import productImg2 from '../../assets/876 × 1628-2.png'
-import productImg3 from '../../assets/876 × 1628-3.png'
-import productImg4 from '../../assets/876 × 1628-4.png'
+import productFallback from '../../assets/876 × 1628-1.png'
+import { getJson } from '../../AdminPanel/services/apiClient.js'
 
 const PRIMARY = '#0f2e40'
 
 const normalizeText = (v) => String(v || '').trim().toLowerCase()
+
+const getPriceAmount = (p) => {
+  const raw = typeof p === 'object' && p !== null ? p.amount : p
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 0
+}
+
+const pickPrimaryVariant = (product) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+  if (!variants.length) return null
+  const active = variants.find((v) => v?.isActive !== false)
+  return active || variants[0]
+}
+
+const getAttrValue = (attributes, key) => {
+  if (!attributes || typeof attributes !== 'object') return ''
+  const target = String(key || '').trim().toLowerCase()
+  if (!target) return ''
+  const entry = Object.entries(attributes).find(([k]) => String(k).trim().toLowerCase() === target)
+  if (!entry) return ''
+  const v = entry[1]
+  return v === undefined || v === null ? '' : String(v).trim()
+}
 
 const COLOR_SWATCH = {
   gold: '#c79b3a',
@@ -20,84 +41,6 @@ const COLOR_SWATCH = {
   green: '#16a34a',
   red: '#dc2626',
   white: '#e5e7eb',
-}
-
-const dummyCategories = [
-  { id: 'necklaces', name: 'Necklaces' },
-  { id: 'rings', name: 'Rings' },
-  { id: 'earrings', name: 'Earrings' },
-  { id: 'bracelets', name: 'Bracelets' },
-  { id: 'anklets', name: 'Anklets' },
-  { id: 'chains', name: 'Chains' },
-  { id: 'bangles', name: 'Bangles' },
-]
-
-const dummySubcategories = [
-  { id: 'solitaire', categoryId: 'rings', name: 'Solitaire' },
-  { id: 'minimal', categoryId: 'rings', name: 'Minimal' },
-  { id: 'studs', categoryId: 'earrings', name: 'Studs' },
-  { id: 'hoops', categoryId: 'earrings', name: 'Hoops' },
-  { id: 'charm', categoryId: 'bracelets', name: 'Charm' },
-  { id: 'tennis', categoryId: 'bracelets', name: 'Tennis' },
-  { id: 'pendant', categoryId: 'necklaces', name: 'Pendant' },
-  { id: 'layered', categoryId: 'necklaces', name: 'Layered' },
-]
-
-const dummyImages = [productImg1, productImg2, productImg3, productImg4]
-
-const buildDummyProducts = () => {
-  const titles = [
-    'Gold Diamond Ring',
-    'Golden Elegance Bracelet',
-    'Gold Necklace',
-    'Gold Bracelet',
-    'Green Diamond Earrings',
-    'Gold Bracelet',
-    'Gold Bangle',
-    'Gold Chain',
-    'Silver Minimal Pendant',
-    'Silver Classic Solitaire Ring',
-    'Silver Hoop Earrings',
-    'Rose Gold Tennis Bracelet',
-  ]
-  const colors = ['Gold', 'Silver', 'Rose Gold', 'Black', 'Green', 'Blue']
-  const materials = ['Gold', 'Silver', 'Platinum']
-  const out = []
-
-  for (let i = 0; i < 30; i += 1) {
-    const c = dummyCategories[i % dummyCategories.length]
-    const subs = dummySubcategories.filter((s) => s.categoryId === c.id)
-    const sc = subs.length ? subs[i % subs.length] : { id: '', name: '' }
-    const title = titles[i % titles.length]
-    const base = 180 + (i % 8) * 35
-    const price = Math.round(base * 10) * 10
-    const originalPrice = Math.round(price * 1.3)
-    const key = `${c.id}-${sc.id || 'all'}-${i + 1}`
-    const color = colors[i % colors.length]
-    const material = materials[i % materials.length]
-
-    out.push({
-      key,
-      id: key,
-      sku: `SJ-${1000 + i}`,
-      title,
-      categoryId: c.id,
-      categoryName: c.name,
-      subCategoryId: sc.id,
-      subCategoryName: sc.name,
-      images: [dummyImages[i % dummyImages.length], dummyImages[(i + 1) % dummyImages.length]],
-      imageUrl: dummyImages[i % dummyImages.length],
-      price,
-      originalPrice,
-      rating: 4.8,
-      ratingCount: 243,
-      couponText: 'EXTRA 15% OFF with coupon',
-      color,
-      material,
-      inStock: i % 7 !== 0,
-    })
-  }
-  return out
 }
 
 export default function SearchPage() {
@@ -115,17 +58,121 @@ export default function SearchPage() {
   const [sort, setSort] = useState('default')
   const [page, setPage] = useState(1)
 
-  const products = useMemo(() => buildDummyProducts(), [])
+  const [apiProducts, setApiProducts] = useState([])
+  const [apiCategories, setApiCategories] = useState([])
+  const [apiSubcategories, setApiSubcategories] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const pageSize = 12
+
+  const categories = useMemo(() => (Array.isArray(apiCategories) ? apiCategories : []), [apiCategories])
+  const subcategories = useMemo(() => (Array.isArray(apiSubcategories) ? apiSubcategories : []), [apiSubcategories])
+
+  const categoryById = useMemo(() => {
+    const m = new Map()
+    categories.forEach((c) => m.set(String(c?._id || c?.id || ''), c))
+    return m
+  }, [categories])
+  const subById = useMemo(() => {
+    const m = new Map()
+    subcategories.forEach((s) => m.set(String(s?._id || s?.id || ''), s))
+    return m
+  }, [subcategories])
+
+  const products = useMemo(() => (Array.isArray(apiProducts) ? apiProducts : []), [apiProducts])
+
+  useEffect(() => {
+    let active = true
+    setLoadError('')
+
+    Promise.all([getJson('/api/categories', { page: 1, limit: 200 }), getJson('/api/subcategories', { page: 1, limit: 200 })])
+      .then(([catsRes, subsRes]) => {
+        if (!active) return
+        const cats = Array.isArray(catsRes?.data) ? catsRes.data : []
+        const subs = Array.isArray(subsRes?.data) ? subsRes.data : []
+        setApiCategories(cats)
+        setApiSubcategories(subs)
+      })
+      .catch(() => {
+        if (!active) return
+        setApiCategories([])
+        setApiSubcategories([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setLoadError('')
+
+    getJson('/api/products', { page: 1, limit: 200, q: qParam })
+      .then((res) => {
+        if (!active) return
+        const rows = Array.isArray(res?.data) ? res.data : []
+        const mapped = rows.map((p, idx) => {
+          const v = pickPrimaryVariant(p) || {}
+          const images = [p?.image, ...(Array.isArray(p?.images) ? p.images : []), v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(
+            Boolean
+          )
+          const cover = images[0] || productFallback
+          const price = getPriceAmount(p?.makingCost) + getPriceAmount(p?.otherCharges) || getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+          const categoryId = String(p?.category || '')
+          const subCategoryId = String(p?.subCategory || '')
+          const categoryName = categoryById.get(categoryId)?.name || ''
+          const subCategoryName = subById.get(subCategoryId)?.name || ''
+          const stock = Number(p?.stock)
+          const inStock = Number.isFinite(stock) ? stock > 0 : (Number(v?.stock) || 0) > 0
+
+          return {
+            key: p?._id || `p-${idx + 1}`,
+            id: p?._id,
+            sku: p?.sku || v?.sku || '',
+            title: p?.name || 'Product',
+            categoryId,
+            categoryName,
+            subCategoryId,
+            subCategoryName,
+            images: images.length ? images : [cover],
+            imageUrl: cover,
+            price: Number.isFinite(price) ? price : 0,
+            originalPrice: undefined,
+            rating: undefined,
+            ratingCount: undefined,
+            couponText: '',
+            color: getAttrValue(p?.attributes, 'color'),
+            material: getAttrValue(p?.attributes, 'material'),
+            inStock,
+          }
+        })
+        setApiProducts(mapped)
+      })
+      .catch((e) => {
+        if (!active) return
+        setApiProducts([])
+        setLoadError(e?.message || 'Failed to load products')
+      })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [categoryById, qParam, subById])
 
   useEffect(() => {
     setQ(qParam)
   }, [qParam])
 
   const activeSubcategories = useMemo(() => {
-    if (!selectedCategoryId) return dummySubcategories
-    return dummySubcategories.filter((s) => String(s.categoryId) === String(selectedCategoryId))
-  }, [selectedCategoryId])
+    if (!selectedCategoryId) return subcategories
+    return subcategories.filter((s) => String(s.category || s.categoryId || '') === String(selectedCategoryId))
+  }, [selectedCategoryId, subcategories])
 
   const priceBounds = useMemo(() => {
     const prices = products.map((p) => p.price).filter((n) => Number.isFinite(n))
@@ -186,8 +233,10 @@ export default function SearchPage() {
 
   const filterChips = useMemo(() => {
     const chips = []
-    const cat = selectedCategoryId ? dummyCategories.find((c) => c.id === selectedCategoryId)?.name : ''
-    const sub = selectedSubCategoryId ? dummySubcategories.find((s) => s.id === selectedSubCategoryId)?.name : ''
+    const cat = selectedCategoryId ? (categories.find((c) => String(c._id || c.id) === String(selectedCategoryId))?.name || '') : ''
+    const sub = selectedSubCategoryId
+      ? (subcategories.find((s) => String(s._id || s.id) === String(selectedSubCategoryId))?.name || '')
+      : ''
     if (cat) chips.push({ key: 'cat', label: cat, onClear: () => setSelectedCategoryId('') })
     if (sub) chips.push({ key: 'sub', label: sub, onClear: () => setSelectedSubCategoryId('') })
     if (selectedColor) chips.push({ key: 'color', label: selectedColor, onClear: () => setSelectedColor('') })
@@ -204,7 +253,7 @@ export default function SearchPage() {
       })
     }
     return chips
-  }, [availability, maxPrice, minPrice, priceBounds.max, priceBounds.min, selectedCategoryId, selectedColor, selectedMaterial, selectedSubCategoryId])
+  }, [availability, categories, maxPrice, minPrice, priceBounds.max, priceBounds.min, selectedCategoryId, selectedColor, selectedMaterial, selectedSubCategoryId, subcategories])
 
   const onSubmitSearch = (e) => {
     e.preventDefault()
@@ -257,19 +306,22 @@ export default function SearchPage() {
                     >
                       All
                     </button>
-                    {dummyCategories.map((c) => (
+                    {categories.map((c) => {
+                      const id = String(c?._id || c?.id || '')
+                      return (
                       <button
-                        key={c.id}
+                        key={id}
                         type="button"
                         onClick={() => {
-                          setSelectedCategoryId(c.id)
+                          setSelectedCategoryId(id)
                           setSelectedSubCategoryId('')
                         }}
-                        className={`block w-full text-left hover:text-gray-900 ${selectedCategoryId === c.id ? 'text-[#0f2e40]' : ''}`}
+                        className={`block w-full text-left hover:text-gray-900 ${selectedCategoryId === id ? 'text-[#0f2e40]' : ''}`}
                       >
                         {c.name}
                       </button>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -283,16 +335,19 @@ export default function SearchPage() {
                     >
                       All
                     </button>
-                    {activeSubcategories.map((s) => (
+                    {activeSubcategories.map((s) => {
+                      const id = String(s?._id || s?.id || '')
+                      return (
                       <button
-                        key={s.id}
+                        key={id}
                         type="button"
-                        onClick={() => setSelectedSubCategoryId(s.id)}
-                        className={`block w-full text-left hover:text-gray-900 ${selectedSubCategoryId === s.id ? 'text-[#0f2e40]' : ''}`}
+                        onClick={() => setSelectedSubCategoryId(id)}
+                        className={`block w-full text-left hover:text-gray-900 ${selectedSubCategoryId === id ? 'text-[#0f2e40]' : ''}`}
                       >
                         {s.name}
                       </button>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -456,6 +511,17 @@ export default function SearchPage() {
                     <span className="text-gray-700">×</span>
                   </button>
                 ))}
+              </div>
+            ) : null}
+
+            {loadError ? (
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {loadError}
+              </div>
+            ) : null}
+            {loading ? (
+              <div className="mt-6 rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-gray-200">
+                Loading products...
               </div>
             ) : null}
 

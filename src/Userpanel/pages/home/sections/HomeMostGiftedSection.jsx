@@ -1,67 +1,60 @@
 import ProductCard from '../../../components/ProductCard.jsx'
-import productImg1 from '../../../../assets/876 × 1628-1.png'
-import productImg2 from '../../../../assets/876 × 1628-2.png'
-import productImg3 from '../../../../assets/876 × 1628-3.png'
-import productImg4 from '../../../../assets/876 × 1628-4.png'
+import { useEffect, useState } from 'react'
+import productFallback from '../../../../assets/876 × 1628-1.png'
+import { getJson } from '../../../../AdminPanel/services/apiClient.js'
+
+const getPriceAmount = (p) => {
+  const raw = typeof p === 'object' && p !== null ? p.amount : p
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 0
+}
+
+const pickPrimaryVariant = (product) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+  if (!variants.length) return null
+  const active = variants.find((v) => v?.isActive !== false)
+  return active || variants[0]
+}
 
 export default function HomeMostGiftedSection() {
-  const mostGiftedProducts = [
-    {
-      id: 'mg-1',
-      showBestseller: true,
-      images: [productImg1],
-      rating: 4.8,
-      ratingCount: 337,
-      price: 4799,
-      originalPrice: 8399,
-      title: 'Silver Classic Solitaire Ring',
-      couponText: 'EXTRA 15% OFF with coupon',
-    },
-    {
-      id: 'mg-2',
-      showBestseller: true,
-      images: [productImg2, productImg1],
-      rating: 4.9,
-      ratingCount: 280,
-      price: 3599,
-      originalPrice: 5799,
-      title: 'Anushka Sharma Silver Queens Necklace',
-      couponText: 'EXTRA 15% OFF with coupon',
-    },
-    {
-      id: 'mg-3',
-      showBestseller: false,
-      images: [productImg3],
-      rating: 4.7,
-      ratingCount: 453,
-      price: 1399,
-      originalPrice: 3099,
-      title: 'Silver Love Like A Butterfly Studs',
-      couponText: 'EXTRA 15% OFF with coupon',
-    },
-    {
-      id: 'mg-4',
-      showBestseller: false,
-      images: [productImg4],
-      rating: 4.9,
-      ratingCount: 297,
-      price: 3899,
-      originalPrice: 6199,
-      title: 'Silver Drizzle Drop Pendant',
-      couponText: 'EXTRA 15% OFF with coupon',
-    },
-    {
-      id: 'mg-5',
-      showBestseller: false,
-      images: [productImg1],
-      rating: 4.8,
-      ratingCount: 312,
-      price: 3499,
-      originalPrice: 5799,
-      title: 'Rose Gold Princess Pendant',
-      couponText: 'EXTRA 15% OFF with coupon',
-    },
-  ]
+  const [apiProducts, setApiProducts] = useState([])
+
+  useEffect(() => {
+    let active = true
+    getJson('/api/products', { page: 1, limit: 12 })
+      .then((res) => {
+        if (!active) return
+        const rows = Array.isArray(res?.data) ? res.data : []
+        const mapped = rows.slice(0, 6).map((p, idx) => {
+          const v = pickPrimaryVariant(p) || {}
+          const images = [p?.image, ...(Array.isArray(p?.images) ? p.images : []), v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(
+            Boolean
+          )
+          const cover = images[0] || productFallback
+          const price = getPriceAmount(p?.makingCost) + getPriceAmount(p?.otherCharges) || getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+          return {
+            id: p?._id,
+            showBestseller: idx < 2,
+            images: images.length ? images : [cover],
+            imageUrl: cover,
+            price: Number.isFinite(price) ? price : 0,
+            originalPrice: undefined,
+            title: p?.name || 'Product',
+            couponText: '',
+          }
+        })
+        setApiProducts(mapped)
+      })
+      .catch(() => {
+        if (!active) return
+        setApiProducts([])
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  if (!apiProducts.length) return null
 
   return (
     <div className="mt-10">
@@ -70,7 +63,7 @@ export default function HomeMostGiftedSection() {
 
         <div className="w-full px-4 md:px-10">
           <div className="no-scrollbar flex gap-8 overflow-x-auto py-2">
-            {mostGiftedProducts.map((p) => (
+            {apiProducts.map((p) => (
               <div key={p.id} className="w-[280px] shrink-0">
                 <ProductCard {...p} className="max-w-none" />
               </div>
