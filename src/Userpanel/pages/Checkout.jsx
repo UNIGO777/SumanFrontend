@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import productFallback from '../../assets/876 × 1628-1.png'
+import { getApiBase } from '../../AdminPanel/services/apiClient.js'
+import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 const CHECKOUT_KEY = 'sj_checkout_v1'
 const ORDERS_KEY = 'sj_orders_v1'
+
+const normalizeId = (id) => (id === undefined || id === null ? '' : String(id)).trim()
+const isMongoId = (id) => /^[a-f\d]{24}$/i.test(normalizeId(id))
 
 const readCartItems = () => {
   if (typeof window === 'undefined') return []
@@ -75,10 +80,22 @@ const emptyCard = { number: '', name: '', expiry: '', cvv: '' }
 export default function Checkout() {
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }), [])
   const navigate = useNavigate()
+  const apiBase = useMemo(() => getApiBase(), [])
 
   const [items, setItems] = useState(() => readCartItems())
   const [status, setStatus] = useState('')
   const [placedOrder, setPlacedOrder] = useState(null)
+  const [silverRatePerGram, setSilverRatePerGram] = useState(0)
+
+  const toPublicUrl = useMemo(() => {
+    return (p) => {
+      if (!p) return ''
+      if (/^https?:\/\//i.test(p)) return p
+      if (!apiBase) return p
+      if (String(p).startsWith('/')) return `${apiBase}${p}`
+      return `${apiBase}/${p}`
+    }
+  }, [apiBase])
 
   const draft = useMemo(() => readCheckoutDraft(), [])
 
@@ -121,6 +138,52 @@ export default function Checkout() {
       window.removeEventListener('storage', onStorage)
     }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    const withId = (items || []).filter((it) => isMongoId(it?.id))
+    if (!apiBase || withId.length === 0) return () => {}
+
+    const run = async () => {
+      try {
+        const [rate, productsRes] = await Promise.all([
+          getSilver925RatePerGram({ maxAgeMs: 0 }),
+          fetch(`${apiBase}/api/products?page=1&limit=500`),
+        ])
+        const productsJson = await productsRes.json().catch(() => null)
+        const rows = Array.isArray(productsJson?.data) ? productsJson.data : []
+        const byId = new Map(rows.map((p) => [String(p?._id || ''), p]).filter(([id]) => id))
+
+        let changed = false
+        const next = (items || [])
+          .filter((it) => !isMongoId(it?.id) || byId.has(normalizeId(it.id)))
+          .map((it) => {
+            if (!isMongoId(it?.id)) return it
+            const p = byId.get(normalizeId(it.id))
+            const pricing = computeProductPricing(p, rate)
+            const priceNum = Number.isFinite(pricing?.price) ? pricing.price : 0
+            const originalNum = Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined
+            if (Math.abs((Number(it.price) || 0) - priceNum) > 0.0001) changed = true
+            if (Math.abs((Number(it.originalPrice) || 0) - (Number(originalNum) || 0)) > 0.0001) changed = true
+            return { ...it, price: priceNum, originalPrice: originalNum }
+          })
+
+        if (!active) return
+        setSilverRatePerGram(Number.isFinite(Number(rate)) ? Number(rate) : 0)
+        if (next.length !== items.length || changed) {
+          writeCartItems(next)
+          setItems(next)
+        }
+      } catch {
+        return
+      }
+    }
+
+    run()
+    return () => {
+      active = false
+    }
+  }, [apiBase, items])
 
   useEffect(() => {
     writeCheckoutDraft({ contact, shipping, delivery, payment })
@@ -185,6 +248,7 @@ export default function Checkout() {
         images: Array.isArray(it?.images) ? it.images.filter(Boolean) : [],
         imageUrl: it?.imageUrl || '',
       })),
+      silverRatePerGram,
       totals: { subtotal, gst, shippingFee, total },
     }
 
@@ -256,6 +320,10 @@ export default function Checkout() {
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
                 <span>₹{formatter.format(placedOrder.totals.subtotal)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span>92.5 Silver Rate</span>
+                <span>{placedOrder.silverRatePerGram ? `₹${formatter.format(placedOrder.silverRatePerGram)}/g` : '—'}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span>GST (18%)</span>
@@ -549,7 +617,9 @@ export default function Checkout() {
             <div className="mt-4 space-y-4">
               {items.map((it) => {
                 const qty = Math.max(1, Number.parseInt(it?.qty, 10) || 1)
-                const cover = it?.images?.[0] || it?.imageUrl || productFallback
+                const cover = toPublicUrl(it?.images?.[0]) || toPublicUrl(it?.imageUrl) || productFallback
+                const showOriginal =
+                  Number.isFinite(Number(it?.originalPrice)) && Number.isFinite(Number(it?.price)) && Number(it.originalPrice) > Number(it.price)
                 return (
                   <div key={it.key} className="flex items-start gap-4">
                     <div className="h-16 w-16 overflow-hidden rounded-xl bg-gray-50 ring-1 ring-gray-200">
@@ -558,6 +628,14 @@ export default function Checkout() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-gray-900">{it.title}</div>
                       <div className="mt-1 text-xs font-semibold text-gray-500">Qty: {qty}</div>
+                      <div className="mt-1 flex items-end gap-2">
+                        <div className="text-sm font-bold text-gray-900">₹{formatter.format(Number(it?.price) || 0)}</div>
+                        {showOriginal ? (
+                          <div className="pb-0.5 text-xs font-semibold text-gray-500 line-through">
+                            ₹{formatter.format(Number(it?.originalPrice) || 0)}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="text-sm font-bold text-gray-900">
                       ₹{formatter.format((Number(it?.price) || 0) * qty)}
@@ -571,6 +649,10 @@ export default function Checkout() {
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
                 <span>₹{formatter.format(subtotal)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span>92.5 Silver Rate</span>
+                <span>{silverRatePerGram ? `₹${formatter.format(silverRatePerGram)}/g` : '—'}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span>GST (18%)</span>

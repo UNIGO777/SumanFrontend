@@ -5,6 +5,7 @@ import AdminCategories from './Categories.jsx'
 import AdminSubcategories from './Subcategories.jsx'
 import AdminProductsNew from './ProductsNew.jsx'
 import AdminProductsList from './ProductsList.jsx'
+import AdminSilverPrice from './SilverPrice.jsx'
 
 function RequireAdmin({ children }) {
   const token = window.localStorage.getItem('admin_token') || window.sessionStorage.getItem('admin_token')
@@ -97,6 +98,10 @@ function AdminLayout() {
             <NavLink to="/admin/orders" className={linkCls}>
               <span>Orders</span>
             </NavLink>
+
+            <NavLink to="/admin/silver-price" className={linkCls}>
+              <span>92.5 Silver Price</span>
+            </NavLink>
           </nav>
 
           <div className="mt-auto px-2 pt-8 text-xs text-white/60">© {new Date().getFullYear()} Suman Jwellaries</div>
@@ -139,6 +144,7 @@ export default function AdminPanelRoutes() {
         <Route path="products" element={<AdminProductsList />} />
         <Route path="products/active" element={<AdminProductsList activeOnly />} />
         <Route path="orders" element={<AdminStub title="Orders" />} />
+        <Route path="silver-price" element={<AdminSilverPrice />} />
       </Route>
 
       <Route path="*" element={<Navigate to="login" replace />} />

@@ -5,6 +5,13 @@ import promoBanner2 from '../../../../assets/1312 × 668-2.jpg'
 export default function HomeHeroPromos() {
   return (
     <section className="space-y-4">
+      <div className="mx-auto max-w-[92vw] text-center">
+        <div className="text-3xl font-bold text-gray-900">Latest Offers</div>
+        <div className="mt-2 text-sm font-semibold text-gray-600">
+          Discover new drops, best deals, and limited-time savings.
+        </div>
+      </div>
+
       <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
         <img
           src={heroBanner}

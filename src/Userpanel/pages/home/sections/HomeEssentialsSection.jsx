@@ -6,14 +6,19 @@ export default function HomeEssentialsSection() {
   return (
     <div className="mt-12">
       <section className="w-full">
-        <div className="mb-6 text-center text-3xl font-bold text-[#0f2e40]">2026 Jewellery Essentials</div>
+        <div className="mb-6 text-center">
+          <div className="text-3xl font-bold text-[#0f2e40]">2026 Jewellery Essentials</div>
+          <div className="mt-2 text-sm font-semibold text-gray-600">
+            Everyday staples designed to match your mood, your outfit, and your moment.
+          </div>
+        </div>
 
         <div className="mx-auto flex max-w-[90vw] flex-col gap-8 md:flex-row">
           {[
             {
               label: 'Timeless Pearls',
               img: essentialImg1,
-              className: 'md:w-[330px]',
+              className: 'md:w-[330px]', 
             },
             {
               label: 'Stackable Collection',

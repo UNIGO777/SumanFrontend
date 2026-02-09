@@ -28,7 +28,12 @@ export default function HomeCustomerStoriesSection() {
   return (
     <div className="mt-16">
       <section className="w-full">
-        <div className="mb-10 text-center text-3xl font-bold text-gray-900">Customer Stories</div>
+        <div className="mb-10 text-center">
+          <div className="text-3xl font-bold text-gray-900">Customer Stories</div>
+          <div className="mt-2 text-sm font-semibold text-gray-600">
+            Real moments and real reviews from people who wear and gift our pieces.
+          </div>
+        </div>
 
         <div className="mx-auto max-w-[92vw]">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

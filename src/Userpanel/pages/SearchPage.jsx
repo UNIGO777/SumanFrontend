@@ -4,16 +4,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getJson } from '../../AdminPanel/services/apiClient.js'
+import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
 
 const PRIMARY = '#0f2e40'
 
 const normalizeText = (v) => String(v || '').trim().toLowerCase()
-
-const getPriceAmount = (p) => {
-  const raw = typeof p === 'object' && p !== null ? p.amount : p
-  const n = Number(raw)
-  return Number.isFinite(n) ? n : 0
-}
 
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
@@ -48,10 +43,12 @@ export default function SearchPage() {
   const navigate = useNavigate()
 
   const qParam = String(searchParams.get('q') || '').trim()
+  const categoryIdParam = String(searchParams.get('categoryId') || '').trim()
+  const subCategoryIdParam = String(searchParams.get('subCategoryId') || '').trim()
   const [q, setQ] = useState(qParam)
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState('')
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState(() => categoryIdParam)
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(() => subCategoryIdParam)
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedMaterial, setSelectedMaterial] = useState('')
   const [availability, setAvailability] = useState('all')
@@ -61,6 +58,7 @@ export default function SearchPage() {
   const [apiProducts, setApiProducts] = useState([])
   const [apiCategories, setApiCategories] = useState([])
   const [apiSubcategories, setApiSubcategories] = useState([])
+  const [silverPricePerGram, setSilverPricePerGram] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
   const pageSize = 12
@@ -106,6 +104,22 @@ export default function SearchPage() {
 
   useEffect(() => {
     let active = true
+    getSilver925RatePerGram()
+      .then((rate) => {
+        if (!active) return
+        setSilverPricePerGram(Number.isFinite(Number(rate)) ? Number(rate) : 0)
+      })
+      .catch(() => {
+        if (!active) return
+        setSilverPricePerGram(0)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
     setLoading(true)
     setLoadError('')
 
@@ -119,7 +133,7 @@ export default function SearchPage() {
             Boolean
           )
           const cover = images[0] || productFallback
-          const price = getPriceAmount(p?.makingCost) + getPriceAmount(p?.otherCharges) || getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+          const pricing = computeProductPricing(p, silverPricePerGram)
           const categoryId = String(p?.category || '')
           const subCategoryId = String(p?.subCategory || '')
           const categoryName = categoryById.get(categoryId)?.name || ''
@@ -138,8 +152,9 @@ export default function SearchPage() {
             subCategoryName,
             images: images.length ? images : [cover],
             imageUrl: cover,
-            price: Number.isFinite(price) ? price : 0,
-            originalPrice: undefined,
+            price: Number.isFinite(pricing?.price) ? pricing.price : 0,
+            originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
+            discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
             rating: undefined,
             ratingCount: undefined,
             couponText: '',
@@ -163,11 +178,36 @@ export default function SearchPage() {
     return () => {
       active = false
     }
-  }, [categoryById, qParam, subById])
+  }, [categoryById, qParam, silverPricePerGram, subById])
 
   useEffect(() => {
     setQ(qParam)
   }, [qParam])
+
+  useEffect(() => {
+    setSelectedCategoryId(categoryIdParam)
+    setSelectedSubCategoryId(subCategoryIdParam)
+  }, [categoryIdParam, subCategoryIdParam])
+
+  useEffect(() => {
+    const currentCat = String(searchParams.get('categoryId') || '').trim()
+    const currentSub = String(searchParams.get('subCategoryId') || '').trim()
+    const next = new URLSearchParams(searchParams)
+
+    const nextCat = String(selectedCategoryId || '').trim()
+    const nextSub = String(selectedSubCategoryId || '').trim()
+
+    if (nextCat) next.set('categoryId', nextCat)
+    else next.delete('categoryId')
+
+    if (nextSub) next.set('subCategoryId', nextSub)
+    else next.delete('subCategoryId')
+
+    const hasChange = currentCat !== nextCat || currentSub !== nextSub
+    if (!hasChange) return
+
+    setSearchParams(next, { replace: true })
+  }, [searchParams, selectedCategoryId, selectedSubCategoryId, setSearchParams])
 
   const activeSubcategories = useMemo(() => {
     if (!selectedCategoryId) return subcategories
@@ -258,7 +298,10 @@ export default function SearchPage() {
   const onSubmitSearch = (e) => {
     e.preventDefault()
     const next = String(q || '').trim()
-    setSearchParams(next ? { q: next } : {})
+    const params = new URLSearchParams(searchParams)
+    if (next) params.set('q', next)
+    else params.delete('q')
+    setSearchParams(params)
   }
 
   const clearAll = () => {
@@ -270,6 +313,10 @@ export default function SearchPage() {
     setSort('default')
     setMinPrice(priceBounds.min)
     setMaxPrice(priceBounds.max)
+    const params = new URLSearchParams(searchParams)
+    params.delete('categoryId')
+    params.delete('subCategoryId')
+    setSearchParams(params, { replace: true })
   }
 
   return (

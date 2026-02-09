@@ -162,6 +162,8 @@ export default function AdminProductsNew() {
   const [attributesPairs, setAttributesPairs] = useState([{ key: '', value: '' }])
   const [sku, setSku] = useState('')
   const [stock, setStock] = useState('0')
+  const [silverWeightGrams, setSilverWeightGrams] = useState('')
+  const [discountPercent, setDiscountPercent] = useState('')
   const [makingCost, setMakingCost] = useState('')
   const [otherCharges, setOtherCharges] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -171,6 +173,9 @@ export default function AdminProductsNew() {
   const [localImages, setLocalImages] = useState([])
   const [localVideo, setLocalVideo] = useState('')
   const [localVideoName, setLocalVideoName] = useState('')
+  const [isImagesDragActive, setIsImagesDragActive] = useState(false)
+  const [dragImageKey, setDragImageKey] = useState('')
+  const [isVideoDragActive, setIsVideoDragActive] = useState(false)
 
   const filteredSubcategories = useMemo(() => {
     if (!categoryId) return subcategories
@@ -200,6 +205,78 @@ export default function AdminProductsNew() {
   }
 
   const maxUploadBytes = 5 * 1024 * 1024
+
+  const handleImagesSelected = async (fileList) => {
+    setError('')
+    const files = Array.isArray(fileList) ? fileList : Array.from(fileList || [])
+    if (!files.length) return
+
+    const tooLarge = files.find((f) => (f?.size || 0) > maxUploadBytes)
+    if (tooLarge) {
+      setError(`"${tooLarge.name}" is larger than 5 MB`)
+      return
+    }
+
+    const localUrls = files.map((f) => URL.createObjectURL(f))
+    setLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return localUrls
+    })
+
+    try {
+      setLoading(true)
+      const res = await uploadImages(files)
+      const paths = res?.paths || []
+      if (!paths.length) throw new Error('Upload failed')
+      setImages((arr) => {
+        const next = Array.isArray(arr) ? [...arr, ...paths] : [...paths]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setImage((prev) => String(prev || '').trim() || paths[0] || '')
+      setLocalImages((prev) => {
+        safeRevokeUrls(prev)
+        return []
+      })
+    } catch (err) {
+      setError(err?.message || 'Failed to upload images')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVideoSelected = async (file) => {
+    if (!file) return
+    setError('')
+
+    if ((file?.size || 0) > maxUploadBytes) {
+      setError(`"${file.name}" is larger than 5 MB`)
+      return
+    }
+
+    const localUrl = URL.createObjectURL(file)
+    setLocalVideo((prev) => {
+      safeRevokeUrl(prev)
+      return localUrl
+    })
+    setLocalVideoName(file.name || '')
+
+    try {
+      setLoading(true)
+      const res = await uploadVideo(file)
+      const path = res?.path
+      if (!path) throw new Error('Upload failed')
+      setVideo(path)
+      setLocalVideo((prev) => {
+        safeRevokeUrl(prev)
+        return ''
+      })
+      setLocalVideoName('')
+    } catch (err) {
+      setError(err?.message || 'Failed to upload video')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     listCategories({ page: 1, limit: 250 })
@@ -321,6 +398,24 @@ export default function AdminProductsNew() {
         return
       }
       payload.otherCharges = n
+    }
+
+    if (String(silverWeightGrams || '').trim()) {
+      const n = Number(silverWeightGrams)
+      if (!Number.isFinite(n) || n < 0) {
+        setError('Silver weight must be a valid number')
+        return
+      }
+      payload.silverWeightGrams = n
+    }
+
+    if (String(discountPercent || '').trim()) {
+      const n = Number(discountPercent)
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        setError('Discount must be between 0 and 100')
+        return
+      }
+      payload.discountPercent = n
     }
 
     payload.isActive = isActive
@@ -582,7 +677,28 @@ export default function AdminProductsNew() {
                           disabled={loading}
                         />
                       </div>
-                      <div className="md:col-span-3" />
+                      <div className="md:col-span-3">
+                        <label className="mb-2 block text-xs font-semibold text-gray-600">Silver Weight (grams)</label>
+                        <input
+                          value={silverWeightGrams}
+                          onChange={(e) => setSilverWeightGrams(e.target.value)}
+                          className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                          placeholder="Optional"
+                          inputMode="decimal"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="md:col-span-1">
+                        <label className="mb-2 block text-xs font-semibold text-gray-600">Discount (%)</label>
+                        <input
+                          value={discountPercent}
+                          onChange={(e) => setDiscountPercent(e.target.value)}
+                          className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                          placeholder="0"
+                          inputMode="decimal"
+                          disabled={loading}
+                        />
+                      </div>
 
                       <div className="md:col-span-2">
                         <label className="mb-2 block text-xs font-semibold text-gray-600">Making Cost</label>
@@ -646,14 +762,63 @@ export default function AdminProductsNew() {
                             Select Images
                           </button>
                         </div>
-                        {image || (Array.isArray(localImages) && localImages.length) ? (
-                          <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
-                            <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-white">
-                              <img src={image ? toPublicUrl(image) : localImages[0]} alt="" className="h-full w-full object-cover" />
+                        <div
+                          className={`mt-3 rounded-xl border-2 border-dashed bg-white p-4 transition-colors ${
+                            isImagesDragActive ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
+                          }`}
+                          onDragEnter={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (loading) return
+                            setIsImagesDragActive(true)
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (loading) return
+                            setIsImagesDragActive(true)
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (e.currentTarget !== e.target) return
+                            setIsImagesDragActive(false)
+                          }}
+                          onDrop={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsImagesDragActive(false)
+                            if (loading) return
+                            await handleImagesSelected(e.dataTransfer?.files)
+                          }}
+                        >
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">Drag & drop images here</div>
+                              <div className="mt-1 text-xs font-medium text-gray-500">PNG, JPG, WEBP, HEIC. Max 5 MB each.</div>
                             </div>
-                            <div className="text-xs font-semibold text-gray-700">Main image selected</div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (loading) return
+                                document.getElementById('product-images')?.click()
+                              }}
+                              disabled={loading}
+                              className="rounded-lg bg-[#0f2e40] px-4 py-2 text-xs font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
+                            >
+                              Browse files
+                            </button>
                           </div>
-                        ) : null}
+
+                          {image || (Array.isArray(localImages) && localImages.length) ? (
+                            <div className="mt-4 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
+                              <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                <img src={image ? toPublicUrl(image) : localImages[0]} alt="" className="h-full w-full object-cover" />
+                              </div>
+                              <div className="text-xs font-semibold text-gray-700">Main image selected</div>
+                            </div>
+                          ) : null}
+                        </div>
                         <input
                           id="product-images"
                           type="file"
@@ -661,43 +826,9 @@ export default function AdminProductsNew() {
                           multiple
                           disabled={loading}
                           onChange={async (e) => {
-                            setError('')
                             const fileList = e.target.files
-                            if (!fileList || fileList.length === 0) return
-                            const files = Array.from(fileList)
                             e.target.value = ''
-
-                            const tooLarge = files.find((f) => (f?.size || 0) > maxUploadBytes)
-                            if (tooLarge) {
-                              setError(`"${tooLarge.name}" is larger than 5 MB`)
-                              return
-                            }
-
-                            const localUrls = files.map((f) => URL.createObjectURL(f))
-                            setLocalImages((prev) => {
-                              safeRevokeUrls(prev)
-                              return localUrls
-                            })
-
-                            try {
-                              setLoading(true)
-                              const res = await uploadImages(files)
-                              const paths = res?.paths || []
-                              if (!paths.length) throw new Error('Upload failed')
-                              setImages((arr) => {
-                                const next = Array.isArray(arr) ? [...arr, ...paths] : [...paths]
-                                return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
-                              })
-                              setImage((prev) => String(prev || '').trim() || paths[0] || '')
-                              setLocalImages((prev) => {
-                                safeRevokeUrls(prev)
-                                return []
-                              })
-                            } catch (err) {
-                              setError(err?.message || 'Failed to upload images')
-                            } finally {
-                              setLoading(false)
-                            }
+                            await handleImagesSelected(fileList)
                           }}
                           className="hidden"
                         />
@@ -709,6 +840,37 @@ export default function AdminProductsNew() {
                                   type="button"
                                   onClick={() => setImage(p)}
                                   disabled={loading}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    if (loading) return
+                                    setDragImageKey(String(p))
+                                    try {
+                                      e.dataTransfer.setData('text/plain', String(p))
+                                    } catch {
+                                      return
+                                    }
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault()
+                                    if (loading) return
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault()
+                                    if (loading) return
+                                    const fromKey = dragImageKey || e.dataTransfer?.getData('text/plain') || ''
+                                    const toKey = String(p)
+                                    if (!fromKey || fromKey === toKey) return
+                                    setImages((arr) => {
+                                      const list = Array.isArray(arr) ? [...arr] : []
+                                      const fromIdx = list.findIndex((x) => String(x) === String(fromKey))
+                                      const toIdx = list.findIndex((x) => String(x) === String(toKey))
+                                      if (fromIdx < 0 || toIdx < 0) return list
+                                      const [moved] = list.splice(fromIdx, 1)
+                                      list.splice(toIdx, 0, moved)
+                                      return list
+                                    })
+                                  }}
+                                  onDragEnd={() => setDragImageKey('')}
                                   className={`h-16 w-16 overflow-hidden rounded-lg border bg-gray-50 disabled:opacity-60 ${
                                     String(image || '') === String(p) ? 'border-gray-900 ring-2 ring-gray-900/10' : 'border-gray-200'
                                   }`}
@@ -742,6 +904,9 @@ export default function AdminProductsNew() {
                         ) : (
                           <div className="mt-2 text-xs text-gray-500">No images uploaded</div>
                         )}
+                        {Array.isArray(images) && images.length ? (
+                          <div className="mt-2 text-[11px] font-medium text-gray-500">Tip: Drag thumbnails to reorder. Click one to set main image.</div>
+                        ) : null}
                       </div>
 
                       <div className="md:col-span-3">
@@ -759,6 +924,87 @@ export default function AdminProductsNew() {
                             Select Video
                           </button>
                         </div>
+                        <div
+                          className={`mt-3 rounded-xl border-2 border-dashed bg-white p-4 transition-colors ${
+                            isVideoDragActive ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
+                          }`}
+                          onDragEnter={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (loading) return
+                            setIsVideoDragActive(true)
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (loading) return
+                            setIsVideoDragActive(true)
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (e.currentTarget !== e.target) return
+                            setIsVideoDragActive(false)
+                          }}
+                          onDrop={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsVideoDragActive(false)
+                            if (loading) return
+                            const f = e.dataTransfer?.files?.[0]
+                            await handleVideoSelected(f)
+                          }}
+                        >
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">Drag & drop video here</div>
+                              <div className="mt-1 text-xs font-medium text-gray-500">Max 5 MB.</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (loading) return
+                                document.getElementById('product-video')?.click()
+                              }}
+                              disabled={loading}
+                              className="rounded-lg bg-[#0f2e40] px-4 py-2 text-xs font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
+                            >
+                              Browse file
+                            </button>
+                          </div>
+
+                          {video || localVideo ? (
+                            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                              <video
+                                src={video ? toPublicUrl(video) : localVideo}
+                                controls
+                                className="h-28 w-full max-w-[220px] rounded-lg border border-gray-200 bg-black"
+                              />
+                              <div className="flex-1">
+                                <div className="text-xs font-semibold text-gray-700">
+                                  {video ? video.split('/').slice(-1)[0] : localVideoName || 'Selected'}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setVideo('')
+                                    setLocalVideo((prev) => {
+                                      safeRevokeUrl(prev)
+                                      return ''
+                                    })
+                                    setLocalVideoName('')
+                                  }}
+                                  disabled={loading}
+                                  className="mt-2 text-xs font-semibold text-red-700 disabled:opacity-60"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 text-xs text-gray-500">No video uploaded</div>
+                          )}
+                        </div>
                         <input
                           id="product-video"
                           type="file"
@@ -767,66 +1013,10 @@ export default function AdminProductsNew() {
                           onChange={async (e) => {
                             const file = e.target.files?.[0]
                             e.target.value = ''
-                            if (!file) return
-
-                            if ((file?.size || 0) > maxUploadBytes) {
-                              setError(`"${file.name}" is larger than 5 MB`)
-                              return
-                            }
-
-                            const localUrl = URL.createObjectURL(file)
-                            setLocalVideo((prev) => {
-                              safeRevokeUrl(prev)
-                              return localUrl
-                            })
-                            setLocalVideoName(file.name || '')
-
-                            try {
-                              setLoading(true)
-                              const res = await uploadVideo(file)
-                              const path = res?.path
-                              if (!path) throw new Error('Upload failed')
-                              setVideo(path)
-                              setLocalVideo((prev) => {
-                                safeRevokeUrl(prev)
-                                return ''
-                              })
-                              setLocalVideoName('')
-                            } catch (err) {
-                              setError(err?.message || 'Failed to upload video')
-                            } finally {
-                              setLoading(false)
-                            }
+                            await handleVideoSelected(file)
                           }}
                           className="hidden"
                         />
-                        {video || localVideo ? (
-                          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-                            <video src={video ? toPublicUrl(video) : localVideo} controls className="h-28 w-full max-w-[220px] rounded-lg border border-gray-200 bg-black" />
-                            <div className="flex-1">
-                              <div className="text-xs font-semibold text-gray-700">
-                                {video ? video.split('/').slice(-1)[0] : localVideoName || 'Selected'}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setVideo('')
-                                  setLocalVideo((prev) => {
-                                    safeRevokeUrl(prev)
-                                    return ''
-                                  })
-                                  setLocalVideoName('')
-                                }}
-                                disabled={loading}
-                                className="mt-2 text-xs font-semibold text-red-700 disabled:opacity-60"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-2 text-xs text-gray-500">No video uploaded</div>
-                        )}
                       </div>
                     </div>
                   </div>

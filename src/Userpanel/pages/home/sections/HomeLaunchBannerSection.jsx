@@ -50,6 +50,13 @@ export default function HomeLaunchBannerSection() {
   return (
     <div className="mt-10">
       <section className="w-full">
+        <div className="mx-auto mb-6 max-w-[92vw] text-center">
+          <div className="text-3xl font-bold text-gray-900">New Launches</div>
+          <div className="mt-2 text-sm font-semibold text-gray-600">
+            Explore the latest campaigns, highlights, and just-dropped collections.
+          </div>
+        </div>
+
         <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden ">
           <div
             className="relative h-[340px] w-full select-none"

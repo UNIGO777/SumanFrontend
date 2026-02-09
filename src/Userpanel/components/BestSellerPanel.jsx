@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import ProductCard from './ProductCard.jsx'
 
-export default function BestSellerPanel({ title = 'Bestsellers', products = [] }) {
+export default function BestSellerPanel({ title = 'Bestsellers', description = '', products = [] }) {
   const ref = useRef(null)
 
   const safeProducts = useMemo(() => (Array.isArray(products) ? products : []), [products])
@@ -23,7 +23,10 @@ export default function BestSellerPanel({ title = 'Bestsellers', products = [] }
 
   return (
     <section className="relative w-full">
-      <div className="mb-6 text-center text-2xl font-semibold text-gray-900">{title}</div>
+      <div className="mb-6 text-center">
+        <div className="text-2xl font-semibold text-gray-900">{title}</div>
+        {description ? <div className="mt-2 text-sm font-semibold text-gray-600">{description}</div> : null}
+      </div>
 
       <button
         type="button"

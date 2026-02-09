@@ -59,6 +59,7 @@ export default function ProductCard({
   title,
   price,
   originalPrice,
+  discountPercent,
   rating,
   ratingCount,
   couponText,
@@ -90,6 +91,15 @@ export default function ProductCard({
 
   const showOriginal = Number.isFinite(originalPrice) && Number.isFinite(price) && originalPrice > price
   const showRating = Number.isFinite(rating) && Number.isFinite(ratingCount)
+  const effectiveDiscount = useMemo(() => {
+    const n = Number(discountPercent)
+    if (Number.isFinite(n) && n > 0) return Math.min(100, Math.max(0, n))
+    if (showOriginal && Number(originalPrice) > 0) {
+      const pct = ((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100
+      return Number.isFinite(pct) && pct > 0 ? Math.round(pct) : 0
+    }
+    return 0
+  }, [discountPercent, price, originalPrice, showOriginal])
 
   const resolvedImages = useMemo(
     () => (Array.isArray(images) ? images : []).map((u) => toPublicUrl(u)).filter(Boolean),
@@ -158,7 +168,7 @@ export default function ProductCard({
 
   const defaultToggleWishlist = () => {
     const titleSafe = title || 'Product'
-    const cover = images?.[0] || imageUrl || ''
+    const cover = resolvedImages?.[0] || coverUrl || ''
 
     const nextItem = {
       key: itemKey,
@@ -167,7 +177,7 @@ export default function ProductCard({
       title: titleSafe,
       price: Number.isFinite(price) ? price : 0,
       originalPrice: Number.isFinite(originalPrice) ? originalPrice : undefined,
-      images: Array.isArray(images) ? images.filter(Boolean) : cover ? [cover] : [],
+      images: Array.isArray(resolvedImages) && resolvedImages.length ? resolvedImages : cover ? [cover] : [],
       imageUrl: cover,
     }
 
@@ -181,7 +191,7 @@ export default function ProductCard({
   const defaultAddToCart = () => {
     const key = decodeURIComponent(slug || '')
     const titleSafe = title || 'Product'
-    const cover = images?.[0] || imageUrl || ''
+    const cover = resolvedImages?.[0] || coverUrl || ''
 
     const nextItem = {
       key,
@@ -190,7 +200,7 @@ export default function ProductCard({
       title: titleSafe,
       price: Number.isFinite(price) ? price : 0,
       originalPrice: Number.isFinite(originalPrice) ? originalPrice : undefined,
-      images: Array.isArray(images) ? images.filter(Boolean) : cover ? [cover] : [],
+      images: Array.isArray(resolvedImages) && resolvedImages.length ? resolvedImages : cover ? [cover] : [],
       imageUrl: cover,
       qty: 1,
     }
@@ -257,6 +267,12 @@ export default function ProductCard({
               }}
             >
               {bestsellerText}
+            </div>
+          ) : null}
+
+          {effectiveDiscount ? (
+            <div className="absolute left-4 top-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+              {effectiveDiscount}% OFF
             </div>
           ) : null}
 

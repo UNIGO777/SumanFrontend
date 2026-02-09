@@ -2,12 +2,7 @@ import BestSellerPanel from '../../../components/BestSellerPanel.jsx'
 import { useEffect, useState } from 'react'
 import productFallback from '../../../../assets/876 × 1628-1.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
-
-const getPriceAmount = (p) => {
-  const raw = typeof p === 'object' && p !== null ? p.amount : p
-  const n = Number(raw)
-  return Number.isFinite(n) ? n : 0
-}
+import { computeProductPricing, getSilver925RatePerGram } from '../../../UserServices/pricingService.js'
 
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
@@ -22,8 +17,8 @@ export default function HomeBestSellerSection() {
   useEffect(() => {
     let active = true
 
-    getJson('/api/products', { page: 1, limit: 12 })
-      .then((res) => {
+    Promise.all([getSilver925RatePerGram(), getJson('/api/products', { page: 1, limit: 12 })])
+      .then(([rate, res]) => {
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
         const mapped = rows.slice(0, 8).map((p, idx) => {
@@ -32,14 +27,15 @@ export default function HomeBestSellerSection() {
             Boolean
           )
           const cover = images[0] || productFallback
-          const price = getPriceAmount(p?.makingCost) + getPriceAmount(p?.otherCharges) || getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+          const pricing = computeProductPricing(p, rate)
           return {
             id: p?._id,
             showBestseller: idx < 2,
             images: images.length ? images : [cover],
             imageUrl: cover,
-            price: Number.isFinite(price) ? price : 0,
-            originalPrice: undefined,
+            price: Number.isFinite(pricing?.price) ? pricing.price : 0,
+            originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
+            discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
             title: p?.name || 'Product',
             couponText: '',
           }
@@ -61,7 +57,11 @@ export default function HomeBestSellerSection() {
   return (
     <div className="mt-12">
       <div className="mx-auto max-w-[92vw]">
-        <BestSellerPanel products={apiProducts} />
+        <BestSellerPanel
+          title="Bestsellers"
+          description="Top picks loved for their look, feel, and everyday sparkle."
+          products={apiProducts}
+        />
       </div>
     </div>
   )

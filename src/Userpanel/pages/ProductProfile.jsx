@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getApiBase, getJson, postJson } from '../../AdminPanel/services/apiClient.js'
+import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
@@ -20,12 +21,6 @@ const plainTextToHtml = (text) => escapeHtml(text).replace(/\r\n|\r|\n/g, '<br /
 
 const looksLikeHtml = (s) => /<\/?[a-z][\s\S]*>/i.test(String(s || ''))
 
-const getPriceAmount = (p) => {
-  const raw = typeof p === 'object' && p !== null ? p.amount : p
-  const n = Number(raw)
-  return Number.isFinite(n) ? n : 0
-}
-
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
   if (!variants.length) return null
@@ -33,7 +28,7 @@ const pickPrimaryVariant = (product) => {
   return active || variants[0]
 }
 
-const toUiProduct = (apiProduct) => {
+const toUiProduct = (apiProduct, silverPricePerGram = 0) => {
   const v = pickPrimaryVariant(apiProduct) || {}
   const images = [
     apiProduct?.image,
@@ -42,9 +37,7 @@ const toUiProduct = (apiProduct) => {
     ...(Array.isArray(v?.images) ? v.images : []),
   ].filter(Boolean)
   const cover = images[0] || productFallback
-  const price =
-    getPriceAmount(apiProduct?.makingCost) + getPriceAmount(apiProduct?.otherCharges) ||
-    getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+  const pricing = computeProductPricing(apiProduct, silverPricePerGram)
   const attributes =
     apiProduct?.attributes && typeof apiProduct.attributes === 'object' && !Array.isArray(apiProduct.attributes)
       ? apiProduct.attributes
@@ -55,8 +48,9 @@ const toUiProduct = (apiProduct) => {
     title: apiProduct?.name || 'Product',
     images: images.length ? images : [cover],
     imageUrl: cover,
-    price: Number.isFinite(price) ? price : 0,
-    originalPrice: undefined,
+    price: Number.isFinite(pricing?.price) ? pricing.price : 0,
+    originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
+    discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
     rating: undefined,
     ratingCount: undefined,
     description: apiProduct?.description || '',
@@ -143,6 +137,7 @@ const ProductProfile = () => {
   const [apiProduct, setApiProduct] = useState(null)
   const [apiError, setApiError] = useState('')
   const [apiRecommendations, setApiRecommendations] = useState([])
+  const [silverPricePerGram, setSilverPricePerGram] = useState(0)
   const [reviews, setReviews] = useState([])
   const [reviewsSummary, setReviewsSummary] = useState({ avg: 0, count: 0 })
   const [reviewsLoading, setReviewsLoading] = useState(false)
@@ -203,6 +198,22 @@ const ProductProfile = () => {
   }, [productId])
 
   useEffect(() => {
+    let active = true
+    getSilver925RatePerGram()
+      .then((rate) => {
+        if (!active) return
+        setSilverPricePerGram(Number.isFinite(Number(rate)) ? Number(rate) : 0)
+      })
+      .catch(() => {
+        if (!active) return
+        setSilverPricePerGram(0)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
     fetchReviews()
   }, [fetchReviews])
 
@@ -220,7 +231,7 @@ const ProductProfile = () => {
         const mapped = rows
           .filter((p) => String(p?._id || '') && String(p?._id || '') !== String(productId || ''))
           .slice(0, 4)
-          .map((p) => toUiProduct(p))
+          .map((p) => toUiProduct(p, silverPricePerGram))
         setApiRecommendations(mapped)
       })
       .catch(() => {
@@ -231,11 +242,11 @@ const ProductProfile = () => {
     return () => {
       active = false
     }
-  }, [productId])
+  }, [productId, silverPricePerGram])
 
   const product = useMemo(() => {
     if (apiProduct) {
-      const ui = toUiProduct(apiProduct)
+      const ui = toUiProduct(apiProduct, silverPricePerGram)
       const imgs = (Array.isArray(ui?.images) ? ui.images : []).map((u) => toPublicUrl(u)).filter(Boolean)
       const cover = imgs[0] || toPublicUrl(ui?.imageUrl) || productFallback
       return { ...ui, images: imgs.length ? imgs : [cover], imageUrl: cover }
@@ -263,7 +274,7 @@ const ProductProfile = () => {
       sku: p.sku || '',
       imageUrl: cover,
     }
-  }, [apiProduct, location?.state?.product, productKey, toPublicUrl])
+  }, [apiProduct, location?.state?.product, productKey, silverPricePerGram, toPublicUrl])
 
   const attributeEntries = useMemo(() => {
     const attrs = product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes) ? product.attributes : {}

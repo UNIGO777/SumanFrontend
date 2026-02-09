@@ -49,7 +49,12 @@ export default function HomeLatestCollectionsSection() {
   return (
     <div className="mt-14">
       <section className="relative w-full">
-        <div className="mb-6 text-center text-3xl font-bold text-gray-900">Latest Collections</div>
+        <div className="mb-6 text-center">
+          <div className="text-3xl font-bold text-gray-900">Latest Collections</div>
+          <div className="mt-2 text-sm font-semibold text-gray-600">
+            Fresh designs, new stories, and styles you’ll want to wear on repeat.
+          </div>
+        </div>
 
         <div className="no-scrollbar flex snap-x snap-mandatory gap-8 overflow-x-auto px-1 py-2 md:px-10">
           {latestCollections.map((c) => (

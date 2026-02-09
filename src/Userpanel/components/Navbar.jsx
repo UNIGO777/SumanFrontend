@@ -2,6 +2,7 @@ import { ChevronDown, Heart, MapPin, Menu, Search, ShoppingCart, Store, User } f
 import LOGO from '../../assets/LOGO.png'
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
+import { getJson } from '../../AdminPanel/services/apiClient.js'
 
 const CART_KEY = 'sj_cart_v1'
 
@@ -18,19 +19,17 @@ const readCartCount = () => {
   }
 }
 
-const desktopLinks = [
-  { label: 'Shop by Category', href: '#' },
-  { label: 'SALE is Live', href: '#' },
-  { label: 'Fresh Drops', href: '#' },
-  { label: 'Gold with Lab Diamonds', href: '#' },
-  { label: 'GIVA Gift Card', href: '#' },
-  { label: 'Gift Store', href: '#' },
-  { label: 'Men in Silver', href: '#' },
-  { label: 'Exclusive Collections', href: '#' },
-  { label: 'More at GIVA', href: '#', chevron: true },
-  { label: 'More at GIVA', href: '#', chevron: true },
-  { label: 'More at GIVA', href: '#', chevron: true },
-]
+const buildSearchHref = ({ q, categoryId, subCategoryId }) => {
+  const params = new URLSearchParams()
+  const qValue = String(q || '').trim()
+  const catValue = String(categoryId || '').trim()
+  const subValue = String(subCategoryId || '').trim()
+  if (qValue) params.set('q', qValue)
+  if (catValue) params.set('categoryId', catValue)
+  if (subValue) params.set('subCategoryId', subValue)
+  const qs = params.toString()
+  return qs ? `/search?${qs}` : '/search'
+}
 
 export default function Navbar({
   promoText = 'Flat 150 Off on Silver Jewellery. Use: FLAT150',
@@ -41,11 +40,34 @@ export default function Navbar({
   const initialCount = useMemo(() => (Number.isFinite(cartCount) ? cartCount : readCartCount()), [cartCount])
   const [count, setCount] = useState(initialCount)
   const [searchText, setSearchText] = useState('')
+  const [categories, setCategories] = useState([])
+  const [subcategories, setSubcategories] = useState([])
 
   const goSearch = () => {
     const q = String(searchText || '').trim()
     navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search')
   }
+
+  useEffect(() => {
+    let active = true
+    Promise.all([getJson('/api/categories', { page: 1, limit: 200, isActive: true }), getJson('/api/subcategories', { page: 1, limit: 500, isActive: true })])
+      .then(([catsRes, subsRes]) => {
+        if (!active) return
+        const cats = Array.isArray(catsRes?.data) ? catsRes.data : []
+        const subs = Array.isArray(subsRes?.data) ? subsRes.data : []
+        setCategories(cats)
+        setSubcategories(subs)
+      })
+      .catch(() => {
+        if (!active) return
+        setCategories([])
+        setSubcategories([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     const onCustom = () => setCount(readCartCount())
@@ -63,6 +85,32 @@ export default function Navbar({
 
   const showBadge = Number.isFinite(count) && count > 0
   const badgeText = count > 9 ? '9+' : String(count)
+
+  const categoriesSorted = useMemo(() => {
+    const arr = Array.isArray(categories) ? categories.slice() : []
+    arr.sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
+    return arr
+  }, [categories])
+
+  const subByCategoryId = useMemo(() => {
+    const m = new Map()
+    const subs = Array.isArray(subcategories) ? subcategories : []
+    subs.forEach((s) => {
+      const catId = String(s?.category || s?.categoryId || '')
+      if (!catId) return
+      const current = m.get(catId) || []
+      current.push(s)
+      m.set(catId, current)
+    })
+    for (const [k, v] of m.entries()) {
+      v.sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')))
+      m.set(k, v)
+    }
+    return m
+  }, [subcategories])
+
+  const topCategories = useMemo(() => categoriesSorted.slice(0, 9), [categoriesSorted])
+  const moreCategories = useMemo(() => categoriesSorted.slice(9), [categoriesSorted])
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
@@ -190,16 +238,93 @@ export default function Navbar({
       <nav className="hidden border-b border-gray-200 md:block">
         <div className="mx-auto  px-10">
           <div className="flex h-11 items-center justify-center gap-10 text-[11px] font-medium text-gray-700">
-            {desktopLinks.map((link, idx) => (
-              <a
-                key={`${link.label}-${idx}`}
-                href={link.href}
-                className="flex items-center gap-1 hover:text-black hover:scale-[1.1] transition-transform text-xs"
-              >
-                {link.label}
-                {link.chevron ? <ChevronDown className="h-3.5 w-3.5" /> : null}
-              </a>
-            ))}
+            {topCategories.map((c) => {
+              const id = String(c?._id || c?.id || '')
+              const subs = id ? subByCategoryId.get(id) || [] : []
+              const hasSubs = subs.length > 0
+              const href = buildSearchHref({ categoryId: id })
+              return (
+                <div key={id} className="group relative">
+                  <Link
+                    to={href}
+                    className="flex items-center gap-1 text-xs transition-transform hover:scale-[1.1] hover:text-black"
+                  >
+                    {c?.name || 'Category'}
+                    {hasSubs ? <ChevronDown className="h-3.5 w-3.5" /> : null}
+                  </Link>
+                  {hasSubs ? (
+                    <div className="invisible absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-xl bg-white p-2 opacity-0 shadow-xl ring-1 ring-gray-200 transition-all group-hover:visible group-hover:opacity-100">
+                      <div className="max-h-80 overflow-auto">
+                        {subs.map((s) => {
+                          const subId = String(s?._id || s?.id || '')
+                          const subHref = buildSearchHref({ categoryId: id, subCategoryId: subId })
+                          return (
+                            <Link
+                              key={subId}
+                              to={subHref}
+                              className="block rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-black"
+                            >
+                              {s?.name || 'Subcategory'}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })}
+
+            {moreCategories.length ? (
+              <div className="group relative">
+                <Link
+                  to="/search"
+                  className="flex items-center gap-1 text-xs transition-transform hover:scale-[1.1] hover:text-black"
+                >
+                  More
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Link>
+                <div className="invisible absolute left-1/2 top-full z-50 mt-2 w-72 -translate-x-1/2 rounded-xl bg-white p-2 opacity-0 shadow-xl ring-1 ring-gray-200 transition-all group-hover:visible group-hover:opacity-100">
+                  <div className="max-h-80 overflow-auto">
+                    {moreCategories.map((c) => {
+                      const id = String(c?._id || c?.id || '')
+                      const subs = id ? subByCategoryId.get(id) || [] : []
+                      const href = buildSearchHref({ categoryId: id })
+                      return (
+                        <div key={id} className="group/item relative">
+                          <Link
+                            to={href}
+                            className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-black"
+                          >
+                            <span className="truncate">{c?.name || 'Category'}</span>
+                            {subs.length ? <ChevronDown className="h-3.5 w-3.5 opacity-70" /> : null}
+                          </Link>
+                          {subs.length ? (
+                            <div className="invisible absolute left-full top-0 z-50 ml-2 w-64 rounded-xl bg-white p-2 opacity-0 shadow-xl ring-1 ring-gray-200 transition-all group-hover/item:visible group-hover/item:opacity-100">
+                              <div className="max-h-80 overflow-auto">
+                                {subs.map((s) => {
+                                  const subId = String(s?._id || s?.id || '')
+                                  const subHref = buildSearchHref({ categoryId: id, subCategoryId: subId })
+                                  return (
+                                    <Link
+                                      key={subId}
+                                      to={subHref}
+                                      className="block rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-black"
+                                    >
+                                      {s?.name || 'Subcategory'}
+                                    </Link>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </nav>

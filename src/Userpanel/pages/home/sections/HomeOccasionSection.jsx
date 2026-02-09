@@ -113,6 +113,9 @@ export default function HomeOccasionSection() {
           <div className="inline-block rounded-md bg-[#0f2e40] px-6 py-1 text-xl font-bold text-white">
             Shop by Occasion
           </div>
+          <div className="mt-2 text-sm font-semibold text-gray-600">
+            Find the perfect piece for every celebration, date night, and milestone.
+          </div>
         </div>
 
         <div className="relative mx-auto max-w-[96vw] sm:max-w-[92vw] lg:max-w-[86vw]">

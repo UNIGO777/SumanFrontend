@@ -1,5 +1,6 @@
 import { Facebook, Instagram, Mail, MapPin, Phone, Twitter, Youtube } from 'lucide-react'
 import LOGO from '../../assets/LOGO.png'
+import { Link } from 'react-router-dom'
 
 export default function Footer() {
   return (
@@ -22,18 +23,25 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="text-sm font-semibold text-white">Customer Services</div>
             <div className="space-y-2 text-sm text-gray-400">
-              <a href="#" className="block hover:text-white">
-                Help &amp; Contact Us
-              </a>
-              <a href="#" className="block hover:text-white">
-                Returns &amp; Refunds
-              </a>
-              <a href="#" className="block hover:text-white">
-                Online Stores
-              </a>
-              <a href="#" className="block hover:text-white">
+             
+              <Link to="/terms-and-conditions" className="block hover:text-white">
                 Terms &amp; Conditions
-              </a>
+              </Link>
+              <Link to="/privacy-policy" className="block hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link to="/refund-policy" className="block hover:text-white">
+                Refund Policy
+              </Link>
+              <Link to="/return-policy" className="block hover:text-white">
+                Return Policy
+              </Link>
+              <Link to="/shipping-policy" className="block hover:text-white">
+                Shipping Policy
+              </Link>
+              <Link to="/policies" className="block hover:text-white">
+                All Policies
+              </Link>
             </div>
           </div>
 
@@ -115,4 +123,3 @@ export default function Footer() {
     </footer>
   )
 }
-

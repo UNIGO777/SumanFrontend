@@ -2,12 +2,7 @@ import ProductCard from '../../../components/ProductCard.jsx'
 import { useEffect, useState } from 'react'
 import productFallback from '../../../../assets/876 × 1628-1.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
-
-const getPriceAmount = (p) => {
-  const raw = typeof p === 'object' && p !== null ? p.amount : p
-  const n = Number(raw)
-  return Number.isFinite(n) ? n : 0
-}
+import { computeProductPricing, getSilver925RatePerGram } from '../../../UserServices/pricingService.js'
 
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
@@ -21,8 +16,8 @@ export default function HomeValentineSpecialSection() {
 
   useEffect(() => {
     let active = true
-    getJson('/api/products', { page: 1, limit: 12 })
-      .then((res) => {
+    Promise.all([getSilver925RatePerGram(), getJson('/api/products', { page: 1, limit: 12 })])
+      .then(([rate, res]) => {
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
         const mapped = rows.slice(0, 8).map((p, idx) => {
@@ -31,15 +26,15 @@ export default function HomeValentineSpecialSection() {
             Boolean
           )
           const cover = images[0] || productFallback
-          const price = getPriceAmount(p?.makingCost) + getPriceAmount(p?.otherCharges) || getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+          const pricing = computeProductPricing(p, rate)
           return {
             id: p?._id,
             showBestseller: idx < 3,
             images: images.length ? images : [cover],
             imageUrl: cover,
-            title: p?.name || 'Product',
-            price: Number.isFinite(price) ? price : 0,
-            originalPrice: undefined,
+            price: Number.isFinite(pricing?.price) ? pricing.price : 0,
+            originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
+            discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
             couponText: '',
           }
         })
@@ -59,7 +54,12 @@ export default function HomeValentineSpecialSection() {
   return (
     <div className="mt-14">
       <section className="w-full">
-        <div className="mb-6 text-center text-3xl font-bold text-gray-900">Valentine&apos;s Special</div>
+        <div className="mb-6 text-center">
+          <div className="text-3xl font-bold text-gray-900">Valentine&apos;s Special</div>
+          <div className="mt-2 text-sm font-semibold text-gray-600">
+            Romantic picks to gift, stack, and shine all season long.
+          </div>
+        </div>
 
         <div className="mx-auto max-w-[92vw]">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">

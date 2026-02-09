@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
 import productFallback from '../../assets/876 × 1628-1.png'
+import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 
@@ -49,8 +50,20 @@ const writeCart = (items) => {
 
 export default function CartPage() {
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN'), [])
+  const apiBase = useMemo(() => getApiBase(), [])
   const [items, setItems] = useState(() => readCart().items)
   const [status, setStatus] = useState('')
+  const [silverRatePerGram, setSilverRatePerGram] = useState(0)
+
+  const toPublicUrl = useMemo(() => {
+    return (p) => {
+      if (!p) return ''
+      if (/^https?:\/\//i.test(p)) return p
+      if (!apiBase) return p
+      if (String(p).startsWith('/')) return `${apiBase}${p}`
+      return `${apiBase}/${p}`
+    }
+  }, [apiBase])
 
   const sync = useCallback(() => {
     setItems(readCart().items)
@@ -72,27 +85,48 @@ export default function CartPage() {
 
   useEffect(() => {
     let active = true
-    const apiBase = getApiBase()
-
     const run = async () => {
       const withId = items.filter((it) => isMongoId(it?.id))
       if (!apiBase || withId.length === 0) return
 
       try {
-        const res = await fetch(`${apiBase}/api/products?page=1&limit=500`)
-        const data = await res.json().catch(() => null)
-        const rows = Array.isArray(data?.data) ? data.data : []
-        const ids = new Set(rows.map((p) => String(p?._id || '')).filter(Boolean))
+        const [rate, productsRes] = await Promise.all([
+          getSilver925RatePerGram({ maxAgeMs: 0 }),
+          fetch(`${apiBase}/api/products?page=1&limit=500`),
+        ])
+        const productsJson = await productsRes.json().catch(() => null)
+        const rows = Array.isArray(productsJson?.data) ? productsJson.data : []
+        const byId = new Map(rows.map((p) => [String(p?._id || ''), p]).filter(([id]) => id))
 
-        const filtered = items.filter((it) => {
-          if (!isMongoId(it?.id)) return true
-          return ids.has(normalizeId(it.id))
-        })
+        let removed = false
+        let updatedPrices = false
+
+        const next = items
+          .filter((it) => {
+            if (!isMongoId(it?.id)) return true
+            const ok = byId.has(normalizeId(it.id))
+            if (!ok) removed = true
+            return ok
+          })
+          .map((it) => {
+            if (!isMongoId(it?.id)) return it
+            const p = byId.get(normalizeId(it.id))
+            const pricing = computeProductPricing(p, rate)
+            const priceNum = Number.isFinite(pricing?.price) ? pricing.price : 0
+            const originalNum = Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined
+            if (Math.abs((Number(it.price) || 0) - priceNum) > 0.0001) updatedPrices = true
+            if (Math.abs((Number(it.originalPrice) || 0) - (Number(originalNum) || 0)) > 0.0001) updatedPrices = true
+            return { ...it, price: priceNum, originalPrice: originalNum }
+          })
 
         if (!active) return
-        if (filtered.length !== items.length) {
-          writeCart(filtered)
-          setStatus('Some items were removed because they are no longer available.')
+        setSilverRatePerGram(Number.isFinite(Number(rate)) ? Number(rate) : 0)
+        if (removed || updatedPrices) {
+          writeCart(next)
+          setItems(next)
+          if (removed && updatedPrices) setStatus('Cart updated with latest prices, and unavailable items were removed.')
+          else if (removed) setStatus('Some items were removed because they are no longer available.')
+          else setStatus('Cart prices updated with latest 92.5 silver rate.')
         }
       } catch {
         return
@@ -103,7 +137,7 @@ export default function CartPage() {
     return () => {
       active = false
     }
-  }, [items])
+  }, [apiBase, items])
 
   const subtotal = useMemo(() => {
     return (items || []).reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.qty) || 1), 0)
@@ -179,7 +213,7 @@ export default function CartPage() {
             <div className="lg:col-span-2">
               <div className="space-y-4">
                 {items.map((it) => {
-                  const cover = it.images?.[0] || it.imageUrl || productFallback
+                  const cover = toPublicUrl(it.images?.[0]) || toPublicUrl(it.imageUrl) || productFallback
                   return (
                     <div key={it.key} className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -197,6 +231,11 @@ export default function CartPage() {
                                 </div>
                               ) : null}
                             </div>
+                            {Number.isFinite(it.originalPrice) && it.originalPrice > it.price ? (
+                              <div className="mt-1 text-xs font-semibold text-emerald-700">
+                                {Math.round(((it.originalPrice - it.price) / it.originalPrice) * 100)}% OFF
+                              </div>
+                            ) : null}
                             <div className="mt-2 text-xs font-semibold text-gray-500">Item Total: ₹{formatter.format((it.price || 0) * (it.qty || 1))}</div>
                           </div>
                         </div>
@@ -247,6 +286,10 @@ export default function CartPage() {
                   <div className="flex items-center justify-between text-gray-700">
                     <span>Subtotal</span>
                     <span>₹{formatter.format(subtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-gray-700">
+                    <span>92.5 Silver Rate</span>
+                    <span>{silverRatePerGram ? `₹${formatter.format(silverRatePerGram)}/g` : '—'}</span>
                   </div>
                   <div className="flex items-center justify-between text-gray-700">
                     <span>Shipping</span>

@@ -24,6 +24,8 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [editActive, setEditActive] = useState(true)
   const [editCategoryId, setEditCategoryId] = useState('')
   const [editSubCategoryId, setEditSubCategoryId] = useState('')
+  const [editSilverWeightGrams, setEditSilverWeightGrams] = useState('')
+  const [editDiscountPercent, setEditDiscountPercent] = useState('')
   const [editVariants, setEditVariants] = useState([])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
@@ -92,6 +94,10 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditActive(Boolean(row.isActive))
     setEditCategoryId(row.category || '')
     setEditSubCategoryId(row.subCategory || '')
+    setEditSilverWeightGrams(
+      row.silverWeightGrams === undefined || row.silverWeightGrams === null ? '' : String(row.silverWeightGrams)
+    )
+    setEditDiscountPercent(row.discountPercent === undefined || row.discountPercent === null ? '' : String(row.discountPercent))
 
     const baseVariants =
       Array.isArray(row.variants) && row.variants.length
@@ -111,7 +117,13 @@ export default function AdminProductsList({ activeOnly = false }) {
       baseVariants.map((v, idx) => ({
         title: v.title || `Variant ${idx + 1}`,
         sku: v.sku || '',
-        grams: v.grams !== undefined && v.grams !== null ? String(v.grams) : '',
+        silverWeightGrams:
+          v.silverWeightGrams !== undefined && v.silverWeightGrams !== null
+            ? String(v.silverWeightGrams)
+            : v.grams !== undefined && v.grams !== null
+              ? String(v.grams)
+              : '',
+        discountPercent: v.discountPercent !== undefined && v.discountPercent !== null ? String(v.discountPercent) : '',
         makingCost: v.makingCost?.amount !== undefined ? String(v.makingCost.amount) : String(v.makingCost ?? ''),
         otherCharges: v.otherCharges?.amount !== undefined ? String(v.otherCharges.amount) : String(v.otherCharges ?? ''),
         stock: v.stock !== undefined && v.stock !== null ? String(v.stock) : '0',
@@ -130,6 +142,8 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditActive(true)
     setEditCategoryId('')
     setEditSubCategoryId('')
+    setEditSilverWeightGrams('')
+    setEditDiscountPercent('')
     setEditVariants([])
   }
 
@@ -147,6 +161,22 @@ export default function AdminProductsList({ activeOnly = false }) {
 
     if (editCategoryId) payload.categoryId = editCategoryId
     if (editSubCategoryId) payload.subCategoryId = editSubCategoryId
+    if (String(editSilverWeightGrams || '').trim()) {
+      const n = Number(editSilverWeightGrams)
+      if (!Number.isFinite(n) || n < 0) {
+        setError('Silver weight must be a valid number')
+        return
+      }
+      payload.silverWeightGrams = n
+    }
+    if (String(editDiscountPercent || '').trim()) {
+      const n = Number(editDiscountPercent)
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        setError('Discount must be between 0 and 100')
+        return
+      }
+      payload.discountPercent = n
+    }
     payload.variants = []
 
     const variantsIn = Array.isArray(editVariants) ? editVariants : []
@@ -164,13 +194,21 @@ export default function AdminProductsList({ activeOnly = false }) {
       const sku = (v.sku || '').trim()
       if (sku) out.sku = sku
 
-      if (String(v.grams || '').trim()) {
-        const n = Number(v.grams)
+      if (String(v.silverWeightGrams || '').trim()) {
+        const n = Number(v.silverWeightGrams)
         if (!Number.isFinite(n) || n < 0) {
-          setError(`Variant ${i + 1}: Grams must be a valid number`)
+          setError(`Variant ${i + 1}: Silver weight must be a valid number`)
           return
         }
-        out.grams = n
+        out.silverWeightGrams = n
+      }
+      if (String(v.discountPercent || '').trim()) {
+        const n = Number(v.discountPercent)
+        if (!Number.isFinite(n) || n < 0 || n > 100) {
+          setError(`Variant ${i + 1}: Discount must be between 0 and 100`)
+          return
+        }
+        out.discountPercent = n
       }
 
       const image = (v.image || '').trim()
@@ -432,6 +470,30 @@ export default function AdminProductsList({ activeOnly = false }) {
                     <tr className="border-t border-gray-100 bg-gray-50/40">
                       <td colSpan={7} className="px-5 py-5">
                         <div className="rounded-lg bg-white p-4 ring-1 ring-gray-100">
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Silver Weight (grams)</div>
+                              <input
+                                value={editSilverWeightGrams}
+                                onChange={(e) => setEditSilverWeightGrams(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="0"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Discount (%)</div>
+                              <input
+                                value={editDiscountPercent}
+                                onChange={(e) => setEditDiscountPercent(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="0"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
+                          </div>
                           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                             <div>
                               <div className="text-sm font-semibold text-gray-900">Variants</div>
@@ -445,7 +507,8 @@ export default function AdminProductsList({ activeOnly = false }) {
                                   {
                                     title: `Variant ${v.length + 1}`,
                                     sku: '',
-                                    grams: '',
+                                    silverWeightGrams: '',
+                                    discountPercent: '',
                                     makingCost: '',
                                     otherCharges: '',
                                     stock: '0',
@@ -504,15 +567,32 @@ export default function AdminProductsList({ activeOnly = false }) {
                                     />
                                   </div>
                                   <div className="md:col-span-1">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Grams</label>
+                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Silver Weight (grams)</label>
                                     <input
-                                      value={v.grams}
+                                      value={v.silverWeightGrams}
                                       onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, grams: e.target.value } : row)))
+                                        setEditVariants((arr) =>
+                                          arr.map((row, i) => (i === idx ? { ...row, silverWeightGrams: e.target.value } : row))
+                                        )
                                       }
                                       className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
                                       inputMode="decimal"
                                       placeholder="Optional"
+                                      disabled={loading}
+                                    />
+                                  </div>
+                                  <div className="md:col-span-1">
+                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Discount (%)</label>
+                                    <input
+                                      value={v.discountPercent || ''}
+                                      onChange={(e) =>
+                                        setEditVariants((arr) =>
+                                          arr.map((row, i) => (i === idx ? { ...row, discountPercent: e.target.value } : row))
+                                        )
+                                      }
+                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                      inputMode="decimal"
+                                      placeholder="0"
                                       disabled={loading}
                                     />
                                   </div>
