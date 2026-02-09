@@ -1,12 +1,24 @@
 import { Heart, Minus, Plus, Star } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
-import { getJson } from '../../AdminPanel/services/apiClient.js'
+import { getApiBase, getJson, postJson } from '../../AdminPanel/services/apiClient.js'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
+
+const escapeHtml = (s) =>
+  String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+const plainTextToHtml = (text) => escapeHtml(text).replace(/\r\n|\r|\n/g, '<br />')
+
+const looksLikeHtml = (s) => /<\/?[a-z][\s\S]*>/i.test(String(s || ''))
 
 const getPriceAmount = (p) => {
   const raw = typeof p === 'object' && p !== null ? p.amount : p
@@ -23,9 +35,20 @@ const pickPrimaryVariant = (product) => {
 
 const toUiProduct = (apiProduct) => {
   const v = pickPrimaryVariant(apiProduct) || {}
-  const images = [v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(Boolean)
+  const images = [
+    apiProduct?.image,
+    ...(Array.isArray(apiProduct?.images) ? apiProduct.images : []),
+    v?.image,
+    ...(Array.isArray(v?.images) ? v.images : []),
+  ].filter(Boolean)
   const cover = images[0] || productFallback
-  const price = getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+  const price =
+    getPriceAmount(apiProduct?.makingCost) + getPriceAmount(apiProduct?.otherCharges) ||
+    getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+  const attributes =
+    apiProduct?.attributes && typeof apiProduct.attributes === 'object' && !Array.isArray(apiProduct.attributes)
+      ? apiProduct.attributes
+      : undefined
 
   return {
     id: apiProduct?._id,
@@ -38,6 +61,7 @@ const toUiProduct = (apiProduct) => {
     ratingCount: undefined,
     description: apiProduct?.description || '',
     tags: Array.isArray(apiProduct?.tags) ? apiProduct.tags : ['Jewellery'],
+    attributes,
     sku: v?.sku || '',
   }
 }
@@ -93,6 +117,19 @@ const ProductProfile = () => {
   const zoomRef = useRef(null)
 
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN'), [])
+  const apiBase = useMemo(() => getApiBase(), [])
+
+  const toPublicUrl = useMemo(() => {
+    return (p) => {
+      if (!p) return ''
+      if (/^https?:\/\//i.test(p)) return p
+      if (String(p).startsWith('/')) {
+        if (!/^\/(uploads|api)\b/i.test(String(p))) return p
+        return apiBase ? `${apiBase}${p}` : p
+      }
+      return apiBase ? `${apiBase}/${p}` : p
+    }
+  }, [apiBase])
 
   const productId = useMemo(() => {
     if (!productKey) return ''
@@ -106,11 +143,48 @@ const ProductProfile = () => {
   const [apiProduct, setApiProduct] = useState(null)
   const [apiError, setApiError] = useState('')
   const [apiRecommendations, setApiRecommendations] = useState([])
+  const [reviews, setReviews] = useState([])
+  const [reviewsSummary, setReviewsSummary] = useState({ avg: 0, count: 0 })
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewsError, setReviewsError] = useState('')
+  const [reviewName, setReviewName] = useState('')
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewSuccess, setReviewSuccess] = useState('')
+  const reviewsReqIdRef = useRef(0)
+
+  const fetchReviews = useCallback(async () => {
+    if (!productId) return
+    const reqId = (reviewsReqIdRef.current || 0) + 1
+    reviewsReqIdRef.current = reqId
+    setReviewsLoading(true)
+    setReviewsError('')
+    try {
+      const data = await getJson(`/api/products/${encodeURIComponent(productId)}/reviews`, { page: 1, limit: 10 })
+      if (reviewsReqIdRef.current !== reqId) return
+      setReviews(Array.isArray(data?.data) ? data.data : [])
+      setReviewsSummary(
+        data?.summary && typeof data.summary === 'object' ? { avg: Number(data.summary.avg || 0), count: Number(data.summary.count || 0) } : { avg: 0, count: 0 }
+      )
+    } catch (e) {
+      if (reviewsReqIdRef.current !== reqId) return
+      setReviews([])
+      setReviewsSummary({ avg: 0, count: 0 })
+      setReviewsError(e?.message || 'Failed to load reviews')
+    } finally {
+      if (reviewsReqIdRef.current === reqId) setReviewsLoading(false)
+    }
+  }, [productId])
 
   useEffect(() => {
     let active = true
-    setApiError('')
     if (!productId) return () => {}
+
+    Promise.resolve().then(() => {
+      if (!active) return
+      setApiError('')
+    })
 
     getJson(`/api/products/${encodeURIComponent(productId)}`)
       .then((data) => {
@@ -129,8 +203,15 @@ const ProductProfile = () => {
   }, [productId])
 
   useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
+
+  useEffect(() => {
     let active = true
-    setApiRecommendations([])
+    Promise.resolve().then(() => {
+      if (!active) return
+      setApiRecommendations([])
+    })
 
     getJson('/api/products', { page: 1, limit: 12 })
       .then((data) => {
@@ -153,12 +234,18 @@ const ProductProfile = () => {
   }, [productId])
 
   const product = useMemo(() => {
-    if (apiProduct) return toUiProduct(apiProduct)
+    if (apiProduct) {
+      const ui = toUiProduct(apiProduct)
+      const imgs = (Array.isArray(ui?.images) ? ui.images : []).map((u) => toPublicUrl(u)).filter(Boolean)
+      const cover = imgs[0] || toPublicUrl(ui?.imageUrl) || productFallback
+      return { ...ui, images: imgs.length ? imgs : [cover], imageUrl: cover }
+    }
 
     const p = location?.state?.product || {}
     const title = p.title || (productKey ? decodeURIComponent(productKey) : 'Product')
-    const images = Array.isArray(p.images) ? p.images.filter(Boolean) : []
-    const cover = p.imageUrl || images[0] || productFallback
+    const images = (Array.isArray(p.images) ? p.images : []).map((u) => toPublicUrl(u)).filter(Boolean)
+    const cover = toPublicUrl(p.imageUrl) || images[0] || productFallback
+    const attributes = p?.attributes && typeof p.attributes === 'object' && !Array.isArray(p.attributes) ? p.attributes : undefined
 
     return {
       id: p.id,
@@ -172,10 +259,25 @@ const ProductProfile = () => {
         p.description ||
         'A timeless piece designed to elevate everyday looks. Crafted with care and finished for lasting shine.',
       tags: Array.isArray(p.tags) ? p.tags : ['Jewellery', 'New Arrival'],
+      attributes,
       sku: p.sku || '',
       imageUrl: cover,
     }
-  }, [apiProduct, location?.state?.product, productKey])
+  }, [apiProduct, location?.state?.product, productKey, toPublicUrl])
+
+  const attributeEntries = useMemo(() => {
+    const attrs = product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes) ? product.attributes : {}
+    return Object.entries(attrs)
+      .map(([k, v]) => [String(k || '').trim(), String(v ?? '').trim()])
+      .filter(([k, v]) => k && v)
+  }, [product.attributes])
+
+  const descriptionHtml = useMemo(() => {
+    const raw = String(product.description || '')
+    if (!raw) return ''
+    if (looksLikeHtml(raw)) return raw
+    return plainTextToHtml(raw)
+  }, [product.description])
 
   const breadcrumbs = useMemo(() => {
     const b = location?.state?.breadcrumbs
@@ -188,7 +290,7 @@ const ProductProfile = () => {
     if (Array.isArray(r) && r.length) return r
     if (Array.isArray(apiRecommendations) && apiRecommendations.length) return apiRecommendations
     return []
-  }, [apiRecommendations, location?.state?.recommendations, product.images])
+  }, [apiRecommendations, location?.state?.recommendations])
 
   const [activeImage, setActiveImage] = useState(0)
   const [qty, setQty] = useState(1)
@@ -199,6 +301,16 @@ const ProductProfile = () => {
 
   const showOriginal =
     Number.isFinite(product.originalPrice) && Number.isFinite(product.price) && product.originalPrice > product.price
+
+  const displayRating = useMemo(() => {
+    if (Number(reviewsSummary?.count || 0) > 0) return Number(reviewsSummary?.avg || 0)
+    return product.rating
+  }, [product.rating, reviewsSummary?.avg, reviewsSummary?.count])
+
+  const displayRatingCount = useMemo(() => {
+    if (Number(reviewsSummary?.count || 0) > 0) return Number(reviewsSummary?.count || 0)
+    return product.ratingCount
+  }, [product.ratingCount, reviewsSummary?.count])
 
   const safeQty = Number.isFinite(qty) && qty > 0 ? qty : 1
   const mainUrl = product.images[Math.min(Math.max(activeImage, 0), product.images.length - 1)]
@@ -389,14 +501,14 @@ const ProductProfile = () => {
             <div>
               <div className="text-3xl font-semibold text-gray-900">{product.title}</div>
 
-              {Number.isFinite(product.rating) && Number.isFinite(product.ratingCount) ? (
+              {Number.isFinite(displayRating) && Number(displayRatingCount || 0) > 0 ? (
                 <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-800">
-                    {product.rating}
+                    {Number(displayRating).toFixed(1)}
                     <Star className="h-4 w-4 text-amber-500" fill="currentColor" />
                   </span>
                   <span className="text-gray-400">|</span>
-                  <span>{formatter.format(product.ratingCount)} reviews</span>
+                  <span>{formatter.format(Number(displayRatingCount))} reviews</span>
                 </div>
               ) : null}
             </div>
@@ -410,7 +522,10 @@ const ProductProfile = () => {
               ) : null}
             </div>
 
-            <div className="text-sm leading-relaxed text-gray-600">{product.description}</div>
+            <div
+              className="text-sm leading-relaxed text-gray-600 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_a]:text-[#0f2e40] [&_a]:underline"
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            />
 
             <div className="space-y-2">
               <div className="text-xs font-semibold text-gray-700">QTY</div>
@@ -472,16 +587,18 @@ const ProductProfile = () => {
               </button>
             </div>
 
-            <div className="rounded-2xl bg-gray-50 px-4 py-4 ring-1 ring-gray-200">
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
-                <span className="text-gray-500">Tags:</span>
-                {product.tags.map((t, idx) => (
-                  <span key={`${t}-${idx}`} className="rounded-full bg-white px-3 py-1 ring-1 ring-gray-200">
-                    {t}
-                  </span>
-                ))}
+            {attributeEntries.length ? (
+              <div className="rounded-2xl bg-gray-50 px-4 py-4 ring-1 ring-gray-200">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                  <span className="text-gray-500">Details:</span>
+                  {attributeEntries.map(([k, v]) => (
+                    <span key={k} className="rounded-full bg-white px-3 py-1 ring-1 ring-gray-200">
+                      {k}: {v}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
 
@@ -495,6 +612,15 @@ const ProductProfile = () => {
               }`}
             >
               Description
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('details')}
+              className={`px-4 py-3 text-sm font-semibold transition-colors ${
+                activeTab === 'details' ? 'border-b-2 border-[#0f2e40] text-[#0f2e40]' : 'text-gray-600'
+              }`}
+            >
+              Details
             </button>
             <button
               type="button"
@@ -518,7 +644,26 @@ const ProductProfile = () => {
 
           <div className="rounded-b-2xl bg-white px-1 py-6">
             {activeTab === 'description' ? (
-              <div className="max-w-4xl text-sm leading-relaxed text-gray-700">{product.description}</div>
+              <div
+                className="max-w-4xl text-sm leading-relaxed text-gray-700 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_a]:text-[#0f2e40] [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            ) : null}
+            {activeTab === 'details' ? (
+              <div className="max-w-4xl">
+                {attributeEntries.length ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {attributeEntries.map(([k, v]) => (
+                      <div key={k} className="rounded-xl bg-gray-50 px-4 py-3 ring-1 ring-gray-200">
+                        <div className="text-xs font-semibold text-gray-500">{k}</div>
+                        <div className="mt-1 text-sm font-semibold text-gray-900">{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-600">No details available.</div>
+                )}
+              </div>
             ) : null}
             {activeTab === 'tags' ? (
               <div className="flex flex-wrap gap-2">
@@ -533,10 +678,126 @@ const ProductProfile = () => {
               </div>
             ) : null}
             {activeTab === 'reviews' ? (
-              <div className="space-y-3 text-sm text-gray-700">
-                <div className="font-semibold text-gray-900">Customer Reviews</div>
-                <div className="rounded-2xl bg-gray-50 px-4 py-4 ring-1 ring-gray-200">
-                  <div className="text-gray-600">No reviews yet.</div>
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-gray-900">Customer Reviews</div>
+                  {Number(reviewsSummary?.count || 0) > 0 ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-800">
+                        {Number(reviewsSummary.avg || 0).toFixed(1)}
+                        <Star className="h-4 w-4 text-amber-500" fill="currentColor" />
+                      </span>
+                      <span className="text-gray-400">|</span>
+                      <span>{formatter.format(Number(reviewsSummary.count || 0))} reviews</span>
+                    </div>
+                  ) : null}
+                </div>
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    if (!productId || reviewSubmitting) return
+                    setReviewSubmitting(true)
+                    setReviewSuccess('')
+                    setReviewsError('')
+                    try {
+                      await postJson(`/api/products/${encodeURIComponent(productId)}/reviews`, {
+                        name: reviewName,
+                        rating: reviewRating,
+                        comment: reviewComment,
+                      })
+                      setReviewComment('')
+                      setReviewSuccess('Review submitted.')
+                      await fetchReviews()
+                    } catch (err) {
+                      setReviewsError(err?.message || 'Failed to submit review')
+                    } finally {
+                      setReviewSubmitting(false)
+                    }
+                  }}
+                  className="rounded-2xl bg-gray-50 px-4 py-4 ring-1 ring-gray-200"
+                >
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-1">
+                      <div className="text-xs font-semibold text-gray-700">Your name</div>
+                      <input
+                        value={reviewName}
+                        onChange={(e) => setReviewName(e.target.value)}
+                        type="text"
+                        className="mt-2 w-full rounded-xl bg-white px-4 py-3 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0f2e40]/40"
+                        placeholder="Anonymous"
+                      />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <div className="text-xs font-semibold text-gray-700">Rating</div>
+                      <div className="mt-2 flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((n) => {
+                          const active = Number(reviewRating) >= n
+                          return (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setReviewRating(n)}
+                              className="grid h-10 w-10 place-items-center rounded-xl bg-white ring-1 ring-gray-200 hover:bg-gray-50"
+                              aria-label={`Rate ${n}`}
+                            >
+                              <Star className={`h-5 w-5 ${active ? 'text-amber-500' : 'text-gray-300'}`} fill={active ? 'currentColor' : 'none'} />
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <div className="text-xs font-semibold text-gray-700">Your review</div>
+                      <textarea
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        rows={4}
+                        className="mt-2 w-full resize-none rounded-xl bg-white px-4 py-3 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0f2e40]/40"
+                        placeholder="Write your review here..."
+                      />
+                    </div>
+                  </div>
+
+                  {reviewSuccess ? <div className="mt-3 text-sm font-semibold text-emerald-700">{reviewSuccess}</div> : null}
+                  {reviewsError ? <div className="mt-3 text-sm font-semibold text-red-600">{reviewsError}</div> : null}
+
+                  <div className="mt-4 flex items-center justify-end">
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting || !String(reviewComment || '').trim()}
+                      className="inline-flex items-center justify-center rounded-xl bg-[#0f2e40] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#13384d] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {reviewSubmitting ? 'Submitting...' : 'Submit review'}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="space-y-3">
+                  {reviewsLoading ? <div className="text-sm text-gray-600">Loading reviews...</div> : null}
+                  {!reviewsLoading && !reviews.length ? (
+                    <div className="rounded-2xl bg-gray-50 px-4 py-4 text-sm text-gray-600 ring-1 ring-gray-200">No reviews yet.</div>
+                  ) : null}
+                  {reviews.map((r) => {
+                    const created = r?.createdAt ? new Date(r.createdAt) : null
+                    const dateLabel = created && !Number.isNaN(created.getTime()) ? created.toLocaleDateString() : ''
+                    const rating = Number(r?.rating || 0)
+                    return (
+                      <div key={r?._id || `${r?.name}-${r?.createdAt}`} className="rounded-2xl bg-white px-4 py-4 ring-1 ring-gray-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-sm font-semibold text-gray-900">{r?.name || 'Anonymous'}</div>
+                          {dateLabel ? <div className="text-xs font-semibold text-gray-500">{dateLabel}</div> : null}
+                        </div>
+                        <div className="mt-2 flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <Star key={n} className={`h-4 w-4 ${rating >= n ? 'text-amber-500' : 'text-gray-200'}`} fill={rating >= n ? 'currentColor' : 'none'} />
+                          ))}
+                        </div>
+                        {r?.comment ? <div className="mt-2 text-sm leading-relaxed text-gray-700">{r.comment}</div> : null}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             ) : null}

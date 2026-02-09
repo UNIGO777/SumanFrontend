@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { listCategories } from '../services/categories.js'
@@ -6,6 +6,142 @@ import { getApiBase } from '../services/apiClient.js'
 import { uploadImages, uploadVideo } from '../services/files.js'
 import { createProduct } from '../services/products.js'
 import { listSubcategories } from '../services/subcategories.js'
+
+const htmlToText = (html) => {
+  if (typeof window === 'undefined') return String(html || '')
+  try {
+    const doc = new DOMParser().parseFromString(String(html || ''), 'text/html')
+    return (doc.body?.textContent || '').replace(/\u00a0/g, ' ')
+  } catch {
+    return String(html || '')
+  }
+}
+
+function RichTextEditor({ value, onChange, disabled, placeholder = '' }) {
+  const ref = useRef(null)
+
+  const isEmpty = useMemo(() => !htmlToText(value).trim(), [value])
+
+  useEffect(() => {
+    try {
+      document.execCommand('defaultParagraphSeparator', false, 'p')
+    } catch {
+      return
+    }
+  }, [])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const next = String(value || '')
+    if (el.innerHTML !== next) el.innerHTML = next
+  }, [value])
+
+  const runCmd = (cmd, arg) => {
+    if (disabled) return
+    const el = ref.current
+    if (!el) return
+    try {
+      el.focus()
+      document.execCommand(cmd, false, arg)
+      onChange?.(el.innerHTML)
+    } catch {
+      return
+    }
+  }
+
+  const onLink = () => {
+    if (disabled) return
+    const url = window.prompt('Enter link URL')
+    if (!url) return
+    runCmd('createLink', url)
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 p-2">
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCmd('bold')}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          B
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCmd('italic')}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          I
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCmd('underline')}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          U
+        </button>
+        <div className="mx-1 h-5 w-px bg-gray-200" />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCmd('insertUnorderedList')}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          • List
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCmd('insertOrderedList')}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          1. List
+        </button>
+        <div className="mx-1 h-5 w-px bg-gray-200" />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onLink}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          Link
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCmd('removeFormat')}
+          disabled={disabled}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+        >
+          Clear
+        </button>
+      </div>
+
+      <div className="relative">
+        {isEmpty && placeholder ? (
+          <div className="pointer-events-none absolute left-3 top-2 text-sm text-gray-400">{placeholder}</div>
+        ) : null}
+        <div
+          ref={ref}
+          contentEditable={!disabled}
+          onInput={(e) => onChange?.(e.currentTarget.innerHTML)}
+          className="min-h-[120px] w-full rounded-b-lg px-3 py-2 text-sm text-gray-900 outline-none"
+          suppressContentEditableWarning
+        />
+      </div>
+    </div>
+  )
+}
 
 export default function AdminProductsNew() {
   const navigate = useNavigate()
@@ -128,7 +264,7 @@ export default function AdminProductsNew() {
       setError('Subcategory is required')
       return
     }
-    if (!description.trim()) {
+    if (!htmlToText(description).trim()) {
       setError('Description is required')
       return
     }
@@ -146,7 +282,7 @@ export default function AdminProductsNew() {
 
     const payload = {
       name: name.trim(),
-      description: description.trim(),
+      description: String(description || ''),
     }
 
     const stockNum = String(stock || '').trim() ? Number(stock) : 0
@@ -219,7 +355,7 @@ export default function AdminProductsNew() {
       setError('Subcategory is required')
       return
     }
-    if (!description.trim()) {
+    if (!htmlToText(description).trim()) {
       setError('Description is required')
       return
     }
@@ -336,10 +472,9 @@ export default function AdminProductsNew() {
                 </div>
                 <div className="md:col-span-3">
                   <label className="mb-2 block text-xs font-semibold text-gray-600">Description</label>
-                  <textarea
+                  <RichTextEditor
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[96px] w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-300"
+                    onChange={setDescription}
                     placeholder="Product description"
                     disabled={loading}
                   />

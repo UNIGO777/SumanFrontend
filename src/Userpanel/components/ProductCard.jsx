@@ -1,6 +1,8 @@
 import { Heart, Star } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getApiBase } from '../../AdminPanel/services/apiClient.js'
+import productFallback from '../../assets/876 × 1628-1.png'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
@@ -69,17 +71,33 @@ export default function ProductCard({
   onAddToCart,
   className = '',
 }) {
-  const [isHovered, setIsHovered] = useState(false)
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN'), [])
   const navigate = useNavigate()
   const [justAdded, setJustAdded] = useState(false)
+  const apiBase = useMemo(() => getApiBase(), [])
+
+  const toPublicUrl = useMemo(() => {
+    return (p) => {
+      if (!p) return ''
+      if (/^https?:\/\//i.test(p)) return p
+      if (String(p).startsWith('/')) {
+        if (!/^\/(uploads|api)\b/i.test(String(p))) return p
+        return apiBase ? `${apiBase}${p}` : p
+      }
+      return apiBase ? `${apiBase}/${p}` : p
+    }
+  }, [apiBase])
 
   const showOriginal = Number.isFinite(originalPrice) && Number.isFinite(price) && originalPrice > price
   const showRating = Number.isFinite(rating) && Number.isFinite(ratingCount)
 
-  const coverUrl = images?.[0] || imageUrl
-  const hoverUrl = images?.[1]
-  const activeUrl = isHovered && hoverUrl ? hoverUrl : coverUrl
+  const resolvedImages = useMemo(
+    () => (Array.isArray(images) ? images : []).map((u) => toPublicUrl(u)).filter(Boolean),
+    [images, toPublicUrl]
+  )
+
+  const coverUrl = resolvedImages[0] || toPublicUrl(imageUrl) || productFallback
+  const hoverUrl = resolvedImages[2] || resolvedImages[0]
 
   const slug = useMemo(() => {
     const raw = String(id || sku || title || 'product')
@@ -124,8 +142,8 @@ export default function ProductCard({
         product: {
           id,
           sku,
-          images,
-          imageUrl,
+          images: resolvedImages.length ? resolvedImages : [coverUrl],
+          imageUrl: coverUrl,
           title,
           price,
           originalPrice,
@@ -210,16 +228,24 @@ export default function ProductCard({
       <div className="overflow-hidden   bg-white">
         <div className="relative bg-white">
           <div
-            className="flex h-[380px] w-full items-center overflow-hidden justify-center bg-white"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            className="group relative flex h-[380px] w-full items-center justify-center overflow-hidden bg-white"
           >
             <img
-              src={activeUrl}
+              src={coverUrl}
               alt={title || 'Product image'}
-              className="h-full w-full hover:scale-[1.1] object-cover transition-all duration-300 "
+              className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-[1.1] ${
+                hoverUrl ? 'opacity-100 group-hover:opacity-0' : 'opacity-100'
+              }`}
               loading="lazy"
             />
+            {hoverUrl ? (
+              <img
+                src={hoverUrl}
+                alt={title || 'Product image'}
+                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-300 group-hover:scale-[1.1] group-hover:opacity-100"
+                loading="lazy"
+              />
+            ) : null}
           </div>
 
           {showBestseller ? (

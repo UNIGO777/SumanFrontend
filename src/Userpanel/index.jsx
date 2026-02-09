@@ -29,7 +29,7 @@ const pickPrimaryVariant = (product) => {
   return active || variants[0]
 }
 
-const index = () => {
+const Index = () => {
   const [bestSellers, setBestSellers] = useState([])
 
   useEffect(() => {
@@ -142,4 +142,4 @@ const index = () => {
   )
 }
 
-export default index
+export default Index
