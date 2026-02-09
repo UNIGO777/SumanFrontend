@@ -1,23 +1,25 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import panelImg1 from '../../assets/1312 × 668-2.jpg'
 import panelImg2 from '../../assets/1312 × 668-3.jpg'
 import panelImg3 from '../../assets/1312 × 668-4.jpg'
 import panelImg4 from '../../assets/1312 × 668-5.jpg'
 
-export default function ItemPanel({ title = '' }) {
+export default function ItemPanel({ title = '', autoScroll = true }) {
   const ref = useRef(null)
+  const loopWidthRef = useRef(0)
+  const autoRafRef = useRef(0)
+  const autoLastTsRef = useRef(0)
+  const pausedRef = useRef(false)
+  const pauseTimerRef = useRef(0)
+  const scrollEventRafRef = useRef(0)
+  const animRafRef = useRef(0)
+  const isAnimatingRef = useRef(false)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
 
   const items = useMemo(
     () => [
-      { label: 'Rings', img: panelImg1, badge: 'Min 65% OFF' },
-      { label: 'Bracelets', img: panelImg2, badge: 'Min 60% OFF' },
-      { label: 'Anklets', img: panelImg3, badge: 'Min 60% OFF' },
-      { label: 'Sets', img: panelImg4, badge: 'Min 60% OFF' },
-      { label: 'Men in Silver', img: panelImg1, badge: 'Min 60% OFF' },
-      { label: 'Mangalsutras', img: panelImg2, badge: 'Min 60% OFF' },
-      { label: 'Silver Chains', img: panelImg3, badge: 'Min 60% OFF' },
-      { label: 'Personalised', img: panelImg4, badge: 'Min 60% OFF' },
       { label: 'Rings', img: panelImg1, badge: 'Min 65% OFF' },
       { label: 'Bracelets', img: panelImg2, badge: 'Min 60% OFF' },
       { label: 'Anklets', img: panelImg3, badge: 'Min 60% OFF' },
@@ -30,28 +32,178 @@ export default function ItemPanel({ title = '' }) {
     []
   )
 
-  const scroll = (dir) => {
-    if (!ref.current) return
+  const loopItems = useMemo(() => [...items, ...items, ...items], [items])
+
+  const computeLoopWidth = useCallback(() => {
     const container = ref.current
-    const firstChild = container.firstElementChild
-    const cardWidth = firstChild ? firstChild.getBoundingClientRect().width : 0
+    if (!container) return 0
+    const marker = container.children?.[items.length]
+    const w = marker ? marker.offsetLeft : 0
+    return Number.isFinite(w) ? w : 0
+  }, [items.length])
 
-    const styles = window.getComputedStyle(container)
-    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0
+  const updateButtons = useCallback(() => {
+    const container = ref.current
+    if (!container) return
+    const hasOverflow = container.scrollWidth - container.clientWidth > 2
+    setCanScrollLeft(hasOverflow)
+    setCanScrollRight(hasOverflow)
+  }, [])
 
-    const delta = (cardWidth + gap) * 3 * dir || 520 * dir
-    container.scrollBy({ left: delta, behavior: 'smooth' })
-  }
+  const wrapToMiddle = useCallback(() => {
+    const container = ref.current
+    if (!container) return
+    const loopWidth = loopWidthRef.current
+    if (!loopWidth) return
+
+    const left = container.scrollLeft
+    const lower = loopWidth * 0.5
+    const upper = loopWidth * 1.5
+
+    if (left < lower) container.scrollLeft = left + loopWidth
+    else if (left > upper) container.scrollLeft = left - loopWidth
+  }, [])
+
+  const scrollByWithWrap = useCallback(
+    (delta) => {
+      const container = ref.current
+      if (!container) return
+      container.scrollLeft += delta
+      wrapToMiddle()
+    },
+    [wrapToMiddle]
+  )
+
+  const scrollByStep = useCallback(
+    (dir) => {
+      const container = ref.current
+      if (!container) return
+      if (animRafRef.current) window.cancelAnimationFrame(animRafRef.current)
+
+      pausedRef.current = true
+      isAnimatingRef.current = true
+      if (pauseTimerRef.current) window.clearTimeout(pauseTimerRef.current)
+
+      const firstChild = container.firstElementChild
+      const cardWidth = firstChild ? firstChild.getBoundingClientRect().width : 0
+      const styles = window.getComputedStyle(container)
+      const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0
+      const distance = (Math.max(240, Math.round((cardWidth + gap) * 3)) || 520) * dir
+
+      const start = container.scrollLeft
+      const durationMs = 340
+      const startTs = performance.now()
+      const ease = (t) => 1 - Math.pow(1 - t, 3)
+
+      const tick = (ts) => {
+        const p = Math.min(1, Math.max(0, (ts - startTs) / durationMs))
+        container.scrollLeft = start + distance * ease(p)
+        wrapToMiddle()
+        if (p < 1) animRafRef.current = window.requestAnimationFrame(tick)
+        else {
+          animRafRef.current = 0
+          isAnimatingRef.current = false
+          pauseTimerRef.current = window.setTimeout(() => {
+            pausedRef.current = false
+            autoLastTsRef.current = 0
+          }, 450)
+        }
+      }
+
+      animRafRef.current = window.requestAnimationFrame(tick)
+    },
+    [wrapToMiddle]
+  )
+
+  useEffect(() => {
+    updateButtons()
+    const container = ref.current
+    if (!container) return
+
+    const onScroll = () => {
+      if (scrollEventRafRef.current) return
+      scrollEventRafRef.current = window.requestAnimationFrame(() => {
+        scrollEventRafRef.current = 0
+        wrapToMiddle()
+      })
+    }
+    container.addEventListener('scroll', onScroll, { passive: true })
+
+    let ro
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        loopWidthRef.current = computeLoopWidth()
+        wrapToMiddle()
+        updateButtons()
+      })
+      ro.observe(container)
+    } else {
+      window.addEventListener('resize', updateButtons)
+    }
+
+    window.setTimeout(() => {
+      loopWidthRef.current = computeLoopWidth()
+      if (loopWidthRef.current > 0) container.scrollLeft = loopWidthRef.current
+      wrapToMiddle()
+      updateButtons()
+    }, 0)
+
+    return () => {
+      container.removeEventListener('scroll', onScroll)
+      if (ro) ro.disconnect()
+      else window.removeEventListener('resize', updateButtons)
+      if (scrollEventRafRef.current) window.cancelAnimationFrame(scrollEventRafRef.current)
+      if (animRafRef.current) window.cancelAnimationFrame(animRafRef.current)
+      if (pauseTimerRef.current) window.clearTimeout(pauseTimerRef.current)
+    }
+  }, [computeLoopWidth, updateButtons, wrapToMiddle])
+
+  useEffect(() => {
+    const container = ref.current
+    if (!container) return
+    if (!autoScroll) return
+
+    const speedPxPerSec = 28
+    autoLastTsRef.current = 0
+
+    const tick = (ts) => {
+      if (!ref.current) return
+      if (pausedRef.current || isAnimatingRef.current) {
+        autoLastTsRef.current = ts
+        autoRafRef.current = window.requestAnimationFrame(tick)
+        return
+      }
+
+      if (autoLastTsRef.current) {
+        const dt = Math.min(0.05, (ts - autoLastTsRef.current) / 1000)
+        scrollByWithWrap(speedPxPerSec * dt)
+      }
+      autoLastTsRef.current = ts
+      autoRafRef.current = window.requestAnimationFrame(tick)
+    }
+
+    autoRafRef.current = window.requestAnimationFrame(tick)
+
+    return () => {
+      if (autoRafRef.current) window.cancelAnimationFrame(autoRafRef.current)
+      autoRafRef.current = 0
+      autoLastTsRef.current = 0
+    }
+  }, [autoScroll, scrollByWithWrap])
 
   return (
     <section className="relative">
       {title ? <div className="mb-3 text-sm font-semibold text-gray-900">{title}</div> : null}
 
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent sm:w-16" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent sm:w-16" />
+
       <button
         type="button"
         aria-label="Scroll left"
-        onClick={() => scroll(-1)}
-        className="absolute left-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white text-gray-800 shadow ring-1 ring-gray-200 hover:bg-gray-50 md:grid"
+        onClick={() => scrollByStep(-1)}
+        disabled={!canScrollLeft}
+        className="absolute left-2 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-gray-900 shadow-lg ring-1 ring-gray-200 backdrop-blur disabled:cursor-not-allowed disabled:opacity-40 sm:left-4"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -59,16 +211,34 @@ export default function ItemPanel({ title = '' }) {
       <button
         type="button"
         aria-label="Scroll right"
-        onClick={() => scroll(1)}
-        className="absolute right-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white text-gray-800 shadow ring-1 ring-gray-200 hover:bg-gray-50 md:grid"
+        onClick={() => scrollByStep(1)}
+        disabled={!canScrollRight}
+        className="absolute right-2 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-gray-900 shadow-lg ring-1 ring-gray-200 backdrop-blur disabled:cursor-not-allowed disabled:opacity-40 sm:right-4"
       >
         <ChevronRight className="h-5 w-5" />
       </button>
 
-      <div ref={ref} className="no-scrollbar flex gap-6 overflow-x-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10">
-        {items.map((it) => (
+      <div
+        ref={ref}
+        onMouseEnter={() => {
+          pausedRef.current = true
+        }}
+        onMouseLeave={() => {
+          pausedRef.current = false
+          autoLastTsRef.current = 0
+        }}
+        onTouchStart={() => {
+          pausedRef.current = true
+        }}
+        onTouchEnd={() => {
+          pausedRef.current = false
+          autoLastTsRef.current = 0
+        }}
+        className="no-scrollbar flex gap-6 overflow-x-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10"
+      >
+        {loopItems.map((it, idx) => (
           <div
-            key={it.label}
+            key={`${it.label}-${idx}`}
             className="flex w-[120px] shrink-0 flex-col items-center transition-transform hover:cursor-pointer hover:scale-[1.1] sm:w-[150px]"
           >
             <div className="relative h-[120px] w-[120px] overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-gray-200 sm:h-[150px] sm:w-[150px]">

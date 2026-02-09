@@ -57,9 +57,11 @@ export default function ProductCard({
   images,
   imageUrl,
   title,
+  name,
   price,
   originalPrice,
   discountPercent,
+  silverWeightGrams,
   rating,
   ratingCount,
   couponText,
@@ -76,6 +78,8 @@ export default function ProductCard({
   const navigate = useNavigate()
   const [justAdded, setJustAdded] = useState(false)
   const apiBase = useMemo(() => getApiBase(), [])
+
+  const displayTitle = useMemo(() => String(title || name || 'Product'), [name, title])
 
   const toPublicUrl = useMemo(() => {
     return (p) => {
@@ -108,16 +112,20 @@ export default function ProductCard({
 
   const coverUrl = resolvedImages[0] || toPublicUrl(imageUrl) || productFallback
   const hoverUrl = resolvedImages[2] || resolvedImages[0]
+  const displayGrams = useMemo(() => {
+    const n = Number(silverWeightGrams)
+    return Number.isFinite(n) && n > 0 ? n : 0
+  }, [silverWeightGrams])
 
   const slug = useMemo(() => {
-    const raw = String(id || sku || title || 'product')
+    const raw = String(id || sku || displayTitle || 'product')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
 
     return encodeURIComponent(raw || 'product')
-  }, [id, sku, title])
+  }, [displayTitle, id, sku])
 
   const itemKey = useMemo(() => decodeURIComponent(slug || ''), [slug])
 
@@ -154,20 +162,21 @@ export default function ProductCard({
           sku,
           images: resolvedImages.length ? resolvedImages : [coverUrl],
           imageUrl: coverUrl,
-          title,
+          title: displayTitle,
           price,
           originalPrice,
+          silverWeightGrams: displayGrams || undefined,
           rating,
           ratingCount,
           couponText,
         },
-        breadcrumbs: ['Home', 'Products', title || 'Product'],
+        breadcrumbs: ['Home', 'Products', displayTitle || 'Product'],
       },
     })
   }
 
   const defaultToggleWishlist = () => {
-    const titleSafe = title || 'Product'
+    const titleSafe = displayTitle || 'Product'
     const cover = resolvedImages?.[0] || coverUrl || ''
 
     const nextItem = {
@@ -177,6 +186,7 @@ export default function ProductCard({
       title: titleSafe,
       price: Number.isFinite(price) ? price : 0,
       originalPrice: Number.isFinite(originalPrice) ? originalPrice : undefined,
+      silverWeightGrams: displayGrams || undefined,
       images: Array.isArray(resolvedImages) && resolvedImages.length ? resolvedImages : cover ? [cover] : [],
       imageUrl: cover,
     }
@@ -190,7 +200,7 @@ export default function ProductCard({
 
   const defaultAddToCart = () => {
     const key = decodeURIComponent(slug || '')
-    const titleSafe = title || 'Product'
+    const titleSafe = displayTitle || 'Product'
     const cover = resolvedImages?.[0] || coverUrl || ''
 
     const nextItem = {
@@ -200,6 +210,7 @@ export default function ProductCard({
       title: titleSafe,
       price: Number.isFinite(price) ? price : 0,
       originalPrice: Number.isFinite(originalPrice) ? originalPrice : undefined,
+      silverWeightGrams: displayGrams || undefined,
       images: Array.isArray(resolvedImages) && resolvedImages.length ? resolvedImages : cover ? [cover] : [],
       imageUrl: cover,
       qty: 1,
@@ -224,7 +235,7 @@ export default function ProductCard({
 
   return (
     <div
-      className={`w-full max-w-[460px] ${className} cursor-pointer`}
+      className={`w-full max-w-[560px] ${className} cursor-pointer`}
       onClick={goToProfile}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -242,7 +253,7 @@ export default function ProductCard({
           >
             <img
               src={coverUrl}
-              alt={title || 'Product image'}
+              alt={displayTitle || 'Product image'}
               className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-[1.1] ${
                 hoverUrl ? 'opacity-100 group-hover:opacity-0' : 'opacity-100'
               }`}
@@ -251,7 +262,7 @@ export default function ProductCard({
             {hoverUrl ? (
               <img
                 src={hoverUrl}
-                alt={title || 'Product image'}
+                alt={displayTitle || 'Product image'}
                 className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-300 group-hover:scale-[1.1] group-hover:opacity-100"
                 loading="lazy"
               />
@@ -270,7 +281,7 @@ export default function ProductCard({
             </div>
           ) : null}
 
-          {effectiveDiscount ? (
+          {!showBestseller && effectiveDiscount ? (
             <div className="absolute left-4 top-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
               {effectiveDiscount}% OFF
             </div>
@@ -317,7 +328,10 @@ export default function ProductCard({
             ) : null}
           </div>
 
-          <div className="text-lg font-medium leading-tight text-gray-500">{title}</div>
+          <div className="text-lg font-medium leading-tight text-gray-500">{displayTitle}</div>
+          {displayGrams ? (
+            <div className="text-sm font-semibold text-gray-500">{displayGrams} g</div>
+          ) : null}
 
           {couponText ? (
             <div className="text-sm font-semibold text-[#0f2e40] underline">{couponText}</div>

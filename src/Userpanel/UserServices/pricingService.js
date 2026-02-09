@@ -31,8 +31,12 @@ export const getSilverWeightGrams = (product) => {
   const v = pickPrimaryVariant(product) || {}
   const direct = Number(product?.silverWeightGrams)
   if (Number.isFinite(direct) && direct > 0) return direct
+  const directLegacy = Number(product?.grams)
+  if (Number.isFinite(directLegacy) && directLegacy > 0) return directLegacy
   const fromVariant = Number(v?.silverWeightGrams)
   if (Number.isFinite(fromVariant) && fromVariant > 0) return fromVariant
+  const fromVariantLegacy = Number(v?.grams)
+  if (Number.isFinite(fromVariantLegacy) && fromVariantLegacy > 0) return fromVariantLegacy
   const attrs = product?.attributes
   return (
     getAttrNumber(attrs, 'silverWeightGrams') ||

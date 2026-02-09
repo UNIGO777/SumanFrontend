@@ -11,20 +11,24 @@ const pickPrimaryVariant = (product) => {
   return active || variants[0]
 }
 
-export default function HomeMostGiftedSection() {
+export default function HomeSpecialOccasionSection() {
   const [apiProducts, setApiProducts] = useState([])
+  const [cms, setCms] = useState(null)
 
   useEffect(() => {
     let active = true
-    Promise.all([getSilver925RatePerGram(), getJson('/api/products', { page: 1, limit: 12 })])
+    Promise.all([getSilver925RatePerGram(), getJson('/api/products/special-occasion', { page: 1, limit: 12 })])
       .then(([rate, res]) => {
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
-        const mapped = rows.slice(0, 6).map((p) => {
+        const mapped = rows.slice(0, 8).map((p) => {
           const v = pickPrimaryVariant(p) || {}
-          const images = [p?.image, ...(Array.isArray(p?.images) ? p.images : []), v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(
-            Boolean
-          )
+          const images = [
+            p?.image,
+            ...(Array.isArray(p?.images) ? p.images : []),
+            v?.image,
+            ...(Array.isArray(v?.images) ? v.images : []),
+          ].filter(Boolean)
           const cover = images[0] || productFallback
           const pricing = computeProductPricing(p, rate)
           const gramsNum = getSilverWeightGrams(p)
@@ -46,6 +50,18 @@ export default function HomeMostGiftedSection() {
         if (!active) return
         setApiProducts([])
       })
+      .finally(() => {
+        if (!active) return
+        getJson('/api/occasions/special-occasion')
+          .then((cmsRes) => {
+            if (!active) return
+            setCms(cmsRes?.data || null)
+          })
+          .catch(() => {
+            if (!active) return
+            setCms(null)
+          })
+      })
     return () => {
       active = false
     }
@@ -54,31 +70,26 @@ export default function HomeMostGiftedSection() {
   if (!apiProducts.length) return null
 
   return (
-    <div className="mt-10">
+    <div className="mt-14">
       <section className="w-full">
         <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-gray-900">Most Gifted</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
-            Crowd favourites that make gifting effortless and memorable.
+          <div className="text-3xl font-bold text-gray-900">{cms?.title || "Special Occasion"}</div>
+          <div className="mt-2 text-sm flex justify-center font-semibold text-gray-600">
+            <p className='max-w-4xl text-center'>{cms?.description || 'Handpicked pieces for your special moments.'}</p>
           </div>
         </div>
 
-        <div className="w-full px-4 md:px-10">
-          <div className="no-scrollbar flex gap-8 overflow-x-auto py-2">
+        <div className="mx-auto max-w-[92vw]">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {apiProducts.map((p) => (
-              <div key={p.id} className="w-[280px] shrink-0">
-                <ProductCard {...p} className="max-w-none" />
-              </div>
+              <ProductCard
+                key={p.id}
+                {...p}
+                className="max-w-none"
+                cardHeightClassName="h-[460px]"
+                imageHeightClassName="h-[240px]"
+              />
             ))}
-          </div>
-
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              className="rounded-full border border-gray-300 bg-white px-8 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
-            >
-              View More
-            </button>
           </div>
         </div>
       </section>

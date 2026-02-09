@@ -8,7 +8,7 @@ import HomeLaunchBannerSection from './sections/HomeLaunchBannerSection.jsx'
 import HomeMostGiftedSection from './sections/HomeMostGiftedSection.jsx'
 import HomeLatestCollectionsSection from './sections/HomeLatestCollectionsSection.jsx'
 import HomeInternationalShippingBanner from './sections/HomeInternationalShippingBanner.jsx'
-import HomeValentineSpecialSection from './sections/HomeValentineSpecialSection.jsx'
+import HomeSpecialOccasionSection from './sections/HomeSpecialOccasionSection.jsx'
 import HomeCustomerStoriesSection from './sections/HomeCustomerStoriesSection.jsx'
 
 const Home = () => {
@@ -16,9 +16,7 @@ const Home = () => {
     <div className="mx-auto px-4 py-6">
       <HomeHeroPromos />
 
-      <div className="mt-8">
-        <ItemPanel />
-      </div>
+      <ItemPanel />
 
       <div className="mt-10">
         <RecipientPanel />
@@ -31,7 +29,7 @@ const Home = () => {
       <HomeMostGiftedSection />
       <HomeLatestCollectionsSection />
       <HomeInternationalShippingBanner />
-      <HomeValentineSpecialSection />
+      <HomeSpecialOccasionSection />
       <HomeCustomerStoriesSection />
     </div>
   )

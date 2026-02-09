@@ -6,6 +6,7 @@ import AdminSubcategories from './Subcategories.jsx'
 import AdminProductsNew from './ProductsNew.jsx'
 import AdminProductsList from './ProductsList.jsx'
 import AdminSilverPrice from './SilverPrice.jsx'
+import AdminSpecialOccasionCms from './SpecialOccasionCms.jsx'
 
 function RequireAdmin({ children }) {
   const token = window.localStorage.getItem('admin_token') || window.sessionStorage.getItem('admin_token')
@@ -23,7 +24,7 @@ function AdminStub({ title }) {
 }
 
 function AdminLayout() {
-  const [open, setOpen] = useState({ category: true, product: true })
+  const [open, setOpen] = useState({ category: true, product: true, cms: true })
 
   const linkBase = useMemo(
     () => 'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -102,6 +103,22 @@ function AdminLayout() {
             <NavLink to="/admin/silver-price" className={linkCls}>
               <span>92.5 Silver Price</span>
             </NavLink>
+
+            <button
+              type="button"
+              onClick={() => setOpen((v) => ({ ...v, cms: !v.cms }))}
+              className={`${linkBase} text-white/80 hover:bg-white/10 hover:text-white`}
+            >
+              <span>CMS</span>
+              <span className="text-xs">{open.cms ? '—' : '+'}</span>
+            </button>
+            {open.cms ? (
+              <div className="space-y-1 pl-2">
+                <NavLink to="/admin/cms/special-occasion" className={subLinkCls}>
+                  Special Occasion
+                </NavLink>
+              </div>
+            ) : null}
           </nav>
 
           <div className="mt-auto px-2 pt-8 text-xs text-white/60">© {new Date().getFullYear()} Suman Jwellaries</div>
@@ -145,6 +162,7 @@ export default function AdminPanelRoutes() {
         <Route path="products/active" element={<AdminProductsList activeOnly />} />
         <Route path="orders" element={<AdminStub title="Orders" />} />
         <Route path="silver-price" element={<AdminSilverPrice />} />
+        <Route path="cms/special-occasion" element={<AdminSpecialOccasionCms />} />
       </Route>
 
       <Route path="*" element={<Navigate to="login" replace />} />

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
-import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
+import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 const CHECKOUT_KEY = 'sj_checkout_v1'
@@ -163,9 +163,11 @@ export default function Checkout() {
             const pricing = computeProductPricing(p, rate)
             const priceNum = Number.isFinite(pricing?.price) ? pricing.price : 0
             const originalNum = Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined
+            const gramsNum = getSilverWeightGrams(p)
             if (Math.abs((Number(it.price) || 0) - priceNum) > 0.0001) changed = true
             if (Math.abs((Number(it.originalPrice) || 0) - (Number(originalNum) || 0)) > 0.0001) changed = true
-            return { ...it, price: priceNum, originalPrice: originalNum }
+            if (Math.abs((Number(it.silverWeightGrams) || 0) - (Number(gramsNum) || 0)) > 0.0001) changed = true
+            return { ...it, price: priceNum, originalPrice: originalNum, silverWeightGrams: gramsNum || undefined }
           })
 
         if (!active) return
@@ -244,6 +246,8 @@ export default function Checkout() {
         sku: it?.sku,
         title: it?.title || '',
         price: Number(it?.price) || 0,
+        originalPrice: Number.isFinite(Number(it?.originalPrice)) ? Number(it.originalPrice) : undefined,
+        silverWeightGrams: Number.isFinite(Number(it?.silverWeightGrams)) ? Number(it.silverWeightGrams) : undefined,
         qty: Math.max(1, Number.parseInt(it?.qty, 10) || 1),
         images: Array.isArray(it?.images) ? it.images.filter(Boolean) : [],
         imageUrl: it?.imageUrl || '',
@@ -310,6 +314,9 @@ export default function Checkout() {
                 <div key={it.key} className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-gray-900">{it.title}</div>
+                    {Number(it.silverWeightGrams) > 0 ? (
+                      <div className="text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
+                    ) : null}
                     <div className="text-xs font-semibold text-gray-500">Qty: {it.qty}</div>
                   </div>
                   <div className="text-sm font-bold text-gray-900">₹{formatter.format(it.price * it.qty)}</div>
@@ -628,6 +635,9 @@ export default function Checkout() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-gray-900">{it.title}</div>
                       <div className="mt-1 text-xs font-semibold text-gray-500">Qty: {qty}</div>
+                      {Number(it.silverWeightGrams) > 0 ? (
+                        <div className="mt-1 text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
+                      ) : null}
                       <div className="mt-1 flex items-end gap-2">
                         <div className="text-sm font-bold text-gray-900">₹{formatter.format(Number(it?.price) || 0)}</div>
                         {showOriginal ? (

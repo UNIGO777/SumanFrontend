@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getApiBase, getJson, postJson } from '../../AdminPanel/services/apiClient.js'
-import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
+import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
@@ -38,6 +38,7 @@ const toUiProduct = (apiProduct, silverPricePerGram = 0) => {
   ].filter(Boolean)
   const cover = images[0] || productFallback
   const pricing = computeProductPricing(apiProduct, silverPricePerGram)
+  const gramsNum = getSilverWeightGrams(apiProduct)
   const attributes =
     apiProduct?.attributes && typeof apiProduct.attributes === 'object' && !Array.isArray(apiProduct.attributes)
       ? apiProduct.attributes
@@ -51,6 +52,7 @@ const toUiProduct = (apiProduct, silverPricePerGram = 0) => {
     price: Number.isFinite(pricing?.price) ? pricing.price : 0,
     originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
     discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
+    silverWeightGrams: gramsNum || undefined,
     rating: undefined,
     ratingCount: undefined,
     description: apiProduct?.description || '',

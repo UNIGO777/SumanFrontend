@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getJson } from '../../AdminPanel/services/apiClient.js'
-import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
+import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../UserServices/pricingService.js'
 
 const PRIMARY = '#0f2e40'
 
@@ -45,6 +45,7 @@ export default function SearchPage() {
   const qParam = String(searchParams.get('q') || '').trim()
   const categoryIdParam = String(searchParams.get('categoryId') || '').trim()
   const subCategoryIdParam = String(searchParams.get('subCategoryId') || '').trim()
+  const occasionKeyParam = String(searchParams.get('occasionKey') || '').trim()
   const [q, setQ] = useState(qParam)
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(() => categoryIdParam)
@@ -123,7 +124,22 @@ export default function SearchPage() {
     setLoading(true)
     setLoadError('')
 
-    getJson('/api/products', { page: 1, limit: 200, q: qParam })
+    const path = occasionKeyParam
+      ? `/api/occasions/${encodeURIComponent(occasionKeyParam)}/products`
+      : '/api/products/search'
+
+    const query = occasionKeyParam
+      ? { page: 1, limit: 200 }
+      : {
+          page: 1,
+          limit: 200,
+          q: qParam,
+          categoryId: categoryIdParam,
+          subCategoryId: subCategoryIdParam,
+          availability: availability === 'all' ? '' : availability,
+        }
+
+    getJson(path, query)
       .then((res) => {
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
@@ -134,6 +150,7 @@ export default function SearchPage() {
           )
           const cover = images[0] || productFallback
           const pricing = computeProductPricing(p, silverPricePerGram)
+          const gramsNum = getSilverWeightGrams(p)
           const categoryId = String(p?.category || '')
           const subCategoryId = String(p?.subCategory || '')
           const categoryName = categoryById.get(categoryId)?.name || ''
@@ -155,6 +172,7 @@ export default function SearchPage() {
             price: Number.isFinite(pricing?.price) ? pricing.price : 0,
             originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
             discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
+            silverWeightGrams: gramsNum || undefined,
             rating: undefined,
             ratingCount: undefined,
             couponText: '',
@@ -178,7 +196,7 @@ export default function SearchPage() {
     return () => {
       active = false
     }
-  }, [categoryById, qParam, silverPricePerGram, subById])
+  }, [availability, categoryById, categoryIdParam, occasionKeyParam, qParam, silverPricePerGram, subById, subCategoryIdParam])
 
   useEffect(() => {
     setQ(qParam)
@@ -236,7 +254,19 @@ export default function SearchPage() {
   const filtered = useMemo(() => {
     const qLower = normalizeText(qParam)
     return products.filter((p) => {
-      if (qLower && !normalizeText(p.title).includes(qLower)) return false
+      if (qLower) {
+        const hay = [
+          p.title,
+          p.categoryName,
+          p.subCategoryName,
+          p.color,
+          p.material,
+        ]
+          .map((x) => normalizeText(x))
+          .filter(Boolean)
+          .join(' ')
+        if (!hay.includes(qLower)) return false
+      }
       if (selectedCategoryId && String(p.categoryId) !== String(selectedCategoryId)) return false
       if (selectedSubCategoryId && String(p.subCategoryId) !== String(selectedSubCategoryId)) return false
       if (selectedColor && normalizeText(p.color) !== normalizeText(selectedColor)) return false

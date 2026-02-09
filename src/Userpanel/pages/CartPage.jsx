@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
 import productFallback from '../../assets/876 × 1628-1.png'
-import { computeProductPricing, getSilver925RatePerGram } from '../UserServices/pricingService.js'
+import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 
@@ -35,6 +35,7 @@ const writeCart = (items) => {
         title: it.title || '',
         price: Number.isFinite(it.price) ? it.price : 0,
         originalPrice: Number.isFinite(it.originalPrice) ? it.originalPrice : undefined,
+        silverWeightGrams: Number.isFinite(Number(it.silverWeightGrams)) ? Number(it.silverWeightGrams) : undefined,
         images: Array.isArray(it.images) ? it.images.filter(Boolean) : [],
         imageUrl: it.imageUrl || '',
         qty: Math.max(1, Number.parseInt(it.qty, 10) || 1),
@@ -114,9 +115,11 @@ export default function CartPage() {
             const pricing = computeProductPricing(p, rate)
             const priceNum = Number.isFinite(pricing?.price) ? pricing.price : 0
             const originalNum = Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined
+            const gramsNum = getSilverWeightGrams(p)
             if (Math.abs((Number(it.price) || 0) - priceNum) > 0.0001) updatedPrices = true
             if (Math.abs((Number(it.originalPrice) || 0) - (Number(originalNum) || 0)) > 0.0001) updatedPrices = true
-            return { ...it, price: priceNum, originalPrice: originalNum }
+            if (Math.abs((Number(it.silverWeightGrams) || 0) - (Number(gramsNum) || 0)) > 0.0001) updatedPrices = true
+            return { ...it, price: priceNum, originalPrice: originalNum, silverWeightGrams: gramsNum || undefined }
           })
 
         if (!active) return
@@ -223,6 +226,9 @@ export default function CartPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="truncate text-base font-semibold text-gray-900">{it.title}</div>
+                            {Number(it.silverWeightGrams) > 0 ? (
+                              <div className="mt-1 text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
+                            ) : null}
                             <div className="mt-1 flex items-end gap-2">
                               <div className="text-lg font-bold text-gray-900">₹{formatter.format(it.price || 0)}</div>
                               {Number.isFinite(it.originalPrice) && it.originalPrice > it.price ? (

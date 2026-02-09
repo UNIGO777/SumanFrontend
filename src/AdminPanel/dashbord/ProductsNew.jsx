@@ -162,11 +162,14 @@ export default function AdminProductsNew() {
   const [attributesPairs, setAttributesPairs] = useState([{ key: '', value: '' }])
   const [sku, setSku] = useState('')
   const [stock, setStock] = useState('0')
+  const [occasionKey, setOccasionKey] = useState('')
   const [silverWeightGrams, setSilverWeightGrams] = useState('')
   const [discountPercent, setDiscountPercent] = useState('')
   const [makingCost, setMakingCost] = useState('')
   const [otherCharges, setOtherCharges] = useState('')
   const [isActive, setIsActive] = useState(true)
+  const [isBestseller, setIsBestseller] = useState(false)
+  const [isSpecialOccasion, setIsSpecialOccasion] = useState(false)
   const [image, setImage] = useState('')
   const [images, setImages] = useState([])
   const [video, setVideo] = useState('')
@@ -372,6 +375,9 @@ export default function AdminProductsNew() {
     if (skuTrim) payload.sku = skuTrim
     payload.stock = stockNum
 
+    const occasionKeyTrim = String(occasionKey || '').trim().toLowerCase()
+    if (occasionKeyTrim) payload.occasionKey = occasionKeyTrim
+
     const imageTrim = String(image || '').trim()
     if (imageTrim) payload.image = imageTrim
 
@@ -419,6 +425,8 @@ export default function AdminProductsNew() {
     }
 
     payload.isActive = isActive
+    payload.isBestseller = isBestseller
+    payload.isSpecialOccasion = isSpecialOccasion
 
     if (categoryId) payload.categoryId = categoryId
     if (subCategoryId) payload.subCategoryId = subCategoryId
@@ -666,6 +674,16 @@ export default function AdminProductsNew() {
                           disabled={loading}
                         />
                       </div>
+                        <div className="md:col-span-2">
+                          <label className="mb-2 block text-xs font-semibold text-gray-600">Occasion Key</label>
+                          <input
+                            value={occasionKey}
+                            onChange={(e) => setOccasionKey(e.target.value)}
+                            className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                            placeholder="Eg. valentines-day"
+                            disabled={loading}
+                          />
+                        </div>
                       <div className="md:col-span-1">
                         <label className="mb-2 block text-xs font-semibold text-gray-600">Stock</label>
                         <input
@@ -733,6 +751,38 @@ export default function AdminProductsNew() {
                           <span>{isActive ? 'Active' : 'Inactive'}</span>
                           <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isActive ? 'primary-bg' : 'bg-gray-200'}`}>
                             <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${isActive ? 'translate-x-4' : 'translate-x-1'}`} />
+                          </span>
+                        </button>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-xs font-semibold text-gray-600">Bestseller</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsBestseller((v) => !v)}
+                          disabled={loading}
+                          className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                        >
+                          <span>{isBestseller ? 'Yes' : 'No'}</span>
+                          <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isBestseller ? 'primary-bg' : 'bg-gray-200'}`}>
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${isBestseller ? 'translate-x-4' : 'translate-x-1'}`} />
+                          </span>
+                        </button>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-xs font-semibold text-gray-600">Special Occasion</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsSpecialOccasion((v) => !v)}
+                          disabled={loading}
+                          className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                        >
+                          <span>{isSpecialOccasion ? 'Yes' : 'No'}</span>
+                          <span
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isSpecialOccasion ? 'primary-bg' : 'bg-gray-200'}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${isSpecialOccasion ? 'translate-x-4' : 'translate-x-1'}`}
+                            />
                           </span>
                         </button>
                       </div>

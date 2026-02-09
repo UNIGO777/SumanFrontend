@@ -24,9 +24,16 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [editActive, setEditActive] = useState(true)
   const [editCategoryId, setEditCategoryId] = useState('')
   const [editSubCategoryId, setEditSubCategoryId] = useState('')
+  const [editSku, setEditSku] = useState('')
+  const [editStock, setEditStock] = useState('0')
+  const [editOccasionKey, setEditOccasionKey] = useState('')
   const [editSilverWeightGrams, setEditSilverWeightGrams] = useState('')
   const [editDiscountPercent, setEditDiscountPercent] = useState('')
-  const [editVariants, setEditVariants] = useState([])
+  const [editMakingCost, setEditMakingCost] = useState('')
+  const [editOtherCharges, setEditOtherCharges] = useState('')
+  const [editImage, setEditImage] = useState('')
+  const [editImages, setEditImages] = useState([])
+  const [editVideo, setEditVideo] = useState('')
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
 
@@ -94,46 +101,20 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditActive(Boolean(row.isActive))
     setEditCategoryId(row.category || '')
     setEditSubCategoryId(row.subCategory || '')
+    setEditSku(row.sku || '')
+    setEditStock(row.stock !== undefined && row.stock !== null ? String(row.stock) : '0')
+    setEditOccasionKey(row.occasionKey || '')
     setEditSilverWeightGrams(
       row.silverWeightGrams === undefined || row.silverWeightGrams === null ? '' : String(row.silverWeightGrams)
     )
     setEditDiscountPercent(row.discountPercent === undefined || row.discountPercent === null ? '' : String(row.discountPercent))
-
-    const baseVariants =
-      Array.isArray(row.variants) && row.variants.length
-        ? row.variants
-        : [
-            {
-              title: 'Default',
-              sku: row.sku || '',
-              makingCost: row.makingCost?.amount,
-              otherCharges: row.otherCharges?.amount,
-              stock: row.stock ?? 0,
-              isActive: Boolean(row.isActive),
-            },
-          ]
-
-    setEditVariants(
-      baseVariants.map((v, idx) => ({
-        title: v.title || `Variant ${idx + 1}`,
-        sku: v.sku || '',
-        silverWeightGrams:
-          v.silverWeightGrams !== undefined && v.silverWeightGrams !== null
-            ? String(v.silverWeightGrams)
-            : v.grams !== undefined && v.grams !== null
-              ? String(v.grams)
-              : '',
-        discountPercent: v.discountPercent !== undefined && v.discountPercent !== null ? String(v.discountPercent) : '',
-        makingCost: v.makingCost?.amount !== undefined ? String(v.makingCost.amount) : String(v.makingCost ?? ''),
-        otherCharges: v.otherCharges?.amount !== undefined ? String(v.otherCharges.amount) : String(v.otherCharges ?? ''),
-        stock: v.stock !== undefined && v.stock !== null ? String(v.stock) : '0',
-        isActive: v.isActive !== false,
-        image: v.image || '',
-        images: Array.isArray(v.images) ? v.images : [],
-        video: v.video || '',
-        attributes: v.attributes,
-      }))
+    setEditMakingCost(row.makingCost?.amount !== undefined && row.makingCost?.amount !== null ? String(row.makingCost.amount) : '')
+    setEditOtherCharges(
+      row.otherCharges?.amount !== undefined && row.otherCharges?.amount !== null ? String(row.otherCharges.amount) : ''
     )
+    setEditImage(row.image || '')
+    setEditImages(Array.isArray(row.images) ? row.images : [])
+    setEditVideo(row.video || '')
   }
 
   const cancelEdit = () => {
@@ -142,9 +123,16 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditActive(true)
     setEditCategoryId('')
     setEditSubCategoryId('')
+    setEditSku('')
+    setEditStock('0')
+    setEditOccasionKey('')
     setEditSilverWeightGrams('')
     setEditDiscountPercent('')
-    setEditVariants([])
+    setEditMakingCost('')
+    setEditOtherCharges('')
+    setEditImage('')
+    setEditImages([])
+    setEditVideo('')
   }
 
   const onSaveEdit = async () => {
@@ -161,6 +149,20 @@ export default function AdminProductsList({ activeOnly = false }) {
 
     if (editCategoryId) payload.categoryId = editCategoryId
     if (editSubCategoryId) payload.subCategoryId = editSubCategoryId
+
+    const sku = String(editSku || '').trim()
+    if (sku) payload.sku = sku
+
+    const occasionKeyTrim = String(editOccasionKey || '').trim().toLowerCase()
+    if (occasionKeyTrim) payload.occasionKey = occasionKeyTrim
+
+    const stockNum = String(editStock || '').trim() ? Number(editStock) : 0
+    if (!Number.isFinite(stockNum) || stockNum < 0) {
+      setError('Stock must be a valid number')
+      return
+    }
+    payload.stock = stockNum
+
     if (String(editSilverWeightGrams || '').trim()) {
       const n = Number(editSilverWeightGrams)
       if (!Number.isFinite(n) || n < 0) {
@@ -177,67 +179,33 @@ export default function AdminProductsList({ activeOnly = false }) {
       }
       payload.discountPercent = n
     }
-    payload.variants = []
 
-    const variantsIn = Array.isArray(editVariants) ? editVariants : []
-    for (let i = 0; i < variantsIn.length; i += 1) {
-      const v = variantsIn[i]
-      const title = (v.title || '').trim() || `Variant ${i + 1}`
-      const stockNum = String(v.stock || '').trim() ? Number(v.stock) : 0
-
-      if (!Number.isFinite(stockNum) || stockNum < 0) {
-        setError(`Variant ${i + 1}: Stock must be a valid number`)
+    if (String(editMakingCost || '').trim()) {
+      const n = Number(editMakingCost)
+      if (!Number.isFinite(n) || n < 0) {
+        setError('Making cost must be a valid number')
         return
       }
-
-      const out = { title, stock: stockNum, isActive: v.isActive !== false }
-      const sku = (v.sku || '').trim()
-      if (sku) out.sku = sku
-
-      if (String(v.silverWeightGrams || '').trim()) {
-        const n = Number(v.silverWeightGrams)
-        if (!Number.isFinite(n) || n < 0) {
-          setError(`Variant ${i + 1}: Silver weight must be a valid number`)
-          return
-        }
-        out.silverWeightGrams = n
-      }
-      if (String(v.discountPercent || '').trim()) {
-        const n = Number(v.discountPercent)
-        if (!Number.isFinite(n) || n < 0 || n > 100) {
-          setError(`Variant ${i + 1}: Discount must be between 0 and 100`)
-          return
-        }
-        out.discountPercent = n
-      }
-
-      const image = (v.image || '').trim()
-      if (image) out.image = image
-      if (Array.isArray(v.images) && v.images.length) out.images = v.images.map((s) => String(s)).filter(Boolean)
-      const video = (v.video || '').trim()
-      if (video) out.video = video
-      if (v.attributes !== undefined) out.attributes = v.attributes
-
-      if (String(v.makingCost || '').trim()) {
-        const n = Number(v.makingCost)
-        if (!Number.isFinite(n) || n < 0) {
-          setError(`Variant ${i + 1}: Making cost must be a valid number`)
-          return
-        }
-        out.makingCost = n
-      }
-
-      if (String(v.otherCharges || '').trim()) {
-        const n = Number(v.otherCharges)
-        if (!Number.isFinite(n) || n < 0) {
-          setError(`Variant ${i + 1}: Other charges must be a valid number`)
-          return
-        }
-        out.otherCharges = n
-      }
-
-      payload.variants.push(out)
+      payload.makingCost = n
     }
+
+    if (String(editOtherCharges || '').trim()) {
+      const n = Number(editOtherCharges)
+      if (!Number.isFinite(n) || n < 0) {
+        setError('Other charges must be a valid number')
+        return
+      }
+      payload.otherCharges = n
+    }
+
+    const imageTrim = String(editImage || '').trim()
+    const imagesOut = (Array.isArray(editImages) ? editImages : []).map((s) => String(s)).filter(Boolean)
+    if (imagesOut.length) payload.images = imagesOut
+    if (imageTrim) payload.image = imageTrim
+    else if (imagesOut.length) payload.image = imagesOut[0]
+
+    const videoTrim = String(editVideo || '').trim()
+    if (videoTrim) payload.video = videoTrim
 
     try {
       setLoading(true)
@@ -305,11 +273,10 @@ export default function AdminProductsList({ activeOnly = false }) {
         </div>
 
         <div className="w-full overflow-x-auto">
-          <table className="w-full min-w-[1220px] text-left">
+          <table className="w-full min-w-[1100px] text-left">
             <thead className="bg-gray-50 text-xs font-semibold text-gray-600">
               <tr>
                 <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">Variants</th>
                 <th className="px-5 py-3">Category</th>
                 <th className="px-5 py-3">Subcategory</th>
                 <th className="px-5 py-3">Stock</th>
@@ -322,8 +289,7 @@ export default function AdminProductsList({ activeOnly = false }) {
                 const isEditing = editingId === r._id
                 const catName = categoryMap.get(r.category)?.name || '—'
                 const subName = subCategoryMap.get(r.subCategory)?.name || '—'
-                const variantCount = Array.isArray(r.variants) ? r.variants.length : 0
-                const totalStock = Array.isArray(r.variants) && r.variants.length ? r.variants.reduce((sum, v) => sum + (v.stock ?? 0), 0) : (r.stock ?? 0)
+                const totalStock = r.stock ?? 0
 
                 return (
                   <Fragment key={r._id}>
@@ -342,23 +308,6 @@ export default function AdminProductsList({ activeOnly = false }) {
                           <div className="mt-1 text-xs text-gray-500">{r.slug || ''}</div>
                         </div>
                       )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-gray-700">{variantCount || 1}</span>
-                        {isEditing ? (
-                          <span className="text-xs font-semibold text-gray-500">Editing</span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => startEdit(r)}
-                            disabled={loading}
-                            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-800 disabled:opacity-60"
-                          >
-                            Manage
-                          </button>
-                        )}
-                      </div>
                     </td>
                     <td className="px-5 py-4">
                       {isEditing ? (
@@ -432,7 +381,7 @@ export default function AdminProductsList({ activeOnly = false }) {
                           <button
                             type="button"
                             onClick={onSaveEdit}
-                            disabled={loading || !editName.trim() || editVariants.length === 0}
+                            disabled={loading || !editName.trim()}
                             className="primary-bg rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
                           >
                             Save
@@ -468,9 +417,40 @@ export default function AdminProductsList({ activeOnly = false }) {
                   </tr>
                   {isEditing ? (
                     <tr className="border-t border-gray-100 bg-gray-50/40">
-                      <td colSpan={7} className="px-5 py-5">
+                      <td colSpan={6} className="px-5 py-5">
                         <div className="rounded-lg bg-white p-4 ring-1 ring-gray-100">
                           <div className="grid gap-3 md:grid-cols-3">
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">SKU</div>
+                              <input
+                                value={editSku}
+                                onChange={(e) => setEditSku(e.target.value)}
+                                placeholder="Optional"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Occasion Key</div>
+                              <input
+                                value={editOccasionKey}
+                                onChange={(e) => setEditOccasionKey(e.target.value)}
+                                placeholder="Eg. valentines-day"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Stock</div>
+                              <input
+                                value={editStock}
+                                onChange={(e) => setEditStock(e.target.value)}
+                                inputMode="numeric"
+                                placeholder="0"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
                             <div className="md:col-span-1">
                               <div className="text-xs font-semibold text-gray-600">Silver Weight (grams)</div>
                               <input
@@ -493,275 +473,119 @@ export default function AdminProductsList({ activeOnly = false }) {
                                 disabled={loading}
                               />
                             </div>
-                          </div>
-                          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                            <div>
-                              <div className="text-sm font-semibold text-gray-900">Variants</div>
-                    <div className="mt-1 text-xs text-gray-500">Optional</div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Making Cost</div>
+                              <input
+                                value={editMakingCost}
+                                onChange={(e) => setEditMakingCost(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="Optional"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
                             </div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setEditVariants((v) => [
-                                  ...v,
-                                  {
-                                    title: `Variant ${v.length + 1}`,
-                                    sku: '',
-                                    silverWeightGrams: '',
-                                    discountPercent: '',
-                                    makingCost: '',
-                                    otherCharges: '',
-                                    stock: '0',
-                                    isActive: true,
-                                    image: '',
-                                    images: [],
-                                    video: '',
-                                  },
-                                ])
-                              }
-                              disabled={loading}
-                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 disabled:opacity-60"
-                            >
-                              Add Variant
-                            </button>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Other Charges</div>
+                              <input
+                                value={editOtherCharges}
+                                onChange={(e) => setEditOtherCharges(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="Optional"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
                           </div>
-
-                          <div className="mt-4 space-y-4">
-                            {editVariants.map((v, idx) => (
-                              <div key={idx} className="rounded-lg bg-white p-4 ring-1 ring-gray-100">
-                                <div className="flex items-center justify-between">
-                                  <div className="text-xs font-semibold text-gray-600">Variant {idx + 1}</div>
+                          <div className="mt-4 grid gap-3 md:grid-cols-2">
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Main Image URL</div>
+                              <input
+                                value={editImage}
+                                onChange={(e) => setEditImage(e.target.value)}
+                                placeholder="Optional"
+                                className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Upload Images</div>
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                multiple
+                                disabled={loading}
+                                onChange={async (e) => {
+                                  const files = e.target.files
+                                  e.target.value = ''
+                                  if (!files || files.length === 0) return
+                                  try {
+                                    setLoading(true)
+                                    const res = await uploadImages(files)
+                                    const paths = res?.paths || []
+                                    setEditImages((arr) => (Array.isArray(arr) ? [...arr, ...paths] : [...paths]))
+                                    setEditImage((v) => String(v || '').trim() || paths[0] || '')
+                                  } catch (err) {
+                                    setError(err?.message || 'Failed to upload images')
+                                  } finally {
+                                    setLoading(false)
+                                  }
+                                }}
+                                className="mt-2 block w-full text-sm"
+                              />
+                              {Array.isArray(editImages) && editImages.length ? (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {editImages.map((p) => (
+                                    <button
+                                      key={p}
+                                      type="button"
+                                      onClick={() => setEditImages((arr) => (Array.isArray(arr) ? arr.filter((x) => x !== p) : []))}
+                                      disabled={loading}
+                                      className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-700 disabled:opacity-60"
+                                    >
+                                      {String(p).split('/').slice(-1)[0]}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Upload Video (optional)</div>
+                              <input
+                                type="file"
+                                accept="video/mp4,video/webm,video/quicktime"
+                                disabled={loading}
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0]
+                                  e.target.value = ''
+                                  if (!file) return
+                                  try {
+                                    setLoading(true)
+                                    const res = await uploadVideo(file)
+                                    const path = res?.path
+                                    if (!path) throw new Error('Upload failed')
+                                    setEditVideo(path)
+                                  } catch (err) {
+                                    setError(err?.message || 'Failed to upload video')
+                                  } finally {
+                                    setLoading(false)
+                                  }
+                                }}
+                                className="mt-2 block w-full text-sm"
+                              />
+                              {editVideo ? (
+                                <div className="mt-2 flex items-center gap-2">
+                                  <div className="text-xs text-gray-600">{String(editVideo).split('/').slice(-1)[0]}</div>
                                   <button
                                     type="button"
-                                onClick={() => setEditVariants((arr) => (Array.isArray(arr) ? arr.filter((_, i) => i !== idx) : []))}
-                                disabled={loading}
+                                    onClick={() => setEditVideo('')}
+                                    disabled={loading}
                                     className="text-xs font-semibold text-red-700 disabled:opacity-60"
                                   >
                                     Remove
                                   </button>
                                 </div>
-
-                                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-6">
-                                  <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Title</label>
-                                    <input
-                                      value={v.title}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, title: e.target.value } : row)))
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-1">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Stock</label>
-                                    <input
-                                      value={v.stock}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, stock: e.target.value } : row)))
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      inputMode="numeric"
-                                      placeholder="0"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-1">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Silver Weight (grams)</label>
-                                    <input
-                                      value={v.silverWeightGrams}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) =>
-                                          arr.map((row, i) => (i === idx ? { ...row, silverWeightGrams: e.target.value } : row))
-                                        )
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      inputMode="decimal"
-                                      placeholder="Optional"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-1">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Discount (%)</label>
-                                    <input
-                                      value={v.discountPercent || ''}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) =>
-                                          arr.map((row, i) => (i === idx ? { ...row, discountPercent: e.target.value } : row))
-                                        )
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      inputMode="decimal"
-                                      placeholder="0"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">SKU</label>
-                                    <input
-                                      value={v.sku}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, sku: e.target.value } : row)))
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      placeholder="Optional"
-                                      disabled={loading}
-                                    />
-                                  </div>
-
-                                  <div className="md:col-span-3">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Main Image URL</label>
-                                    <input
-                                      value={v.image || ''}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, image: e.target.value } : row)))
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      placeholder="Optional"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-3">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Upload Images</label>
-                                    <input
-                                      type="file"
-                                      accept="image/png,image/jpeg,image/webp"
-                                      multiple
-                                      disabled={loading}
-                                      onChange={async (e) => {
-                                        const files = e.target.files
-                                        e.target.value = ''
-                                        if (!files || files.length === 0) return
-                                        try {
-                                          setLoading(true)
-                                          const res = await uploadImages(files)
-                                          const paths = res?.paths || []
-                                          setEditVariants((arr) =>
-                                            arr.map((row, i) => {
-                                              if (i !== idx) return row
-                                              const nextImages = Array.isArray(row.images) ? [...row.images, ...paths] : [...paths]
-                                              const mainImage = (row.image || '').trim() || nextImages[0] || ''
-                                              return { ...row, images: nextImages, image: mainImage }
-                                            })
-                                          )
-                                        } catch (err) {
-                                          setError(err?.message || 'Failed to upload images')
-                                        } finally {
-                                          setLoading(false)
-                                        }
-                                      }}
-                                      className="block w-full text-sm"
-                                    />
-                                    {Array.isArray(v.images) && v.images.length ? (
-                                      <div className="mt-2 flex flex-wrap gap-2">
-                                        {v.images.map((p) => (
-                                          <button
-                                            key={p}
-                                            type="button"
-                                            onClick={() =>
-                                              setEditVariants((arr) =>
-                                                arr.map((row, i) =>
-                                                  i === idx ? { ...row, images: row.images.filter((x) => x !== p) } : row
-                                                )
-                                              )
-                                            }
-                                            disabled={loading}
-                                            className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-700 disabled:opacity-60"
-                                          >
-                                            {p.split('/').slice(-1)[0]}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                  <div className="md:col-span-3">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Upload Video (optional)</label>
-                                    <input
-                                      type="file"
-                                      accept="video/mp4,video/webm,video/quicktime"
-                                      disabled={loading}
-                                      onChange={async (e) => {
-                                        const file = e.target.files?.[0]
-                                        e.target.value = ''
-                                        if (!file) return
-                                        try {
-                                          setLoading(true)
-                                          const res = await uploadVideo(file)
-                                          const path = res?.path
-                                          if (!path) throw new Error('Upload failed')
-                                          setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, video: path } : row)))
-                                        } catch (err) {
-                                          setError(err?.message || 'Failed to upload video')
-                                        } finally {
-                                          setLoading(false)
-                                        }
-                                      }}
-                                      className="block w-full text-sm"
-                                    />
-                                    {v.video ? (
-                                      <div className="mt-2 flex items-center gap-2">
-                                        <div className="text-xs text-gray-600">{v.video.split('/').slice(-1)[0]}</div>
-                                        <button
-                                          type="button"
-                                          onClick={() => setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, video: '' } : row)))}
-                                          disabled={loading}
-                                          className="text-xs font-semibold text-red-700 disabled:opacity-60"
-                                        >
-                                          Remove
-                                        </button>
-                                      </div>
-                                    ) : null}
-                                  </div>
-
-                                  <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Making Cost</label>
-                                    <input
-                                      value={v.makingCost}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, makingCost: e.target.value } : row)))
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      placeholder="Optional"
-                                      inputMode="decimal"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Other Charges</label>
-                                    <input
-                                      value={v.otherCharges}
-                                      onChange={(e) =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, otherCharges: e.target.value } : row)))
-                                      }
-                                      className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
-                                      placeholder="Optional"
-                                      inputMode="decimal"
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold text-gray-600">Active</label>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setEditVariants((arr) => arr.map((row, i) => (i === idx ? { ...row, isActive: !row.isActive } : row)))
-                                      }
-                                      disabled={loading}
-                                      className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
-                                    >
-                                      <span>{v.isActive ? 'Active' : 'Inactive'}</span>
-                                      <span
-                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${v.isActive ? 'primary-bg' : 'bg-gray-200'}`}
-                                      >
-                                        <span
-                                          className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${v.isActive ? 'translate-x-4' : 'translate-x-1'}`}
-                                        />
-                                      </span>
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -772,7 +596,7 @@ export default function AdminProductsList({ activeOnly = false }) {
               })}
               {!loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-500">
+                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-500">
                     No products found
                   </td>
                 </tr>

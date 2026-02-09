@@ -5,12 +5,7 @@ import promoBanner2 from '../../../../assets/1312 × 668-2.jpg'
 export default function HomeHeroPromos() {
   return (
     <section className="space-y-4">
-      <div className="mx-auto max-w-[92vw] text-center">
-        <div className="text-3xl font-bold text-gray-900">Latest Offers</div>
-        <div className="mt-2 text-sm font-semibold text-gray-600">
-          Discover new drops, best deals, and limited-time savings.
-        </div>
-      </div>
+      
 
       <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
         <img
@@ -23,12 +18,12 @@ export default function HomeHeroPromos() {
         <div className="absolute left-5 top-1/2 w-[90%] -translate-y-1/2 sm:left-8 sm:w-[70%]"></div>
       </div>
 
-      <div className="grid grid-cols-1 gap-10 mx-auto max-w-[90vw] sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 mx-auto max-w-[100vw] sm:grid-cols-2">
         <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
           <img
             src={promoBanner1}
             alt="Promo card 2"
-            className="h-[250px] w-full object-cover"
+            className="h-[350px] w-full object-fill"
             loading="lazy"
           />
           <div className="absolute inset-0 " />
@@ -41,7 +36,7 @@ export default function HomeHeroPromos() {
           <img
             src={promoBanner2}
             alt="Promo card 1"
-            className="h-[250px] w-full object-cover"
+            className="h-[350px] w-full object-fill"
             loading="lazy"
           />
           <div className="absolute inset-0 " />

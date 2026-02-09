@@ -2,7 +2,7 @@ import BestSellerPanel from '../../../components/BestSellerPanel.jsx'
 import { useEffect, useState } from 'react'
 import productFallback from '../../../../assets/876 × 1628-1.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
-import { computeProductPricing, getSilver925RatePerGram } from '../../../UserServices/pricingService.js'
+import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../../../UserServices/pricingService.js'
 
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
@@ -17,25 +17,27 @@ export default function HomeBestSellerSection() {
   useEffect(() => {
     let active = true
 
-    Promise.all([getSilver925RatePerGram(), getJson('/api/products', { page: 1, limit: 12 })])
+    Promise.all([getSilver925RatePerGram(), getJson('/api/products/bestsellers', { page: 1, limit: 12 })])
       .then(([rate, res]) => {
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
-        const mapped = rows.slice(0, 8).map((p, idx) => {
+        const mapped = rows.slice(0, 8).map((p) => {
           const v = pickPrimaryVariant(p) || {}
           const images = [p?.image, ...(Array.isArray(p?.images) ? p.images : []), v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(
             Boolean
           )
           const cover = images[0] || productFallback
           const pricing = computeProductPricing(p, rate)
+          const gramsNum = getSilverWeightGrams(p)
           return {
             id: p?._id,
-            showBestseller: idx < 2,
+            showBestseller: true,
             images: images.length ? images : [cover],
             imageUrl: cover,
             price: Number.isFinite(pricing?.price) ? pricing.price : 0,
             originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
             discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
+            silverWeightGrams: gramsNum || undefined,
             title: p?.name || 'Product',
             couponText: '',
           }
