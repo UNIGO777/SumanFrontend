@@ -7,6 +7,10 @@ import AdminProductsNew from './ProductsNew.jsx'
 import AdminProductsList from './ProductsList.jsx'
 import AdminSilverPrice from './SilverPrice.jsx'
 import AdminSpecialOccasionCms from './SpecialOccasionCms.jsx'
+import HomeHeroPromosCms from './cms/HomeHeroPromosCms.jsx'
+import ItemPanelCms from './cms/ItemPanelCms.jsx'
+import RecipientPanelCms from './cms/RecipientPanelCms.jsx'
+import HomeLaunchBannersCms from './cms/HomeLaunchBannersCms.jsx'
 
 function RequireAdmin({ children }) {
   const token = window.localStorage.getItem('admin_token') || window.sessionStorage.getItem('admin_token')
@@ -120,6 +124,12 @@ function AdminLayout() {
                 <NavLink to="/admin/cms/home-hero-promos" className={subLinkCls}>
                   Home Hero Promos
                 </NavLink>
+                <NavLink to="/admin/cms/home-item-panel" className={subLinkCls}>
+                  Home Item Panel
+                </NavLink>
+                <NavLink to="/admin/cms/home-recipient-panel" className={subLinkCls}>
+                  Home Recipient Panel
+                </NavLink>
                 <NavLink to="/admin/cms/home-latest-collections" className={subLinkCls}>
                   Home Latest Collections
                 </NavLink>
@@ -178,9 +188,11 @@ export default function AdminPanelRoutes() {
         <Route path="orders" element={<AdminStub title="Orders" />} />
         <Route path="silver-price" element={<AdminSilverPrice />} />
         <Route path="cms/special-occasion" element={<AdminSpecialOccasionCms />} />
-        <Route path="cms/home-hero-promos" element={<AdminStub title="Home Hero Promos" />} />
+        <Route path="cms/home-hero-promos" element={<HomeHeroPromosCms />} />
+        <Route path="cms/home-item-panel" element={<ItemPanelCms />} />
+        <Route path="cms/home-recipient-panel" element={<RecipientPanelCms />} />
         <Route path="cms/home-latest-collections" element={<AdminStub title="Home Latest Collections" />} />
-        <Route path="cms/home-launch-banners" element={<AdminStub title="Home Launch Banners" />} />
+        <Route path="cms/home-launch-banners" element={<HomeLaunchBannersCms />} />
         <Route path="cms/home-occasion" element={<AdminStub title="Home Occasion" />} />
         <Route path="cms/home-international-shipping" element={<AdminStub title="Home International Shipping" />} />
       </Route>

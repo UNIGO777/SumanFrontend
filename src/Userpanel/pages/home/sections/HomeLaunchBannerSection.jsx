@@ -5,7 +5,7 @@ import launchBanner2 from '../../../../assets/1618 × 768-2.jpg'
 import launchBanner3 from '../../../../assets/1618 × 768-3.jpg'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeLaunchBannerSection() {
+export default function HomeLaunchBannerSection({ fullBleed = true }) {
   const bannerSwipeRef = useRef({ isDragging: false, startX: 0, pointerId: null })
 
   const [cms, setCms] = useState(null)
@@ -150,7 +150,7 @@ export default function HomeLaunchBannerSection() {
           </div>
         </div>
 
-        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden ">
+        <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden ' : 'overflow-hidden'}>
           <div
             className="relative md:h-[550px] w-full select-none"
             onPointerDown={onBannerPointerDown}

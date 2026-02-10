@@ -123,7 +123,7 @@ export default function Navbar({
       </div>
 
       <div className="border-b border-gray-200">
-        <div className="mx-auto  px-10">
+        <div className="mx-auto  px-5 md:px-10">
           <div className="flex h-16 items-center justify-between md:hidden">
             <div className="flex items-center gap-3">
               <button type="button" className="p-2 text-gray-900">

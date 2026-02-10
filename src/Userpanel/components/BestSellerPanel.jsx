@@ -183,7 +183,7 @@ export default function BestSellerPanel({
   return (
     <section className="relative w-full">
       <div className="mb-6 text-center">
-        <div className="text-2xl font-semibold text-gray-900">{title}</div>
+        <div className="text-4xl font-bold  text-gray-900">{title}</div>
         {description ? <div className="mt-2 text-sm font-semibold text-gray-600">{description}</div> : null}
       </div>
 

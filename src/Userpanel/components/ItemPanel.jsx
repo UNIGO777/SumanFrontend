@@ -1,11 +1,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { getJson } from '../../AdminPanel/services/apiClient.js'
 import panelImg1 from '../../assets/1312 × 668-2.jpg'
 import panelImg2 from '../../assets/1312 × 668-3.jpg'
 import panelImg3 from '../../assets/1312 × 668-4.jpg'
 import panelImg4 from '../../assets/1312 × 668-5.jpg'
 
-export default function ItemPanel({ title = '', autoScroll = true }) {
+export default function ItemPanel({ title = '', autoScroll = true, items: itemsProp }) {
   const ref = useRef(null)
   const loopWidthRef = useRef(0)
   const autoRafRef = useRef(0)
@@ -17,22 +19,61 @@ export default function ItemPanel({ title = '', autoScroll = true }) {
   const isAnimatingRef = useRef(false)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
+  const [cms, setCms] = useState(null)
 
-  const items = useMemo(
+  useEffect(() => {
+    const hasOverride = Array.isArray(itemsProp) && itemsProp.length > 0
+    if (hasOverride) return
+
+    let active = true
+    getJson('/api/cms/home-item-panel')
+      .then((res) => {
+        if (!active) return
+        setCms(res?.data || null)
+      })
+      .catch(() => {
+        if (!active) return
+        setCms(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [itemsProp])
+
+  const fallbackItems = useMemo(
     () => [
-      { label: 'Rings', img: panelImg1, badge: 'Min 65% OFF' },
-      { label: 'Bracelets', img: panelImg2, badge: 'Min 60% OFF' },
-      { label: 'Anklets', img: panelImg3, badge: 'Min 60% OFF' },
-      { label: 'Sets', img: panelImg4, badge: 'Min 60% OFF' },
-      { label: 'Men in Silver', img: panelImg1, badge: 'Min 60% OFF' },
-      { label: 'Mangalsutras', img: panelImg2, badge: 'Min 60% OFF' },
-      { label: 'Silver Chains', img: panelImg3, badge: 'Min 60% OFF' },
-      { label: 'Personalised', img: panelImg4, badge: 'Min 60% OFF' },
+      { label: 'Rings', imageUrl: panelImg1, badgeText: 'Min 65% OFF', href: '' },
+      { label: 'Bracelets', imageUrl: panelImg2, badgeText: 'Min 60% OFF', href: '' },
+      { label: 'Anklets', imageUrl: panelImg3, badgeText: 'Min 60% OFF', href: '' },
+      { label: 'Sets', imageUrl: panelImg4, badgeText: 'Min 60% OFF', href: '' },
+      { label: 'Men in Silver', imageUrl: panelImg1, badgeText: 'Min 60% OFF', href: '' },
+      { label: 'Mangalsutras', imageUrl: panelImg2, badgeText: 'Min 60% OFF', href: '' },
+      { label: 'Silver Chains', imageUrl: panelImg3, badgeText: 'Min 60% OFF', href: '' },
+      { label: 'Personalised', imageUrl: panelImg4, badgeText: 'Min 60% OFF', href: '' },
     ],
     []
   )
 
-  const loopItems = useMemo(() => [...items, ...items, ...items], [items])
+  const items = useMemo(() => {
+    const override = Array.isArray(itemsProp) ? itemsProp : []
+    const cmsItems = Array.isArray(cms?.items) ? cms.items : []
+    const source = override.length ? override : cmsItems.length ? cmsItems : fallbackItems
+
+    const normalized = source
+      .map((it, idx) => ({
+        label: String(it?.label || '').trim(),
+        imageUrl: String(it?.imageUrl || it?.img || '').trim(),
+        href: String(it?.href || '').trim(),
+        badgeText: String(it?.badgeText || it?.badge || '').trim(),
+        sortOrder: Number.isFinite(Number(it?.sortOrder)) ? Number(it.sortOrder) : idx,
+      }))
+      .filter((it) => Boolean(it.imageUrl) && Boolean(it.label))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+
+    return normalized.length ? normalized : fallbackItems
+  }, [cms, fallbackItems, itemsProp])
+
+  const loopItems = useMemo(() => [...items, ...items, ...items, ...items, ...items], [items])
 
   const computeLoopWidth = useCallback(() => {
     const container = ref.current
@@ -57,8 +98,8 @@ export default function ItemPanel({ title = '', autoScroll = true }) {
     if (!loopWidth) return
 
     const left = container.scrollLeft
-    const lower = loopWidth * 0.5
-    const upper = loopWidth * 1.5
+    const lower = loopWidth * 1
+    const upper = loopWidth * 3
 
     if (left < lower) container.scrollLeft = left + loopWidth
     else if (left > upper) container.scrollLeft = left - loopWidth
@@ -143,7 +184,7 @@ export default function ItemPanel({ title = '', autoScroll = true }) {
 
     window.setTimeout(() => {
       loopWidthRef.current = computeLoopWidth()
-      if (loopWidthRef.current > 0) container.scrollLeft = loopWidthRef.current
+      if (loopWidthRef.current > 0) container.scrollLeft = loopWidthRef.current * 2
       wrapToMiddle()
       updateButtons()
     }, 0)
@@ -236,20 +277,40 @@ export default function ItemPanel({ title = '', autoScroll = true }) {
         }}
         className="no-scrollbar flex gap-6 overflow-x-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10"
       >
-        {loopItems.map((it, idx) => (
-          <div
-            key={`${it.label}-${idx}`}
-            className="flex w-[120px] shrink-0 flex-col items-center transition-transform hover:cursor-pointer hover:scale-[1.1] sm:w-[150px]"
-          >
-            <div className="relative h-[120px] w-[120px] overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-gray-200 sm:h-[150px] sm:w-[150px]">
-              <img src={it.img} alt={it.label} className="h-full w-full object-cover" loading="lazy" />
-              <div className="absolute left-2 top-2 rounded-full bg-gray-800 px-1.5 py-0.5 text-[9px] font-bold text-white sm:px-2 sm:py-1 sm:text-[10px]">
-                {it.badge}
+        {loopItems.map((it, idx) =>
+          it.href ? (
+            <Link
+              key={`${it.label}-${idx}`}
+              to={it.href}
+              className="flex w-[120px] shrink-0 flex-col items-center transition-transform hover:cursor-pointer hover:scale-[1.1] sm:w-[150px]"
+            >
+              <div className="relative h-[120px] w-[120px] overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-gray-200 sm:h-[150px] sm:w-[150px]">
+                <img src={it.imageUrl} alt={it.label} className="h-full w-full object-fill" loading="lazy" />
+                {it.badgeText ? (
+                  <div className="absolute left-2 top-2 rounded-full bg-gray-800 px-1.5 py-0.5 text-[9px] font-bold text-white sm:px-2 sm:py-1 sm:text-[10px]">
+                    {it.badgeText}
+                  </div>
+                ) : null}
               </div>
+              <div className="mt-2 text-center text-[11px] font-bold text-gray-800 sm:mt-3 sm:text-xs">{it.label}</div>
+            </Link>
+          ) : (
+            <div
+              key={`${it.label}-${idx}`}
+              className="flex w-[120px] shrink-0 flex-col items-center transition-transform hover:cursor-pointer hover:scale-[1.1] sm:w-[150px]"
+            >
+              <div className="relative h-[120px] w-[120px] overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-gray-200 sm:h-[150px] sm:w-[150px]">
+                <img src={it.imageUrl} alt={it.label} className="h-full w-full object-fill" loading="lazy" />
+                {it.badgeText ? (
+                  <div className="absolute left-2 top-2 rounded-full bg-gray-800 px-1.5 py-0.5 text-[9px] font-bold text-white sm:px-2 sm:py-1 sm:text-[10px]">
+                    {it.badgeText}
+                  </div>
+                ) : null}
+              </div>
+              <div className="mt-2 text-center text-[11px] font-bold text-gray-800 sm:mt-3 sm:text-xs">{it.label}</div>
             </div>
-            <div className="mt-2 text-center text-[11px] font-bold text-gray-800 sm:mt-3 sm:text-xs">{it.label}</div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </section>
   )
