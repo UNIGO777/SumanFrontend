@@ -34,6 +34,9 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [editImage, setEditImage] = useState('')
   const [editImages, setEditImages] = useState([])
   const [editVideo, setEditVideo] = useState('')
+  const [editIsBestseller, setEditIsBestseller] = useState(false)
+  const [editIsSpecialOccasion, setEditIsSpecialOccasion] = useState(false)
+  const [editIsMostGifted, setEditIsMostGifted] = useState(false)
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
 
@@ -115,6 +118,9 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditImage(row.image || '')
     setEditImages(Array.isArray(row.images) ? row.images : [])
     setEditVideo(row.video || '')
+    setEditIsBestseller(Boolean(row.isBestseller))
+    setEditIsSpecialOccasion(Boolean(row.isSpecialOccasion))
+    setEditIsMostGifted(Boolean(row.isMostGifted))
   }
 
   const cancelEdit = () => {
@@ -133,6 +139,9 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditImage('')
     setEditImages([])
     setEditVideo('')
+    setEditIsBestseller(false)
+    setEditIsSpecialOccasion(false)
+    setEditIsMostGifted(false)
   }
 
   const onSaveEdit = async () => {
@@ -145,6 +154,9 @@ export default function AdminProductsList({ activeOnly = false }) {
     const payload = {
       name: editName.trim(),
       isActive: editActive,
+      isBestseller: editIsBestseller,
+      isSpecialOccasion: editIsSpecialOccasion,
+      isMostGifted: editIsMostGifted,
     }
 
     if (editCategoryId) payload.categoryId = editCategoryId
@@ -494,6 +506,60 @@ export default function AdminProductsList({ activeOnly = false }) {
                                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
                                 disabled={loading}
                               />
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Bestseller</div>
+                              <button
+                                type="button"
+                                onClick={() => setEditIsBestseller((v) => !v)}
+                                disabled={loading}
+                                className="mt-2 flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                              >
+                                <span>{editIsBestseller ? 'Yes' : 'No'}</span>
+                                <span
+                                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editIsBestseller ? 'primary-bg' : 'bg-gray-200'}`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${editIsBestseller ? 'translate-x-4' : 'translate-x-1'}`}
+                                  />
+                                </span>
+                              </button>
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Special Occasion</div>
+                              <button
+                                type="button"
+                                onClick={() => setEditIsSpecialOccasion((v) => !v)}
+                                disabled={loading}
+                                className="mt-2 flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                              >
+                                <span>{editIsSpecialOccasion ? 'Yes' : 'No'}</span>
+                                <span
+                                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editIsSpecialOccasion ? 'primary-bg' : 'bg-gray-200'}`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${editIsSpecialOccasion ? 'translate-x-4' : 'translate-x-1'}`}
+                                  />
+                                </span>
+                              </button>
+                            </div>
+                            <div className="md:col-span-1">
+                              <div className="text-xs font-semibold text-gray-600">Most Gifted</div>
+                              <button
+                                type="button"
+                                onClick={() => setEditIsMostGifted((v) => !v)}
+                                disabled={loading}
+                                className="mt-2 flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                              >
+                                <span>{editIsMostGifted ? 'Yes' : 'No'}</span>
+                                <span
+                                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editIsMostGifted ? 'primary-bg' : 'bg-gray-200'}`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${editIsMostGifted ? 'translate-x-4' : 'translate-x-1'}`}
+                                  />
+                                </span>
+                              </button>
                             </div>
                           </div>
                           <div className="mt-4 grid gap-3 md:grid-cols-2">

@@ -44,8 +44,8 @@ export default function HomeOccasionSection() {
     const rows = Array.isArray(cms?.items) ? cms.items : []
     const normalized = rows
       .map((it, idx) => ({
-        label: String(it?.title || '').trim(),
-        img: String(it?.imageUrl || '').trim(),
+        label: String(it?.label || it?.title || '').trim(),
+        img: String(it?.imageUrl || it?.img || '').trim(),
         href: String(it?.href || '').trim(),
         sortOrder: Number.isFinite(Number(it?.sortOrder)) ? Number(it.sortOrder) : idx,
       }))
@@ -150,7 +150,7 @@ export default function HomeOccasionSection() {
                   {it.href ? (
                     <Link
                       to={it.href}
-                      className="relative block h-[320px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[320px] md:h-[390px] md:w-[330px]"
+                      className="relative block h-[420px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]"
                     >
                       <img
                         src={it.img}
@@ -163,11 +163,11 @@ export default function HomeOccasionSection() {
                       </div>
                     </Link>
                   ) : (
-                    <div className="relative h-[320px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[320px] md:h-[390px] md:w-[330px]">
+                    <div className="relative h-[420px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]">
                       <img
                         src={it.img}
                         alt={it.label}
-                        className="absolute inset-0 h-full w-full scale-[1.22] object-cover object-[center_35%] sm:scale-[1.32]"
+                        className="absolute inset-0 h-full w-full scale-[1.22] object-cover sm:scale-[1.32]"
                         loading="lazy"
                       />
                       <div className="absolute bottom-3 left-1/2 w-[calc(100%-2rem)] -translate-x-1/2 bg-white/95 px-3 py-2 text-xs font-bold text-[#0f2e40] shadow-sm ring-1 ring-[#0f2e40]/20 sm:bottom-4 sm:w-[calc(100%-2.5rem)] sm:px-4 sm:text-sm">

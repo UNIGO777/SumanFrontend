@@ -11,6 +11,8 @@ import HomeHeroPromosCms from './cms/HomeHeroPromosCms.jsx'
 import ItemPanelCms from './cms/ItemPanelCms.jsx'
 import RecipientPanelCms from './cms/RecipientPanelCms.jsx'
 import HomeLaunchBannersCms from './cms/HomeLaunchBannersCms.jsx'
+import HomeOccasionCms from './cms/HomeOccasionCms.jsx'
+import HomeEssentialsCms from './cms/HomeEssentialsCms.jsx'
 
 function RequireAdmin({ children }) {
   const token = window.localStorage.getItem('admin_token') || window.sessionStorage.getItem('admin_token')
@@ -139,6 +141,9 @@ function AdminLayout() {
                 <NavLink to="/admin/cms/home-occasion" className={subLinkCls}>
                   Home Occasion
                 </NavLink>
+                <NavLink to="/admin/cms/home-essentials" className={subLinkCls}>
+                  Home Essentials
+                </NavLink>
                 <NavLink to="/admin/cms/home-international-shipping" className={subLinkCls}>
                   Home International Shipping
                 </NavLink>
@@ -193,7 +198,8 @@ export default function AdminPanelRoutes() {
         <Route path="cms/home-recipient-panel" element={<RecipientPanelCms />} />
         <Route path="cms/home-latest-collections" element={<AdminStub title="Home Latest Collections" />} />
         <Route path="cms/home-launch-banners" element={<HomeLaunchBannersCms />} />
-        <Route path="cms/home-occasion" element={<AdminStub title="Home Occasion" />} />
+        <Route path="cms/home-occasion" element={<HomeOccasionCms />} />
+        <Route path="cms/home-essentials" element={<HomeEssentialsCms />} />
         <Route path="cms/home-international-shipping" element={<AdminStub title="Home International Shipping" />} />
       </Route>
 

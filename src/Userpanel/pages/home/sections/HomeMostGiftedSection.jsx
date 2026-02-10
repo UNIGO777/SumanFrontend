@@ -16,7 +16,7 @@ export default function HomeMostGiftedSection() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getSilver925RatePerGram(), getJson('/api/products', { page: 1, limit: 12 })])
+    Promise.all([getSilver925RatePerGram(), getJson('/api/products/most-gifted', { page: 1, limit: 12 })])
       .then(([rate, res]) => {
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
