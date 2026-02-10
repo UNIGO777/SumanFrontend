@@ -1,6 +1,6 @@
 import { ChevronDown, Heart, MapPin, Menu, Search, ShoppingCart, Store, User } from 'lucide-react'
 import LOGO from '../../assets/LOGO.png'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { getJson } from '../../AdminPanel/services/apiClient.js'
 
@@ -37,11 +37,13 @@ export default function Navbar({
   cartCount,
 }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const initialCount = useMemo(() => (Number.isFinite(cartCount) ? cartCount : readCartCount()), [cartCount])
   const [count, setCount] = useState(initialCount)
   const [searchText, setSearchText] = useState('')
   const [categories, setCategories] = useState([])
   const [subcategories, setSubcategories] = useState([])
+  const isSearchPage = String(location?.pathname || '').startsWith('/search')
 
   const goSearch = () => {
     const q = String(searchText || '').trim()
@@ -160,42 +162,12 @@ export default function Navbar({
               <ChevronDown className="h-4 w-4" />
             </button>
 
-            <div className="pb-4">
-              <div className="relative">
-                <input
-                  className="h-12 w-full rounded-md border border-gray-300 bg-white px-4 pr-12 text-base text-gray-900 outline-none focus:border-gray-400"
-                  placeholder='Search "Gifts For Her"'
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') goSearch()
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={goSearch}
-                  className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-gray-700 hover:bg-gray-50"
-                  aria-label="Search"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden md:block">
-            <div className="flex h-20 items-center gap-6">
-              <Link to="/" className="flex items-center gap-3">
-                <img src={LOGO} alt={brandText} className="h-16 w-auto" />
-              </Link>
-
-              
-
-              <div className="flex-1">
+            {!isSearchPage ? (
+              <div className="pb-4">
                 <div className="relative">
                   <input
-                    className="h-11 w-full rounded-md border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-900 outline-none focus:border-gray-400"
-                    placeholder='Search "Pure Gold Jewellery"'
+                    className="h-12 w-full rounded-md border border-gray-300 bg-white px-4 pr-12 text-base text-gray-900 outline-none focus:border-gray-400"
+                    placeholder='Search "Gifts For Her"'
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     onKeyDown={(e) => {
@@ -212,6 +184,42 @@ export default function Navbar({
                   </button>
                 </div>
               </div>
+            ) : null}
+          </div>
+
+          <div className="hidden md:block">
+            <div className="flex h-20 items-center gap-6">
+              <Link to="/" className="flex items-center gap-3">
+                <img src={LOGO} alt={brandText} className="h-16 w-auto" />
+              </Link>
+
+              
+
+              {!isSearchPage ? (
+                <div className="flex-1">
+                  <div className="relative">
+                    <input
+                      className="h-11 w-full rounded-md border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-900 outline-none focus:border-gray-400"
+                      placeholder='Search "Pure Gold Jewellery"'
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') goSearch()
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={goSearch}
+                      className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-gray-700 hover:bg-gray-50"
+                      aria-label="Search"
+                    >
+                      <Search className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1" />
+              )}
 
               <div className="flex items-center gap-6">
                 

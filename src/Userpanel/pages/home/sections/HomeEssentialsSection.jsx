@@ -13,7 +13,7 @@ export default function HomeEssentialsSection() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-[90vw] flex-col gap-8 md:flex-row">
+        <div className="mx-auto flex max-w-[95vw] flex-col gap-8 md:flex-row">
           {[
             {
               label: 'Timeless Pearls',

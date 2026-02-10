@@ -235,7 +235,7 @@ export default function ProductCard({
 
   return (
     <div
-      className={`w-full max-w-[560px] ${className} cursor-pointer`}
+      className={`w-full max-w-[560px] ${className} border border-gray-200 cursor-pointer`}
       onClick={goToProfile}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

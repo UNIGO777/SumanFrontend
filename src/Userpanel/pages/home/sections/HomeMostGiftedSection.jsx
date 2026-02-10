@@ -1,8 +1,8 @@
-import ProductCard from '../../../components/ProductCard.jsx'
 import { useEffect, useState } from 'react'
 import productFallback from '../../../../assets/876 × 1628-1.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../../../UserServices/pricingService.js'
+import BestSellerPanel from '../../../components/BestSellerPanel.jsx'
 
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
@@ -56,21 +56,13 @@ export default function HomeMostGiftedSection() {
   return (
     <div className="mt-10">
       <section className="w-full">
-        <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-gray-900">Most Gifted</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
-            Crowd favourites that make gifting effortless and memorable.
-          </div>
-        </div>
-
         <div className="w-full px-4 md:px-10">
-          <div className="no-scrollbar flex gap-8 overflow-x-auto py-2">
-            {apiProducts.map((p) => (
-              <div key={p.id} className="w-[280px] shrink-0">
-                <ProductCard {...p} className="max-w-none" />
-              </div>
-            ))}
-          </div>
+          <BestSellerPanel
+            title="Most Gifted"
+            description="Crowd favourites that make gifting effortless and memorable."
+            products={apiProducts}
+            autoScroll
+          />
 
           <div className="mt-6 flex justify-center">
             <button

@@ -117,6 +117,21 @@ function AdminLayout() {
                 <NavLink to="/admin/cms/special-occasion" className={subLinkCls}>
                   Special Occasion
                 </NavLink>
+                <NavLink to="/admin/cms/home-hero-promos" className={subLinkCls}>
+                  Home Hero Promos
+                </NavLink>
+                <NavLink to="/admin/cms/home-latest-collections" className={subLinkCls}>
+                  Home Latest Collections
+                </NavLink>
+                <NavLink to="/admin/cms/home-launch-banners" className={subLinkCls}>
+                  Home Launch Banners
+                </NavLink>
+                <NavLink to="/admin/cms/home-occasion" className={subLinkCls}>
+                  Home Occasion
+                </NavLink>
+                <NavLink to="/admin/cms/home-international-shipping" className={subLinkCls}>
+                  Home International Shipping
+                </NavLink>
               </div>
             ) : null}
           </nav>
@@ -163,6 +178,11 @@ export default function AdminPanelRoutes() {
         <Route path="orders" element={<AdminStub title="Orders" />} />
         <Route path="silver-price" element={<AdminSilverPrice />} />
         <Route path="cms/special-occasion" element={<AdminSpecialOccasionCms />} />
+        <Route path="cms/home-hero-promos" element={<AdminStub title="Home Hero Promos" />} />
+        <Route path="cms/home-latest-collections" element={<AdminStub title="Home Latest Collections" />} />
+        <Route path="cms/home-launch-banners" element={<AdminStub title="Home Launch Banners" />} />
+        <Route path="cms/home-occasion" element={<AdminStub title="Home Occasion" />} />
+        <Route path="cms/home-international-shipping" element={<AdminStub title="Home International Shipping" />} />
       </Route>
 
       <Route path="*" element={<Navigate to="login" replace />} />

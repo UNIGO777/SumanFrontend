@@ -1,8 +1,8 @@
-import ProductCard from '../../../components/ProductCard.jsx'
 import { useEffect, useState } from 'react'
 import productFallback from '../../../../assets/876 × 1628-1.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../../../UserServices/pricingService.js'
+import BestSellerPanel from '../../../components/BestSellerPanel.jsx'
 
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
@@ -72,25 +72,15 @@ export default function HomeSpecialOccasionSection() {
   return (
     <div className="mt-14">
       <section className="w-full">
-        <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-gray-900">{cms?.title || "Special Occasion"}</div>
-          <div className="mt-2 text-sm flex justify-center font-semibold text-gray-600">
-            <p className='max-w-4xl text-center'>{cms?.description || 'Handpicked pieces for your special moments.'}</p>
-          </div>
-        </div>
-
-        <div className="mx-auto max-w-[92vw]">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {apiProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                {...p}
-                className="max-w-none"
-                cardHeightClassName="h-[460px]"
-                imageHeightClassName="h-[240px]"
-              />
-            ))}
-          </div>
+        <div className="w-full px-4 md:px-10">
+          <BestSellerPanel
+            title={cms?.title || 'Special Occasion'}
+            description={cms?.description || 'Handpicked pieces for your special moments.'}
+            products={apiProducts}
+            autoScroll
+            cardHeightClassName="h-[460px]"
+            imageHeightClassName="h-[240px]"
+          />
         </div>
       </section>
     </div>
