@@ -1,6 +1,6 @@
 import { Search as SearchIcon, Truck, CreditCard, Headphones } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getJson } from '../../AdminPanel/services/apiClient.js'
@@ -27,17 +27,6 @@ const getAttrValue = (attributes, key) => {
   return v === undefined || v === null ? '' : String(v).trim()
 }
 
-const COLOR_SWATCH = {
-  gold: '#c79b3a',
-  silver: '#9ca3af',
-  'rose gold': '#e6a8a8',
-  black: '#111827',
-  blue: '#2563eb',
-  green: '#16a34a',
-  red: '#dc2626',
-  white: '#e5e7eb',
-}
-
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -50,11 +39,9 @@ export default function SearchPage() {
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(() => categoryIdParam)
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(() => subCategoryIdParam)
-  const [selectedColor, setSelectedColor] = useState('')
-  const [selectedMaterial, setSelectedMaterial] = useState('')
-  const [availability, setAvailability] = useState('all')
   const [sort, setSort] = useState('default')
   const [page, setPage] = useState(1)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const [apiProducts, setApiProducts] = useState([])
   const [apiCategories, setApiCategories] = useState([])
@@ -136,7 +123,6 @@ export default function SearchPage() {
           q: qParam,
           categoryId: categoryIdParam,
           subCategoryId: subCategoryIdParam,
-          availability: availability === 'all' ? '' : availability,
         }
 
     getJson(path, query)
@@ -196,7 +182,7 @@ export default function SearchPage() {
     return () => {
       active = false
     }
-  }, [availability, categoryById, categoryIdParam, occasionKeyParam, qParam, silverPricePerGram, subById, subCategoryIdParam])
+  }, [categoryById, categoryIdParam, occasionKeyParam, qParam, silverPricePerGram, subById, subCategoryIdParam])
 
   useEffect(() => {
     setQ(qParam)
@@ -249,7 +235,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [selectedCategoryId, selectedSubCategoryId, selectedColor, selectedMaterial, availability, minPrice, maxPrice, sort, qParam])
+  }, [selectedCategoryId, selectedSubCategoryId, minPrice, maxPrice, sort, qParam])
 
   const filtered = useMemo(() => {
     const qLower = normalizeText(qParam)
@@ -269,15 +255,11 @@ export default function SearchPage() {
       }
       if (selectedCategoryId && String(p.categoryId) !== String(selectedCategoryId)) return false
       if (selectedSubCategoryId && String(p.subCategoryId) !== String(selectedSubCategoryId)) return false
-      if (selectedColor && normalizeText(p.color) !== normalizeText(selectedColor)) return false
-      if (selectedMaterial && normalizeText(p.material) !== normalizeText(selectedMaterial)) return false
-      if (availability === 'in' && !p.inStock) return false
-      if (availability === 'out' && p.inStock) return false
       if (Number.isFinite(minPrice) && p.price < minPrice) return false
       if (Number.isFinite(maxPrice) && p.price > maxPrice) return false
       return true
     })
-  }, [availability, maxPrice, minPrice, products, qParam, selectedCategoryId, selectedColor, selectedMaterial, selectedSubCategoryId])
+  }, [maxPrice, minPrice, products, qParam, selectedCategoryId, selectedSubCategoryId])
 
   const sorted = useMemo(() => {
     const arr = filtered.slice()
@@ -309,9 +291,6 @@ export default function SearchPage() {
       : ''
     if (cat) chips.push({ key: 'cat', label: cat, onClear: () => setSelectedCategoryId('') })
     if (sub) chips.push({ key: 'sub', label: sub, onClear: () => setSelectedSubCategoryId('') })
-    if (selectedColor) chips.push({ key: 'color', label: selectedColor, onClear: () => setSelectedColor('') })
-    if (selectedMaterial) chips.push({ key: 'material', label: selectedMaterial, onClear: () => setSelectedMaterial('') })
-    if (availability !== 'all') chips.push({ key: 'availability', label: availability === 'in' ? 'In stock' : 'Out of stock', onClear: () => setAvailability('all') })
     if (priceBounds.max > 0 && (minPrice !== priceBounds.min || maxPrice !== priceBounds.max)) {
       chips.push({
         key: 'price',
@@ -323,7 +302,7 @@ export default function SearchPage() {
       })
     }
     return chips
-  }, [availability, categories, maxPrice, minPrice, priceBounds.max, priceBounds.min, selectedCategoryId, selectedColor, selectedMaterial, selectedSubCategoryId, subcategories])
+  }, [categories, maxPrice, minPrice, priceBounds.max, priceBounds.min, selectedCategoryId, selectedSubCategoryId, subcategories])
 
   const onSubmitSearch = (e) => {
     e.preventDefault()
@@ -337,9 +316,6 @@ export default function SearchPage() {
   const clearAll = () => {
     setSelectedCategoryId('')
     setSelectedSubCategoryId('')
-    setSelectedColor('')
-    setSelectedMaterial('')
-    setAvailability('all')
     setSort('default')
     setMinPrice(priceBounds.min)
     setMaxPrice(priceBounds.max)
@@ -349,180 +325,105 @@ export default function SearchPage() {
     setSearchParams(params, { replace: true })
   }
 
-  return (
-    <div className="bg-white">
-      <div className="w-full bg-gray-100">
-        <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
-          <div className="text-4xl font-semibold text-gray-900">Shop</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
-            <Link to="/" className="hover:underline">
-              Home
-            </Link>{' '}
-            <span className="text-gray-400">/</span> <span className="text-gray-900">Shop</span>
+  const FilterBox = ({ className = '' }) => (
+    <div className={`rounded-xl bg-white p-5 ring-1 ring-gray-200 ${className}`.trim()}>
+      <div className="text-sm font-bold text-gray-900">Filter Options</div>
+
+      <div className="mt-5 space-y-6">
+        <div>
+          <div className="text-sm font-semibold text-gray-900">Category</div>
+          <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategoryId('')
+                setSelectedSubCategoryId('')
+              }}
+              className={`block w-full text-left hover:text-gray-900 ${!selectedCategoryId ? 'text-[#0f2e40]' : ''}`}
+            >
+              All
+            </button>
+            {categories.map((c) => {
+              const id = String(c?._id || c?.id || '')
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategoryId(id)
+                    setSelectedSubCategoryId('')
+                  }}
+                  className={`block w-full text-left hover:text-gray-900 ${selectedCategoryId === id ? 'text-[#0f2e40]' : ''}`}
+                >
+                  {c.name}
+                </button>
+              )
+            })}
           </div>
         </div>
-      </div>
 
+        <div>
+          <div className="text-sm font-semibold text-gray-900">Subcategory</div>
+          <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
+            <button
+              type="button"
+              onClick={() => setSelectedSubCategoryId('')}
+              className={`block w-full text-left hover:text-gray-900 ${!selectedSubCategoryId ? 'text-[#0f2e40]' : ''}`}
+            >
+              All
+            </button>
+            {activeSubcategories.map((s) => {
+              const id = String(s?._id || s?.id || '')
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedSubCategoryId(id)}
+                  className={`block w-full text-left hover:text-gray-900 ${selectedSubCategoryId === id ? 'text-[#0f2e40]' : ''}`}
+                >
+                  {s.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold text-gray-900">Price</div>
+          <div className="mt-3">
+            <input
+              type="range"
+              min={Math.floor(priceBounds.min)}
+              max={Math.ceil(priceBounds.max)}
+              value={Math.min(maxPrice, Math.ceil(priceBounds.max))}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              className="w-full accent-[#0f2e40]"
+            />
+            <div className="mt-2 flex items-center justify-between text-xs font-semibold text-gray-600">
+              <span>₹{Math.round(minPrice)}</span>
+              <span>₹{Math.round(maxPrice)}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={clearAll}
+          className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white hover:bg-[#13384d]"
+          style={{ backgroundColor: PRIMARY }}
+        >
+          Clear filters
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="bg-white">
       <div className="w-full px-8 py-10 sm:px-12 md:px-8 lg:px-14">
         <div className="grid gap-8 lg:grid-cols-12">
-          <aside className="lg:col-span-3">
-            <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
-              <div className="text-sm font-bold text-gray-900">Filter Options</div>
-
-              <div className="mt-5 space-y-6">
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Category</div>
-                  <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategoryId('')
-                        setSelectedSubCategoryId('')
-                      }}
-                      className={`block w-full text-left hover:text-gray-900 ${!selectedCategoryId ? 'text-[#0f2e40]' : ''}`}
-                    >
-                      All
-                    </button>
-                    {categories.map((c) => {
-                      const id = String(c?._id || c?.id || '')
-                      return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategoryId(id)
-                          setSelectedSubCategoryId('')
-                        }}
-                        className={`block w-full text-left hover:text-gray-900 ${selectedCategoryId === id ? 'text-[#0f2e40]' : ''}`}
-                      >
-                        {c.name}
-                      </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Subcategory</div>
-                  <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSubCategoryId('')}
-                      className={`block w-full text-left hover:text-gray-900 ${!selectedSubCategoryId ? 'text-[#0f2e40]' : ''}`}
-                    >
-                      All
-                    </button>
-                    {activeSubcategories.map((s) => {
-                      const id = String(s?._id || s?.id || '')
-                      return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => setSelectedSubCategoryId(id)}
-                        className={`block w-full text-left hover:text-gray-900 ${selectedSubCategoryId === id ? 'text-[#0f2e40]' : ''}`}
-                      >
-                        {s.name}
-                      </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Price</div>
-                  <div className="mt-3">
-                    <input
-                      type="range"
-                      min={Math.floor(priceBounds.min)}
-                      max={Math.ceil(priceBounds.max)}
-                      value={Math.min(maxPrice, Math.ceil(priceBounds.max))}
-                      onChange={(e) => setMaxPrice(Number(e.target.value))}
-                      className="w-full accent-[#0f2e40]"
-                    />
-                    <div className="mt-2 flex items-center justify-between text-xs font-semibold text-gray-600">
-                      <span>₹{Math.round(minPrice)}</span>
-                      <span>₹{Math.round(maxPrice)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Color</div>
-                  <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
-                    {['Gold', 'Silver', 'Rose Gold', 'Black', 'Green', 'Blue'].map((c) => {
-                      const active = normalizeText(selectedColor) === normalizeText(c)
-                      const swatch = COLOR_SWATCH[normalizeText(c)] || '#d1d5db'
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setSelectedColor(active ? '' : c)}
-                          className={`flex w-full items-center justify-between gap-3 text-left hover:text-gray-900 ${active ? 'text-[#0f2e40]' : ''}`}
-                        >
-                          <span className="flex items-center gap-3">
-                            <span className="h-3 w-3 rounded-full ring-1 ring-gray-300" style={{ backgroundColor: swatch }} />
-                            <span>{c}</span>
-                          </span>
-                          <span className={`text-xs font-bold ${active ? 'text-[#0f2e40]' : 'text-transparent'}`}>✓</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Material</div>
-                  <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
-                    {['Gold', 'Silver', 'Platinum'].map((m) => {
-                      const active = normalizeText(selectedMaterial) === normalizeText(m)
-                      return (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setSelectedMaterial(active ? '' : m)}
-                          className={`flex w-full items-center justify-between gap-3 text-left hover:text-gray-900 ${active ? 'text-[#0f2e40]' : ''}`}
-                        >
-                          <span>{m}</span>
-                          <span className={`text-xs font-bold ${active ? 'text-[#0f2e40]' : 'text-transparent'}`}>✓</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">Availability</div>
-                  <div className="mt-3 space-y-2 text-sm font-medium text-gray-700">
-                    {[
-                      { key: 'all', label: 'All' },
-                      { key: 'in', label: 'In stock' },
-                      { key: 'out', label: 'Out of stock' },
-                    ].map((a) => (
-                      <button
-                        key={a.key}
-                        type="button"
-                        onClick={() => setAvailability(a.key)}
-                        className={`flex w-full items-center justify-between text-left hover:text-gray-900 ${
-                          availability === a.key ? 'text-[#0f2e40]' : ''
-                        }`}
-                      >
-                        <span>{a.label}</span>
-                        <span className={`text-xs font-bold ${availability === a.key ? 'text-[#0f2e40]' : 'text-transparent'}`}>✓</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={clearAll}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white hover:bg-[#13384d]"
-                  style={{ backgroundColor: PRIMARY }}
-                >
-                  Clear filters
-                </button>
-              </div>
-            </div>
+          <aside className="hidden lg:block lg:col-span-3">
+            <FilterBox />
           </aside>
 
           <main className="lg:col-span-9">
@@ -550,6 +451,19 @@ export default function SearchPage() {
                 View Cart
               </button>
             </form>
+
+            <div className="lg:hidden mb-4">
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen((v) => !v)}
+                className="flex h-11 w-full items-center  justify-between rounded-lg bg-white px-4 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-50"
+                aria-expanded={mobileFiltersOpen}
+              >
+                <span>Filters</span>
+                <span className="text-gray-700">{mobileFiltersOpen ? '▴' : '▾'}</span>
+              </button>
+              {mobileFiltersOpen ? <div className="mt-4"><FilterBox /></div> : null}
+            </div>
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="text-sm font-semibold text-gray-600">
@@ -602,7 +516,7 @@ export default function SearchPage() {
               </div>
             ) : null}
 
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
               {pageItems.map((p) => (
                 <ProductCard key={p.key} {...p} className="max-w-none" />
               ))}

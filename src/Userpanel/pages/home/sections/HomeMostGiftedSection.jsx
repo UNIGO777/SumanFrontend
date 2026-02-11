@@ -67,7 +67,7 @@ export default function HomeMostGiftedSection() {
           <div className="mt-6 flex justify-center">
             <button
               type="button"
-              className="rounded-full border border-gray-300 bg-white px-8 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
+              className="rounded-full border border-gray-300 bg-white px-8 py-2 text-xs font-medium text-gray-800 shadow-sm hover:bg-gray-50 sm:text-sm"
             >
               View More
             </button>

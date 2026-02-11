@@ -22,6 +22,7 @@ export default function BestSellerPanel({
   const [canScroll, setCanScroll] = useState(false)
 
   const safeProducts = useMemo(() => (Array.isArray(products) ? products : []), [products])
+  const mobileProducts = useMemo(() => safeProducts.slice(0, 6), [safeProducts])
   const enableLoop = safeProducts.length > 5
   const loopProducts = useMemo(
     () => (enableLoop ? [...safeProducts, ...safeProducts, ...safeProducts] : safeProducts),
@@ -183,8 +184,8 @@ export default function BestSellerPanel({
   return (
     <section className="relative w-full">
       <div className="mb-6 text-center">
-        <div className="text-4xl font-bold  text-gray-900">{title}</div>
-        {description ? <div className="mt-2 text-sm font-semibold text-gray-600">{description}</div> : null}
+        <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{title}</div>
+        {description ? <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{description}</div> : null}
       </div>
 
       {enableLoop && canScroll ? (
@@ -209,6 +210,12 @@ export default function BestSellerPanel({
         </>
       ) : null}
 
+      <div className="grid grid-cols-2 gap-3 sm:hidden">
+        {mobileProducts.map((p, idx) => (
+          <ProductCard key={p.id || p.sku || p.title || idx} {...p} className="max-w-none" />
+        ))}
+      </div>
+
       <div
         ref={ref}
         onMouseEnter={() => {
@@ -225,10 +232,10 @@ export default function BestSellerPanel({
           pausedRef.current = false
           autoLastTsRef.current = 0
         }}
-        className="no-scrollbar flex gap-8 overflow-x-auto px-1 py-2 "
+        className="no-scrollbar hidden gap-8 overflow-x-auto px-1 py-2 sm:flex"
       >
         {loopProducts.map((p, idx) => (
-          <div key={p.id || p.sku || p.title || idx} className="w-[420px] shrink-0">
+          <div key={p.id || p.sku || p.title || idx} className="w-[260px] shrink-0 md:w-[420px]">
             <ProductCard
               {...p}
               className="max-w-none"

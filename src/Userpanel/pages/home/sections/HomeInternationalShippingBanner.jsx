@@ -45,8 +45,8 @@ export default function HomeInternationalShippingBanner({ cmsData, fullBleed = t
     <div className="mt-10">
       <section className="w-full">
         <div className="mx-auto mb-6 max-w-[92vw] text-center">
-          <div className="text-3xl font-bold text-gray-900">{sectionTitle}</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">{sectionDescription}</div>
+          <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
         </div>
 
         <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden' : 'overflow-hidden'}>

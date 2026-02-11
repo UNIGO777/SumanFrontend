@@ -146,8 +146,8 @@ export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
     <div className="mt-10">
       <section className="w-full">
         <div className="mx-auto mb-6 max-w-[92vw] text-center">
-          <div className="text-3xl font-bold text-gray-900">{(cmsEffective?.title || '').trim() || 'New Launches'}</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
+          <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{(cmsEffective?.title || '').trim() || 'New Launches'}</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             {(cmsEffective?.description || '').trim() || 'Explore the latest campaigns, highlights, and just-dropped collections.'}
           </div>
         </div>

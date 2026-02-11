@@ -57,8 +57,8 @@ export default function HomeEssentialsSection({ cmsData }) {
     <div className="mt-12">
       <section className="w-full">
         <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-[#0f2e40]">{sectionTitle}</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">{sectionDescription}</div>
+          <div className="text-2xl font-bold text-[#0f2e40] sm:text-3xl md:text-4xl">{sectionTitle}</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
         </div>
 
         <div className="mx-auto flex max-w-[95vw] flex-col gap-8 md:flex-row">
@@ -68,7 +68,7 @@ export default function HomeEssentialsSection({ cmsData }) {
               <div className="relative h-[260px] overflow-hidden rounded-[40px] bg-gray-100 shadow-lg ring-1 ring-[#0f2e40]/15">
                 <img src={it.img} alt={it.label} className="h-full w-full object-cover" loading="lazy" />
                 <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0f2e40]/70 to-transparent" />
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-base font-bold text-white">
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-sm font-bold text-white sm:text-base">
                   {it.label}
                 </div>
               </div>

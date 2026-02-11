@@ -117,7 +117,7 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
       <div className="primary-bg h-10 w-full px-4 text-white">
-        <div className="mx-auto flex h-full max-w-6xl items-center justify-center text-center text-sm tracking-wide">
+        <div className="mx-auto flex h-full max-w-6xl items-center justify-center text-center text-xs tracking-wide sm:text-sm">
           {promoText}
         </div>
       </div>
@@ -245,7 +245,7 @@ export default function Navbar({
 
       <nav className="hidden border-b border-gray-200 md:block">
         <div className="mx-auto  px-10">
-          <div className="flex h-11 items-center justify-center gap-10 text-[11px] font-medium text-gray-700">
+          <div className="flex h-11 items-center justify-center gap-10 text-[10px] font-medium text-gray-700 lg:text-[11px]">
             {topCategories.map((c) => {
               const id = String(c?._id || c?.id || '')
               const subs = id ? subByCategoryId.get(id) || [] : []

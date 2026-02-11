@@ -1,13 +1,14 @@
 import heroBanner from '../../../../assets/2048 × 626.jpg'
 import promoBanner1 from '../../../../assets/1312 × 668.jpg'
 import promoBanner2 from '../../../../assets/1312 × 668-2.jpg'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
 export default function HomeHeroPromos({ cmsData }) {
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
+  const scrolledToTopRef = useRef(false)
 
   useEffect(() => {
     if (cmsData) return
@@ -25,6 +26,16 @@ export default function HomeHeroPromos({ cmsData }) {
       active = false
     }
   }, [cmsData])
+
+  useEffect(() => {
+    if (scrolledToTopRef.current) return
+    if (!cms) return
+    if (typeof window === 'undefined') return
+    scrolledToTopRef.current = true
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+  }, [cms])
 
   const items = useMemo(() => {
     const fallback = [
@@ -50,13 +61,13 @@ export default function HomeHeroPromos({ cmsData }) {
 
   return (
     <section className="space-y-4">
-      <div className="relative overflow-hidden rounded-[50px] bg-gray-100">
+      <div className="relative aspect-[2048/626] w-full overflow-hidden rounded-[50px] bg-gray-100">
         {items[0]?.href ? (
           <Link to={items[0].href} className="block">
-            <img src={items[0].imageUrl} alt="Promo banner" className="h-full w-full object-contain " loading="lazy" />
+            <img src={items[0].imageUrl} alt="Promo banner" className="h-full w-full object-contain" loading="eager" />
           </Link>
         ) : (
-          <img src={items[0]?.imageUrl || heroBanner} alt="Promo banner" className="h-full w-full object-contain " loading="lazy" />
+          <img src={items[0]?.imageUrl || heroBanner} alt="Promo banner" className="h-full w-full object-contain" loading="eager" />
         )}
         <div className="pointer-events-none absolute inset-0" />
         <div className="absolute left-5 top-1/2 w-[90%] -translate-y-1/2 sm:left-8 sm:w-[70%]"></div>
@@ -83,7 +94,7 @@ export default function HomeHeroPromos({ cmsData }) {
           )}
           <div className="pointer-events-none absolute inset-0 " />
           {items[1]?.badgeText ? (
-            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-xs font-bold text-gray-900">
+            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-[11px] font-bold text-gray-900 sm:text-xs">
               {items[1].badgeText}
             </div>
           ) : null}
@@ -104,7 +115,7 @@ export default function HomeHeroPromos({ cmsData }) {
           )}
           <div className="pointer-events-none absolute inset-0 " />
           {items[2]?.badgeText ? (
-            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-xs font-bold text-gray-900">
+            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-[11px] font-bold text-gray-900 sm:text-xs">
               {items[2].badgeText}
             </div>
           ) : null}

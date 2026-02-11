@@ -113,26 +113,26 @@ export default function HomeLatestCollectionsSection({ cmsData }) {
     (cmsEffective?.description || '').trim() || 'Fresh designs, new stories, and styles you’ll want to wear on repeat.'
 
   return (
-    <div className="mt-14">
+    <div className="mt-10 sm:mt-12 md:mt-14">
       <section className="relative w-full">
-        <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-gray-900">{sectionTitle}</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">{sectionDescription}</div>
+        <div className="mb-6 px-2 text-center sm:px-0">
+          <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
         </div>
 
-        <div className="no-scrollbar flex snap-x snap-mandatory gap-8 overflow-x-auto px-1 py-2 md:px-10">
+        <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 sm:gap-6 sm:px-4 md:gap-8 md:px-10">
           {latestCollections.map((c) => (
             <div key={c.id} className="shrink-0 snap-center">
-              <div className="relative w-[30vw] max-w-[700px] pb-16 md:w-[700px]">
-                <div className="relative h-[240px] overflow-hidden rounded-[44px] bg-gray-100 ring-1 ring-gray-200 md:h-[300px]">
+              <div className="relative w-[86vw] max-w-[700px] pb-24 sm:w-[72vw] sm:pb-24 md:w-[620px] md:pb-20 lg:w-[700px]">
+                <div className="relative h-[200px] overflow-hidden rounded-[32px] bg-gray-100 ring-1 ring-gray-200 sm:h-[240px] sm:rounded-[44px] md:h-[300px]">
                   {c.href ? (
                     <Link to={c.href} className="block h-full w-full">
                       <img src={c.img} alt={c.title} className="h-full w-full object-cover" loading="lazy" />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-transparent" />
-                      <div className="pointer-events-none absolute left-10 top-1/2 -translate-y-1/2 text-left text-white">
-                        <div className="text-4xl font-bold tracking-wide">{c.title}</div>
-                        <div className="mt-2 text-sm font-medium text-white/90">{c.subtitle}</div>
-                        <div className="mt-1 text-sm font-bold italic text-white/85">{c.tag}</div>
+                      <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-left text-white sm:left-8 md:left-10">
+                        <div className="text-2xl font-bold tracking-wide sm:text-3xl md:text-4xl">{c.title}</div>
+                        <div className="mt-2 text-xs font-medium text-white/90 sm:text-sm">{c.subtitle}</div>
+                        <div className="mt-1 text-xs font-bold italic text-white/85 sm:text-sm">{c.tag}</div>
                       </div>
                     </Link>
                   ) : (
@@ -140,20 +140,20 @@ export default function HomeLatestCollectionsSection({ cmsData }) {
                       <img src={c.img} alt={c.title} className="h-full w-full object-cover" loading="lazy" />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-transparent" />
 
-                      <div className="absolute left-10 top-1/2 -translate-y-1/2 text-left text-white">
-                        <div className="text-4xl font-bold tracking-wide">{c.title}</div>
-                        <div className="mt-2 text-sm font-medium text-white/90">{c.subtitle}</div>
-                        <div className="mt-1 text-sm font-bold italic text-white/85">{c.tag}</div>
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-left text-white sm:left-8 md:left-10">
+                        <div className="text-2xl font-bold tracking-wide sm:text-3xl md:text-4xl">{c.title}</div>
+                        <div className="mt-2 text-xs font-medium text-white/90 sm:text-sm">{c.subtitle}</div>
+                        <div className="mt-1 text-xs font-bold italic text-white/85 sm:text-sm">{c.tag}</div>
                       </div>
                     </>
                   )}
                 </div>
 
-                <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-5">
+                <div className="absolute bottom-2 left-1/2 flex -translate-y-12 -translate-x-1/2 items-center gap-3 sm:gap-4 md:gap-5">
                   {c.items.map((it, idx) => (
                     <div
                       key={it.id || `${c.id}-${idx}`}
-                      className="grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-3xl bg-white shadow-md ring-1 ring-gray-200"
+                      className="grid h-[82px] w-[82px] place-items-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200 sm:h-[96px] sm:w-[96px] sm:rounded-3xl md:h-[120px] md:w-[120px]"
                     >
                       <img src={it.img} alt="" className="h-full w-full object-cover" loading="lazy" />
                     </div>

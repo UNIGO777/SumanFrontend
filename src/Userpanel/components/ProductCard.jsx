@@ -72,6 +72,8 @@ export default function ProductCard({
   isWishlisted = false,
   onToggleWishlist,
   onAddToCart,
+  cardHeightClassName,
+  imageHeightClassName,
   className = '',
 }) {
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN'), [])
@@ -80,6 +82,15 @@ export default function ProductCard({
   const apiBase = useMemo(() => getApiBase(), [])
 
   const displayTitle = useMemo(() => String(title || name || 'Product'), [name, title])
+  const slugify = useMemo(
+    () => (v) =>
+      String(v || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, ''),
+    []
+  )
 
   const toPublicUrl = useMemo(() => {
     return (p) => {
@@ -118,14 +129,11 @@ export default function ProductCard({
   }, [silverWeightGrams])
 
   const slug = useMemo(() => {
-    const raw = String(id || sku || displayTitle || 'product')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-
-    return encodeURIComponent(raw || 'product')
-  }, [displayTitle, id, sku])
+    const idPart = String(id || sku || '').trim()
+    const base = slugify(displayTitle || 'product')
+    const raw = base && idPart ? `${base}-${idPart}` : idPart || base || 'product'
+    return encodeURIComponent(raw)
+  }, [displayTitle, id, sku, slugify])
 
   const itemKey = useMemo(() => decodeURIComponent(slug || ''), [slug])
 
@@ -235,7 +243,7 @@ export default function ProductCard({
 
   return (
     <div
-      className={`w-full max-w-[560px] ${className} border border-gray-200 cursor-pointer`}
+      className={`w-full ${cardHeightClassName || ''} ${className} cursor-pointer overflow-hidden  border border-gray-200 bg-white sm:rounded-2xl`}
       onClick={goToProfile}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -246,15 +254,15 @@ export default function ProductCard({
       role="button"
       tabIndex={0}
     >
-      <div className="overflow-hidden   bg-white">
+      <div className="bg-white">
         <div className="relative bg-white">
           <div
-            className="group relative flex h-[380px] w-full items-center justify-center overflow-hidden bg-white"
+            className={`group relative flex w-full  items-center justify-center overflow-hidden bg-white ${imageHeightClassName || 'h-[120px] sm:h-[240px] md:h-[320px]'}`}
           >
             <img
               src={coverUrl}
               alt={displayTitle || 'Product image'}
-              className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-[1.1] ${
+              className={`h-full  w-full object-cover transition-all duration-300 md:group-hover:scale-[1.1] ${
                 hoverUrl ? 'opacity-100 group-hover:opacity-0' : 'opacity-100'
               }`}
               loading="lazy"
@@ -263,7 +271,7 @@ export default function ProductCard({
               <img
                 src={hoverUrl}
                 alt={displayTitle || 'Product image'}
-                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-300 group-hover:scale-[1.1] group-hover:opacity-100"
+                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-300 md:group-hover:scale-[1.1] group-hover:opacity-100"
                 loading="lazy"
               />
             ) : null}
@@ -271,7 +279,7 @@ export default function ProductCard({
 
           {showBestseller ? (
             <div
-              className="absolute left-0 top-4 px-5 py-2 text-sm font-semibold tracking-wide text-white"
+              className="absolute left-0 top-2 px-3 py-1 text-[11px] font-semibold tracking-wide text-white sm:top-4 sm:px-5 sm:py-2 sm:text-sm"
               style={{
                 backgroundColor: '#0f2e40',
                 clipPath: 'polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%)',
@@ -282,7 +290,7 @@ export default function ProductCard({
           ) : null}
 
           {!showBestseller && effectiveDiscount ? (
-            <div className="absolute left-4 top-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+            <div className="absolute left-2 top-2 rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white sm:left-4 sm:top-4 sm:px-3 sm:text-xs">
               {effectiveDiscount}% OFF
             </div>
           ) : null}
@@ -296,10 +304,10 @@ export default function ProductCard({
                 if (onToggleWishlist) onToggleWishlist(e)
                 else defaultToggleWishlist()
               }}
-              className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/95 shadow-sm ring-1 ring-gray-200"
+              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-white/95 shadow-sm ring-1 ring-gray-200 sm:right-4 sm:top-4 sm:h-10 sm:w-10"
             >
               <Heart
-                className={`h-5 w-5 ${effectiveWishlisted ? 'text-pink-500' : 'text-black'}`}
+                className={`h-4 w-4 sm:h-5 sm:w-5 ${effectiveWishlisted ? 'text-pink-500' : 'text-black'}`}
                 strokeWidth={2}
                 fill={effectiveWishlisted ? 'currentColor' : 'none'}
               />
@@ -307,7 +315,7 @@ export default function ProductCard({
           ) : null}
 
           {showRating ? (
-            <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg bg-gray-100/95 px-3 py-2 text-sm font-semibold text-gray-800">
+            <div className="absolute bottom-3 left-3 hidden items-center gap-2 rounded-lg bg-gray-100/95 px-3 py-2 text-sm font-semibold text-gray-800 sm:flex">
               <span className="flex items-center gap-1">
                 {rating}
                 <Star className="h-4 w-4 text-amber-500" fill="currentColor" />
@@ -318,23 +326,23 @@ export default function ProductCard({
           ) : null}
         </div>
 
-        <div className="space-y-3 px-4 pb-4 pt-4 text-left">
-          <div className="flex items-end gap-3">
-            <div className="text-2xl font-bold text-gray-900">₹{formatter.format(price || 0)}</div>
+        <div className="space-y-1.5 px-3 pb-3 pt-3 text-left sm:space-y-3 sm:px-4 sm:pb-4 sm:pt-4">
+          <div className="flex flex-wrap items-end gap-x-2 gap-y-1 sm:gap-3">
+            <div className="text-base font-bold text-gray-900 sm:text-xl lg:text-2xl">₹{formatter.format(price || 0)}</div>
             {showOriginal ? (
-              <div className="pb-1 text-lg font-semibold text-gray-500 line-through">
+              <div className="pb-0.5 text-[11px] font-semibold text-gray-500 line-through sm:pb-1 sm:text-base">
                 ₹{formatter.format(originalPrice)}
               </div>
             ) : null}
           </div>
 
-          <div className="text-lg font-medium leading-tight text-gray-500">{displayTitle}</div>
+          <div className="text-xs font-medium leading-snug text-gray-600 sm:text-base">{displayTitle}</div>
           {displayGrams ? (
-            <div className="text-sm font-semibold text-gray-500">{displayGrams} g</div>
+            <div className="text-[11px] font-semibold text-gray-500 sm:text-sm">{displayGrams} g</div>
           ) : null}
 
           {couponText ? (
-            <div className="text-sm font-semibold text-[#0f2e40] underline">{couponText}</div>
+            <div className="text-[11px] font-semibold text-[#0f2e40] underline sm:text-sm">{couponText}</div>
           ) : null}
 
           <button
@@ -344,7 +352,7 @@ export default function ProductCard({
               if (onAddToCart) onAddToCart(e)
               else defaultAddToCart()
             }}
-            className="w-full rounded-xl bg-gradient-to-r hover:scale-[1.1] from-[#0f2e40] to-[#1e4a5f] py-2 text-center text-md font-medium text-white transition-all duration-300 hover:from-[#1e4a5f] hover:to-[#0f2e40] hover:shadow-lg cursor-pointer"
+            className="w-full rounded-sm bg-gradient-to-r from-[#0f2e40] to-[#1e4a5f] py-1.5 text-center text-xs font-semibold text-white transition-all duration-300 hover:from-[#1e4a5f] hover:to-[#0f2e40] hover:shadow-lg sm:rounded-xl sm:py-2 sm:text-sm md:text-base md:hover:scale-[1.03]"
           >
             {justAdded ? 'Added' : ctaText}
           </button>

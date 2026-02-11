@@ -81,8 +81,8 @@ export default function RecipientPanel({
 
   return (
     <section className="w-full">
-      <div className="mb-3 text-center text-4xl font-bold text-gray-900">{title}</div>
-      {description ? <div className="mb-6 text-center text-sm font-medium text-gray-600">{description}</div> : null}
+      <div className="mb-3 text-center text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{title}</div>
+      {description ? <div className="mb-6 text-center text-xs font-medium text-gray-600 sm:text-sm md:text-base">{description}</div> : null}
       <div className="mx-auto grid max-w-[94vw] grid-cols-1 gap-8 sm:max-w-[80vw] sm:grid-cols-2 sm:gap-10">
         {items.map((it) => (
           <Link
@@ -94,7 +94,7 @@ export default function RecipientPanel({
               <img src={it.imageUrl} alt={it.label} className="h-full w-full object-contain" loading="lazy" />
             </div>
             <div>
-              <h2 className="mt-5 text-center text-2xl font-semibold text-black">{it.label}</h2>
+              <h2 className="mt-5 text-center text-lg font-semibold text-black sm:text-xl md:text-2xl">{it.label}</h2>
             </div>
           </Link>
         ))}

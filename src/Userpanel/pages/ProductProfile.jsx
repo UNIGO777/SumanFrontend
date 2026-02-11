@@ -21,6 +21,60 @@ const plainTextToHtml = (text) => escapeHtml(text).replace(/\r\n|\r|\n/g, '<br /
 
 const looksLikeHtml = (s) => /<\/?[a-z][\s\S]*>/i.test(String(s || ''))
 
+const normalizeText = (v) => String(v || '').trim()
+
+const isMongoId = (v) => /^[a-f0-9]{24}$/i.test(normalizeText(v))
+
+const extractMongoId = (key) => {
+  const v = normalizeText(key)
+  if (!v) return ''
+  if (isMongoId(v)) return v
+  const parts = v.split('-').map((p) => p.trim()).filter(Boolean)
+  for (let i = parts.length - 1; i >= 0; i -= 1) {
+    if (isMongoId(parts[i])) return parts[i]
+  }
+  return ''
+}
+
+const slugify = (v) =>
+  normalizeText(v)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+const dedupeUrls = (urls) => {
+  const out = []
+  const seen = new Set()
+  ;(Array.isArray(urls) ? urls : []).forEach((u) => {
+    const v = normalizeText(u)
+    if (!v) return
+    if (seen.has(v)) return
+    seen.add(v)
+    out.push(v)
+  })
+  return out
+}
+
+const ensureMetaTag = (selector, create, content) => {
+  if (typeof document === 'undefined') return
+  const head = document.head
+  if (!head) return
+  const existing = head.querySelector(selector)
+  const el = existing || create()
+  if (!existing) head.appendChild(el)
+  if (content !== undefined) el.setAttribute('content', String(content))
+}
+
+const ensureLinkTag = (selector, create, href) => {
+  if (typeof document === 'undefined') return
+  const head = document.head
+  if (!head) return
+  const existing = head.querySelector(selector)
+  const el = existing || create()
+  if (!existing) head.appendChild(el)
+  if (href !== undefined) el.setAttribute('href', String(href))
+}
+
 const pickPrimaryVariant = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : []
   if (!variants.length) return null
@@ -30,12 +84,12 @@ const pickPrimaryVariant = (product) => {
 
 const toUiProduct = (apiProduct, silverPricePerGram = 0) => {
   const v = pickPrimaryVariant(apiProduct) || {}
-  const images = [
+  const images = dedupeUrls([
     apiProduct?.image,
     ...(Array.isArray(apiProduct?.images) ? apiProduct.images : []),
     v?.image,
     ...(Array.isArray(v?.images) ? v.images : []),
-  ].filter(Boolean)
+  ]).filter(Boolean)
   const cover = images[0] || productFallback
   const pricing = computeProductPricing(apiProduct, silverPricePerGram)
   const gramsNum = getSilverWeightGrams(apiProduct)
@@ -128,13 +182,17 @@ const ProductProfile = () => {
   }, [apiBase])
 
   const productId = useMemo(() => {
-    if (!productKey) return ''
+    const fromState = location?.state?.product?.id
+    const fallback = isMongoId(fromState) ? String(fromState) : ''
+    if (!productKey) return fallback
     try {
-      return decodeURIComponent(productKey)
+      const decoded = decodeURIComponent(productKey)
+      return extractMongoId(decoded) || fallback || decoded
     } catch {
-      return String(productKey)
+      const raw = String(productKey)
+      return extractMongoId(raw) || fallback || raw
     }
-  }, [productKey])
+  }, [location?.state?.product?.id, productKey])
 
   const [apiProduct, setApiProduct] = useState(null)
   const [apiError, setApiError] = useState('')
@@ -249,14 +307,14 @@ const ProductProfile = () => {
   const product = useMemo(() => {
     if (apiProduct) {
       const ui = toUiProduct(apiProduct, silverPricePerGram)
-      const imgs = (Array.isArray(ui?.images) ? ui.images : []).map((u) => toPublicUrl(u)).filter(Boolean)
+      const imgs = dedupeUrls((Array.isArray(ui?.images) ? ui.images : []).map((u) => toPublicUrl(u)).filter(Boolean))
       const cover = imgs[0] || toPublicUrl(ui?.imageUrl) || productFallback
       return { ...ui, images: imgs.length ? imgs : [cover], imageUrl: cover }
     }
 
     const p = location?.state?.product || {}
     const title = p.title || (productKey ? decodeURIComponent(productKey) : 'Product')
-    const images = (Array.isArray(p.images) ? p.images : []).map((u) => toPublicUrl(u)).filter(Boolean)
+    const images = dedupeUrls((Array.isArray(p.images) ? p.images : []).map((u) => toPublicUrl(u)).filter(Boolean))
     const cover = toPublicUrl(p.imageUrl) || images[0] || productFallback
     const attributes = p?.attributes && typeof p.attributes === 'object' && !Array.isArray(p.attributes) ? p.attributes : undefined
 
@@ -310,6 +368,10 @@ const ProductProfile = () => {
   const [activeTab, setActiveTab] = useState('description')
   const [isZoomed, setIsZoomed] = useState(false)
   const [zoomOrigin, setZoomOrigin] = useState('50% 50%')
+  const [zoomEnabled, setZoomEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.matchMedia('(min-width: 768px)').matches
+  })
   const [justAdded, setJustAdded] = useState(false)
 
   const showOriginal =
@@ -329,15 +391,110 @@ const ProductProfile = () => {
   const mainUrl = product.images[Math.min(Math.max(activeImage, 0), product.images.length - 1)]
 
   const slug = useMemo(() => {
-    const raw = String(productId || productKey || product?.sku || product?.title || 'product')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-    return encodeURIComponent(raw || 'product')
-  }, [productId, productKey, product?.sku, product?.title])
+    const idPart = normalizeText(product?.id || productId || '')
+    const base = slugify(product?.title || product?.sku || 'product')
+    const raw = base && idPart ? `${base}-${idPart}` : idPart || base || 'product'
+    return encodeURIComponent(raw)
+  }, [product?.id, product?.sku, product?.title, productId])
 
   const itemKey = useMemo(() => decodeURIComponent(slug || ''), [slug])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mql = window.matchMedia('(min-width: 768px)')
+    const apply = () => setZoomEnabled(Boolean(mql.matches))
+    apply()
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', apply)
+      return () => mql.removeEventListener('change', apply)
+    }
+    mql.addListener(apply)
+    return () => mql.removeListener(apply)
+  }, [])
+
+  useEffect(() => {
+    if (zoomEnabled) return
+    setIsZoomed(false)
+    setZoomOrigin('50% 50%')
+  }, [zoomEnabled])
+
+  useEffect(() => {
+    setActiveImage((idx) => {
+      const nextMax = Math.max(0, (product.images?.length || 1) - 1)
+      return Math.min(Math.max(0, idx), nextMax)
+    })
+  }, [product.images])
+
+  useEffect(() => {
+    const id = normalizeText(product?.id || productId || '')
+    if (!id) return
+    const base = slugify(product?.title || product?.sku || '')
+    if (!base) return
+    const canonicalRaw = `${base}-${id}`
+    let currentRaw = ''
+    try {
+      currentRaw = normalizeText(decodeURIComponent(productKey || ''))
+    } catch {
+      currentRaw = normalizeText(productKey || '')
+    }
+    if (!currentRaw || currentRaw === canonicalRaw) return
+    navigate(`/product/${encodeURIComponent(canonicalRaw)}`, { replace: true, state: location?.state })
+  }, [location?.state, navigate, product?.id, product?.sku, product?.title, productId, productKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const title = normalizeText(product?.title)
+    const image = normalizeText(product?.images?.[0] || product?.imageUrl || '')
+    if (!title && !image) return
+
+    if (title) document.title = title
+
+    const absImage = image ? new URL(image, window.location.origin).toString() : ''
+    const absUrl = new URL(window.location.href, window.location.origin).toString()
+
+    ensureMetaTag('meta[property="og:title"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('property', 'og:title')
+      return m
+    }, title)
+    ensureMetaTag('meta[property="og:type"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('property', 'og:type')
+      return m
+    }, 'product')
+    ensureMetaTag('meta[property="og:image"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('property', 'og:image')
+      return m
+    }, absImage || undefined)
+    ensureMetaTag('meta[property="og:url"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('property', 'og:url')
+      return m
+    }, absUrl)
+
+    ensureMetaTag('meta[name="twitter:card"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('name', 'twitter:card')
+      return m
+    }, 'summary_large_image')
+    ensureMetaTag('meta[name="twitter:title"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('name', 'twitter:title')
+      return m
+    }, title)
+    ensureMetaTag('meta[name="twitter:image"]', () => {
+      const m = document.createElement('meta')
+      m.setAttribute('name', 'twitter:image')
+      return m
+    }, absImage || undefined)
+
+    ensureLinkTag('link[rel="canonical"]', () => {
+      const l = document.createElement('link')
+      l.setAttribute('rel', 'canonical')
+      return l
+    }, absUrl)
+  }, [product?.imageUrl, product?.images, product?.title])
 
   const [wishlisted, setWishlisted] = useState(() => {
     const items = readWishlistItems()
@@ -418,7 +575,7 @@ const ProductProfile = () => {
 
   return (
     <div className="bg-white">
-      <div className="mx-auto  px-10 py-6">
+      <div className="mx-auto px-5 md:px-10 py-6">
         <div className="mb-5 flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-gray-500">
           {breadcrumbs.map((b, idx) => {
             const isLast = idx === breadcrumbs.length - 1
@@ -452,39 +609,57 @@ const ProductProfile = () => {
             <div
               ref={zoomRef}
               className={`overflow-hidden rounded-2xl bg-gray-50 ring-1 ring-gray-200 ${
-                isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                zoomEnabled ? (isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in') : 'cursor-default'
               }`}
-              onMouseEnter={() => setIsZoomed(true)}
-              onMouseLeave={() => {
-                setIsZoomed(false)
-                setZoomOrigin('50% 50%')
-              }}
-              onMouseMove={(e) => {
-                if (!zoomRef.current) return
-                const rect = zoomRef.current.getBoundingClientRect()
-                const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
-                const y = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
-                setZoomOrigin(`${(x * 100).toFixed(2)}% ${(y * 100).toFixed(2)}%`)
-              }}
-              onClick={() => setIsZoomed((z) => !z)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  setIsZoomed((z) => !z)
-                }
-              }}
+              onMouseEnter={
+                zoomEnabled
+                  ? () => {
+                      setIsZoomed(true)
+                    }
+                  : undefined
+              }
+              onMouseLeave={
+                zoomEnabled
+                  ? () => {
+                      setIsZoomed(false)
+                      setZoomOrigin('50% 50%')
+                    }
+                  : undefined
+              }
+              onMouseMove={
+                zoomEnabled
+                  ? (e) => {
+                      if (!zoomRef.current) return
+                      const rect = zoomRef.current.getBoundingClientRect()
+                      const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+                      const y = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
+                      setZoomOrigin(`${(x * 100).toFixed(2)}% ${(y * 100).toFixed(2)}%`)
+                    }
+                  : undefined
+              }
+              onClick={zoomEnabled ? () => setIsZoomed((z) => !z) : undefined}
+              role={zoomEnabled ? 'button' : undefined}
+              tabIndex={zoomEnabled ? 0 : undefined}
+              onKeyDown={
+                zoomEnabled
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setIsZoomed((z) => !z)
+                      }
+                    }
+                  : undefined
+              }
             >
               <img
                 src={mainUrl}
                 alt={product.title}
                 className="h-[420px] w-full object-contain md:h-[520px]"
                 style={{
-                  transform: isZoomed ? 'scale(2)' : 'scale(1)',
+                  transform: zoomEnabled && isZoomed ? 'scale(2)' : 'scale(1)',
                   transformOrigin: zoomOrigin,
-                  transition: isZoomed ? 'transform 40ms linear' : 'transform 180ms ease',
-                  willChange: 'transform',
+                  transition: zoomEnabled && isZoomed ? 'transform 40ms linear' : 'transform 180ms ease',
+                  willChange: zoomEnabled ? 'transform' : undefined,
                 }}
               />
             </div>
@@ -826,7 +1001,7 @@ const ProductProfile = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
             {recommendations.map((p, idx) => (
               <div key={p.id || p.sku || p.title || idx} className="w-full">
                 <ProductCard {...p} className="max-w-none" />

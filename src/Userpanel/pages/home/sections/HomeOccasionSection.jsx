@@ -121,10 +121,10 @@ export default function HomeOccasionSection({ cmsData }) {
     <div className="mt-12">
       <section className="w-full rounded-3xl bg-[#f2f7f9] py-10">
         <div className="mb-6 text-center">
-          <div className="inline-block rounded-md  px-6 py-1 text-3xl font-bold text-[#0f2e40]">
+          <div className="inline-block rounded-md px-6 py-1 text-2xl font-bold text-[#0f2e40] sm:text-3xl md:text-4xl">
             {sectionTitle}
           </div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             {sectionDescription}
           </div>
         </div>

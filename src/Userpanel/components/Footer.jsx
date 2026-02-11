@@ -11,8 +11,8 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               
               <div className="leading-tight">
-                <div className="text-xl font-semibold tracking-wide text-white">SUMAN</div>
-                <div className="text-xl font-semibold tracking-wide text-white">9.25</div>
+                <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">SUMAN</div>
+                <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">9.25</div>
               </div>
             </div>
             <div className="max-w-xs text-sm leading-relaxed text-gray-400">
