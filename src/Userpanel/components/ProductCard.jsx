@@ -2,7 +2,6 @@ import { Heart, Star } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
-import productFallback from '../../assets/876 × 1628-1.png'
 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
@@ -81,7 +80,7 @@ export default function ProductCard({
   const [justAdded, setJustAdded] = useState(false)
   const apiBase = useMemo(() => getApiBase(), [])
 
-  const displayTitle = useMemo(() => String(title || name || 'Product'), [name, title])
+  const displayTitle = useMemo(() => String(title || name || '').trim(), [name, title])
   const slugify = useMemo(
     () => (v) =>
       String(v || '')
@@ -121,12 +120,14 @@ export default function ProductCard({
     [images, toPublicUrl]
   )
 
-  const coverUrl = resolvedImages[0] || toPublicUrl(imageUrl) || productFallback
-  const hoverUrl = resolvedImages[2] || resolvedImages[0]
+  const coverUrl = resolvedImages[0] || toPublicUrl(imageUrl) || ''
+  const hoverUrl = resolvedImages[2] || resolvedImages[0] || ''
+  const [loadedCoverUrl, setLoadedCoverUrl] = useState('')
   const displayGrams = useMemo(() => {
     const n = Number(silverWeightGrams)
     return Number.isFinite(n) && n > 0 ? n : 0
   }, [silverWeightGrams])
+  const coverLoaded = Boolean(coverUrl) && loadedCoverUrl === coverUrl
 
   const slug = useMemo(() => {
     const idPart = String(id || sku || '').trim()
@@ -259,14 +260,19 @@ export default function ProductCard({
           <div
             className={`group relative flex w-full  items-center justify-center overflow-hidden bg-white ${imageHeightClassName || 'h-[120px] sm:h-[240px] md:h-[320px]'}`}
           >
-            <img
-              src={coverUrl}
-              alt={displayTitle || 'Product image'}
-              className={`h-full  w-full object-cover transition-all duration-300 md:group-hover:scale-[1.1] ${
-                hoverUrl ? 'opacity-100 group-hover:opacity-0' : 'opacity-100'
-              }`}
-              loading="lazy"
-            />
+            {!coverLoaded ? <div className="absolute inset-0 bg-gray-200 animate-pulse" /> : null}
+            {coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={displayTitle || 'Product image'}
+                className={`h-full w-full object-cover transition-all duration-300 md:group-hover:scale-[1.1] ${
+                  hoverUrl ? 'opacity-100 group-hover:opacity-0' : 'opacity-100'
+                }`}
+                loading="lazy"
+                onLoad={() => setLoadedCoverUrl(coverUrl)}
+                onError={() => setLoadedCoverUrl(coverUrl)}
+              />
+            ) : null}
             {hoverUrl ? (
               <img
                 src={hoverUrl}
@@ -336,7 +342,7 @@ export default function ProductCard({
             ) : null}
           </div>
 
-          <div className="text-xs font-medium leading-snug text-gray-600 sm:text-base">{displayTitle}</div>
+          {displayTitle ? <div className="text-xs font-medium leading-snug text-gray-600 sm:text-base">{displayTitle}</div> : null}
           {displayGrams ? (
             <div className="text-[11px] font-semibold text-gray-500 sm:text-sm">{displayGrams} g</div>
           ) : null}

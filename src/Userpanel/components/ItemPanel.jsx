@@ -2,10 +2,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../AdminPanel/services/apiClient.js'
-import panelImg1 from '../../assets/1312 × 668-2.jpg'
-import panelImg2 from '../../assets/1312 × 668-3.jpg'
-import panelImg3 from '../../assets/1312 × 668-4.jpg'
-import panelImg4 from '../../assets/1312 × 668-5.jpg'
 
 export default function ItemPanel({ title = '', autoScroll = true, items: itemsProp }) {
   const ref = useRef(null)
@@ -20,9 +16,11 @@ export default function ItemPanel({ title = '', autoScroll = true, items: itemsP
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
   const [cms, setCms] = useState(null)
+  const hasOverride = Array.isArray(itemsProp) && itemsProp.length > 0
+  const [loading, setLoading] = useState(!hasOverride)
+  const [loaded, setLoaded] = useState(hasOverride)
 
   useEffect(() => {
-    const hasOverride = Array.isArray(itemsProp) && itemsProp.length > 0
     if (hasOverride) return
 
     let active = true
@@ -35,29 +33,20 @@ export default function ItemPanel({ title = '', autoScroll = true, items: itemsP
         if (!active) return
         setCms(null)
       })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
+      })
     return () => {
       active = false
     }
-  }, [itemsProp])
-
-  const fallbackItems = useMemo(
-    () => [
-      { label: 'Rings', imageUrl: panelImg1, badgeText: 'Min 65% OFF', href: '' },
-      { label: 'Bracelets', imageUrl: panelImg2, badgeText: 'Min 60% OFF', href: '' },
-      { label: 'Anklets', imageUrl: panelImg3, badgeText: 'Min 60% OFF', href: '' },
-      { label: 'Sets', imageUrl: panelImg4, badgeText: 'Min 60% OFF', href: '' },
-      { label: 'Men in Silver', imageUrl: panelImg1, badgeText: 'Min 60% OFF', href: '' },
-      { label: 'Mangalsutras', imageUrl: panelImg2, badgeText: 'Min 60% OFF', href: '' },
-      { label: 'Silver Chains', imageUrl: panelImg3, badgeText: 'Min 60% OFF', href: '' },
-      { label: 'Personalised', imageUrl: panelImg4, badgeText: 'Min 60% OFF', href: '' },
-    ],
-    []
-  )
+  }, [hasOverride, itemsProp])
 
   const items = useMemo(() => {
     const override = Array.isArray(itemsProp) ? itemsProp : []
     const cmsItems = Array.isArray(cms?.items) ? cms.items : []
-    const source = override.length ? override : cmsItems.length ? cmsItems : fallbackItems
+    const source = override.length ? override : cmsItems
 
     const normalized = source
       .map((it, idx) => ({
@@ -70,8 +59,8 @@ export default function ItemPanel({ title = '', autoScroll = true, items: itemsP
       .filter((it) => Boolean(it.imageUrl) && Boolean(it.label))
       .sort((a, b) => a.sortOrder - b.sortOrder)
 
-    return normalized.length ? normalized : fallbackItems
-  }, [cms, fallbackItems, itemsProp])
+    return normalized
+  }, [cms, itemsProp])
 
   const loopItems = useMemo(() => [...items, ...items, ...items, ...items, ...items], [items])
 
@@ -232,9 +221,36 @@ export default function ItemPanel({ title = '', autoScroll = true, items: itemsP
     }
   }, [autoScroll, scrollByWithWrap])
 
+  const sectionTitle = useMemo(() => {
+    const fromCms = String(cms?.title || '').trim()
+    const fromProp = String(title || '').trim()
+    return fromCms || fromProp
+  }, [cms, title])
+
+  if (loading && !loaded) {
+    return (
+      <section className="relative animate-pulse">
+        <div className="mb-3">
+          <div className="h-5 w-40 rounded bg-gray-200" />
+        </div>
+
+        <div className="no-scrollbar flex gap-6 overflow-x-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10">
+          {[0, 1, 2, 3, 4, 5].map((k) => (
+            <div key={k} className="flex w-[120px] shrink-0 flex-col items-center sm:w-[150px]">
+              <div className="relative h-[120px] w-[120px] overflow-hidden rounded-3xl bg-gray-200 ring-1 ring-gray-200 sm:h-[150px] sm:w-[150px]" />
+              <div className="mt-2 h-4 w-16 rounded bg-gray-200 sm:mt-3" />
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  if (!items.length) return null
+
   return (
     <section className="relative">
-      {title ? <div className="mb-3 text-sm font-semibold text-gray-900 sm:text-base md:text-lg">{title}</div> : null}
+      {sectionTitle ? <div className="mb-3 text-sm font-semibold text-gray-900 sm:text-base md:text-lg">{sectionTitle}</div> : null}
 
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent sm:w-16" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent sm:w-16" />

@@ -1,6 +1,5 @@
 import BestSellerPanel from '../../../components/BestSellerPanel.jsx'
 import { useEffect, useState } from 'react'
-import productFallback from '../../../../assets/876 × 1628-1.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../../../UserServices/pricingService.js'
 
@@ -13,57 +12,115 @@ const pickPrimaryVariant = (product) => {
 
 export default function HomeBestSellerSection() {
   const [apiProducts, setApiProducts] = useState([])
+  const [cms, setCms] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let active = true
-
-    Promise.all([getSilver925RatePerGram(), getJson('/api/products/bestsellers', { page: 1, limit: 12 })])
-      .then(([rate, res]) => {
+    const run = async () => {
+      setLoading(true)
+      try {
+        const [rate, res] = await Promise.all([getSilver925RatePerGram(), getJson('/api/products/bestsellers', { page: 1, limit: 12 })])
         if (!active) return
         const rows = Array.isArray(res?.data) ? res.data : []
         const mapped = rows.slice(0, 8).map((p) => {
           const v = pickPrimaryVariant(p) || {}
-          const images = [p?.image, ...(Array.isArray(p?.images) ? p.images : []), v?.image, ...(Array.isArray(v?.images) ? v.images : [])].filter(
-            Boolean
-          )
-          const cover = images[0] || productFallback
+          const images = [
+            p?.image,
+            ...(Array.isArray(p?.images) ? p.images : []),
+            v?.image,
+            ...(Array.isArray(v?.images) ? v.images : []),
+          ].filter(Boolean)
           const pricing = computeProductPricing(p, rate)
           const gramsNum = getSilverWeightGrams(p)
           return {
             id: p?._id,
             showBestseller: true,
-            images: images.length ? images : [cover],
-            imageUrl: cover,
+            images,
+            imageUrl: images[0] || '',
             price: Number.isFinite(pricing?.price) ? pricing.price : 0,
             originalPrice: Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined,
             discountPercent: Number.isFinite(pricing?.discountPercent) ? pricing.discountPercent : 0,
             silverWeightGrams: gramsNum || undefined,
-            title: p?.name || 'Product',
+            title: String(p?.name || '').trim(),
             couponText: '',
           }
         })
         setApiProducts(mapped)
-      })
-      .catch(() => {
+      } catch {
         if (!active) return
         setApiProducts([])
-      })
+      }
+
+      try {
+        const cmsRes = await getJson('/api/cms/home-bestsellers')
+        if (!active) return
+        setCms(cmsRes?.data || null)
+      } catch {
+        if (!active) return
+        setCms(null)
+      }
+      if (!active) return
+      setLoading(false)
+      setLoaded(true)
+    }
+
+    run()
 
     return () => {
       active = false
     }
   }, [])
 
+  const title = String(cms?.title || '').trim()
+  const description = String(cms?.description || '').trim()
+
+  if (loading && !loaded) {
+    return (
+      <div className="mt-12 animate-pulse">
+        <section className="relative w-full">
+          <div className="mb-6 text-center">
+            <div className="mx-auto h-9 w-56 rounded bg-gray-200 sm:h-10 md:h-12" />
+            <div className="mx-auto mt-2 h-4 w-96 rounded bg-gray-200 sm:h-5" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:hidden">
+            {[0, 1, 2, 3].map((k) => (
+              <div key={k} className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                <div className="h-[120px] bg-gray-200" />
+                <div className="space-y-2 p-3">
+                  <div className="h-4 w-3/4 rounded bg-gray-200" />
+                  <div className="h-4 w-1/2 rounded bg-gray-200" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="no-scrollbar hidden gap-8 overflow-x-auto px-1 py-2 sm:flex">
+            {[0, 1, 2, 3, 4].map((k) => (
+              <div key={k} className="w-[260px] shrink-0 md:w-[420px]">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                  <div className="h-[240px] bg-gray-200 md:h-[320px]" />
+                  <div className="space-y-2 p-4">
+                    <div className="h-5 w-3/4 rounded bg-gray-200" />
+                    <div className="h-5 w-1/2 rounded bg-gray-200" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
+  }
+
   if (!apiProducts.length) return null
 
   return (
     <div className="mt-12">
       <div className="mx-auto max-w-[92vw]">
-        <BestSellerPanel
-          title="Bestsellers"
-          description="Top picks loved for their look, feel, and everyday sparkle."
-          products={apiProducts}
-        />
+        <BestSellerPanel title={title} description={description} products={apiProducts} />
       </div>
     </div>
   )

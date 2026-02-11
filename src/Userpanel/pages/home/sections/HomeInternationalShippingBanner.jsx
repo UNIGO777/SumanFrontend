@@ -1,4 +1,3 @@
-import shippingBanner from '../../../../assets/2048 × 626-2.jpg'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
@@ -6,6 +5,8 @@ import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 export default function HomeInternationalShippingBanner({ cmsData, fullBleed = true }) {
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
+  const [loading, setLoading] = useState(!cmsData)
+  const [loaded, setLoaded] = useState(Boolean(cmsData))
 
   useEffect(() => {
     if (cmsData) return
@@ -18,6 +19,11 @@ export default function HomeInternationalShippingBanner({ cmsData, fullBleed = t
       .catch(() => {
         if (!active) return
         setCms(null)
+      })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
       })
     return () => {
       active = false
@@ -34,19 +40,41 @@ export default function HomeInternationalShippingBanner({ cmsData, fullBleed = t
       }))
       .filter((it) => Boolean(it.imageUrl))
       .sort((a, b) => a.sortOrder - b.sortOrder)[0]
-    return first || { imageUrl: shippingBanner, href: '' }
+    return first || null
   }, [cmsEffective])
 
-  const sectionTitle = (cmsEffective?.title || '').trim() || 'International Shipping'
-  const sectionDescription =
-    (cmsEffective?.description || '').trim() || 'Send love across borders with secure packaging and reliable delivery.'
+  const sectionTitle = String(cmsEffective?.title || '').trim()
+  const sectionDescription = String(cmsEffective?.description || '').trim()
+
+  if (loading && !loaded) {
+    return (
+      <div className="mt-10 animate-pulse">
+        <section className="w-full">
+          <div className="mx-auto mb-6 max-w-[92vw] text-center">
+            <div className="mx-auto h-9 w-64 rounded bg-gray-200 sm:h-10 md:h-12" />
+            <div className="mx-auto mt-2 h-4 w-96 rounded bg-gray-200 sm:h-5" />
+          </div>
+
+          <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden' : 'overflow-hidden'}>
+            <div className={fullBleed ? 'mx-auto w-full max-w-[92vw] md:max-w-none' : 'w-full'}>
+              <div className="h-[220px] w-full bg-gray-200 sm:h-[280px] md:h-[440px]" />
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!banner?.imageUrl) return null
 
   return (
     <div className="mt-10">
       <section className="w-full">
         <div className="mx-auto mb-6 max-w-[92vw] text-center">
-          <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div>
-          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          {sectionTitle ? <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div> : null}
+          {sectionDescription ? (
+            <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          ) : null}
         </div>
 
         <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden' : 'overflow-hidden'}>

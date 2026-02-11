@@ -1,10 +1,3 @@
-import collectionImg1 from '../../../../assets/1312 × 668-3.jpg'
-import collectionImg2 from '../../../../assets/1312 × 668-4.jpg'
-import collectionImg3 from '../../../../assets/1312 × 668-5.jpg'
-import productImg1 from '../../../../assets/876 × 1628-1.png'
-import productImg2 from '../../../../assets/876 × 1628-2.png'
-import productImg3 from '../../../../assets/876 × 1628-3.png'
-import productImg4 from '../../../../assets/876 × 1628-4.png'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
@@ -12,6 +5,8 @@ import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 export default function HomeLatestCollectionsSection({ cmsData }) {
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
+  const [loading, setLoading] = useState(!cmsData)
+  const [loaded, setLoaded] = useState(Boolean(cmsData))
 
   useEffect(() => {
     if (cmsData) return
@@ -25,54 +20,17 @@ export default function HomeLatestCollectionsSection({ cmsData }) {
         if (!active) return
         setCms(null)
       })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
+      })
     return () => {
       active = false
     }
   }, [cmsData])
 
   const latestCollections = useMemo(() => {
-    const fallback = [
-      {
-        id: 'lc-1',
-        title: 'FRESH DROP!',
-        subtitle: 'Shiny & New Arrivals',
-        tag: 'Only at GIVA',
-        img: collectionImg1,
-        href: '',
-        items: [
-          { img: productImg1 },
-          { img: productImg2 },
-          { img: productImg3 },
-        ],
-      },
-      {
-        id: 'lc-2',
-        title: 'Shakti',
-        subtitle: 'COLLECTION',
-        tag: 'Wear your power beautifully',
-        img: collectionImg2,
-        href: '',
-        items: [
-          { img: productImg4 },
-          { img: productImg2 },
-          { img: productImg1 },
-        ],
-      },
-      {
-        id: 'lc-3',
-        title: 'Pierced',
-        subtitle: 'COLLECTION',
-        tag: 'Mix, match, and stack',
-        img: collectionImg3,
-        href: '',
-        items: [
-          { img: productImg3 },
-          { img: productImg4 },
-          { img: productImg1 },
-        ],
-      },
-    ]
-
     const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => {
@@ -95,35 +53,59 @@ export default function HomeLatestCollectionsSection({ cmsData }) {
       .filter((it) => Boolean(it.img))
       .sort((a, b) => a.sortOrder - b.sortOrder)
 
-    if (normalized.length) {
-      const ensured = normalized.slice(0, 3).map((c, i) => {
-        const fb = fallback[i]
-        if (c.items.length) return c
-        return { ...c, items: fb.items }
-      })
-      if (ensured.length >= 3) return ensured
-      return [...ensured, ...fallback.slice(ensured.length)]
-    }
-
-    return fallback
+    return normalized.slice(0, 3)
   }, [cmsEffective])
 
-  const sectionTitle = (cmsEffective?.title || '').trim() || 'Latest Collections'
-  const sectionDescription =
-    (cmsEffective?.description || '').trim() || 'Fresh designs, new stories, and styles you’ll want to wear on repeat.'
+  const sectionTitle = String(cmsEffective?.title || '').trim()
+  const sectionDescription = String(cmsEffective?.description || '').trim()
+
+  if (loading && !loaded) {
+    return (
+      <div className="mt-10 sm:mt-12 md:mt-14 animate-pulse">
+        <section className="relative w-full">
+          <div className="mb-6 px-2 text-center sm:px-0">
+            <div className="mx-auto h-9 w-64 rounded bg-gray-200 sm:h-10 md:h-12" />
+            <div className="mx-auto mt-2 h-4 w-96 rounded bg-gray-200 sm:h-5" />
+          </div>
+
+          <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 sm:gap-6 sm:px-4 md:gap-8 md:px-10">
+            {[0, 1, 2].map((k) => (
+              <div key={k} className="shrink-0 snap-center">
+                <div className="relative w-[86vw] max-w-[700px] pb-24 sm:w-[72vw] sm:pb-24 md:w-[620px] md:pb-20 lg:w-[700px]">
+                  <div className="relative h-[200px] overflow-hidden rounded-[32px] bg-gray-200 sm:h-[240px] sm:rounded-[44px] md:h-[300px]" />
+                  <div className="absolute bottom-2 left-1/2 flex -translate-y-9 -translate-x-1/2 items-center gap-2 sm:-translate-y-12 sm:gap-4 md:-translate-y-14 md:gap-5">
+                    {[0, 1, 2].map((t) => (
+                      <div
+                        key={t}
+                        className="h-[82px] w-[82px] overflow-hidden rounded-2xl bg-gray-200 ring-1 ring-gray-200 sm:h-[96px] sm:w-[96px] sm:rounded-3xl md:h-[120px] md:w-[120px]"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!latestCollections.length) return null
 
   return (
     <div className="mt-10 sm:mt-12 md:mt-14">
       <section className="relative w-full">
         <div className="mb-6 px-2 text-center sm:px-0">
-          <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div>
-          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          {sectionTitle ? <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div> : null}
+          {sectionDescription ? (
+            <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          ) : null}
         </div>
 
         <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto px-2 py-2 sm:gap-6 sm:px-4 md:gap-8 md:px-10">
           {latestCollections.map((c) => (
             <div key={c.id} className="shrink-0 snap-center">
-              <div className="relative w-[86vw] max-w-[700px] pb-24 sm:w-[72vw] sm:pb-24 md:w-[620px] md:pb-20 lg:w-[700px]">
+              <div className={`relative w-[86vw] max-w-[700px] ${c.items.length ? 'pb-24 sm:pb-24 md:pb-20' : 'pb-4'} sm:w-[72vw] md:w-[620px] lg:w-[700px]`}>
                 <div className="relative h-[200px] overflow-hidden rounded-[32px] bg-gray-100 ring-1 ring-gray-200 sm:h-[240px] sm:rounded-[44px] md:h-[300px]">
                   {c.href ? (
                     <Link to={c.href} className="block h-full w-full">
@@ -149,16 +131,18 @@ export default function HomeLatestCollectionsSection({ cmsData }) {
                   )}
                 </div>
 
-                <div className="absolute bottom-2 left-1/2 flex -translate-y-9 -translate-x-1/2 items-center gap-2 sm:-translate-y-12 sm:gap-4 md:-translate-y-14 md:gap-5">
-                  {c.items.map((it, idx) => (
-                    <div
-                      key={it.id || `${c.id}-${idx}`}
-                      className="grid h-[82px] w-[82px] place-items-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200 sm:h-[96px] sm:w-[96px] sm:rounded-3xl md:h-[120px] md:w-[120px]"
-                    >
-                      <img src={it.img} alt="" className="h-full w-full object-cover" loading="lazy" />
-                    </div>
-                  ))}
-                </div>
+                {c.items.length ? (
+                  <div className="absolute bottom-2 left-1/2 flex -translate-y-9 -translate-x-1/2 items-center gap-2 sm:-translate-y-12 sm:gap-4 md:-translate-y-14 md:gap-5">
+                    {c.items.map((it, idx) => (
+                      <div
+                        key={it.id || `${c.id}-${idx}`}
+                        className="grid h-[82px] w-[82px] place-items-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200 sm:h-[96px] sm:w-[96px] sm:rounded-3xl md:h-[120px] md:w-[120px]"
+                      >
+                        <img src={it.img} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}

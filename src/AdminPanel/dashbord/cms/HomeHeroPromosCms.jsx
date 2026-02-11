@@ -18,6 +18,29 @@ const normalizeItems = (items) => {
     .slice(0, 3)
 }
 
+const smoothScrollToTop = (durationMs = 360) => {
+  if (typeof window === 'undefined') return
+
+  const doc = document.documentElement
+  const body = document.body
+  const startY = window.scrollY ?? window.pageYOffset ?? doc.scrollTop ?? body.scrollTop ?? 0
+  if (!startY) return
+
+  const start = performance.now()
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
+
+  const step = (now) => {
+    const p = Math.min(1, Math.max(0, (now - start) / durationMs))
+    const y = Math.round(startY * (1 - easeOutCubic(p)))
+    if (typeof window.scrollTo === 'function') window.scrollTo(0, y)
+    doc.scrollTop = y
+    body.scrollTop = y
+    if (p < 1) window.requestAnimationFrame(step)
+  }
+
+  window.requestAnimationFrame(step)
+}
+
 export default function HomeHeroPromosCms() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -67,6 +90,7 @@ export default function HomeHeroPromosCms() {
       setError(e?.message || 'Failed to load CMS')
     } finally {
       setLoading(false)
+      smoothScrollToTop()
     }
   }, [])
 
@@ -92,6 +116,7 @@ export default function HomeHeroPromosCms() {
     setStatus('')
     if ((file?.size || 0) > maxUploadBytes) {
       setError(`"${file.name}" is larger than 5 MB`)
+      smoothScrollToTop()
       return
     }
 
@@ -119,6 +144,7 @@ export default function HomeHeroPromosCms() {
         next[idx] = ''
         return next
       })
+      smoothScrollToTop()
     }
   }
 
@@ -129,6 +155,7 @@ export default function HomeHeroPromosCms() {
     const normalized = normalizeItems(items)
     if (!normalized.length) {
       setError('Please add at least 1 image')
+      smoothScrollToTop()
       return
     }
 
@@ -141,6 +168,7 @@ export default function HomeHeroPromosCms() {
       setError(e?.message || 'Failed to save CMS')
     } finally {
       setLoading(false)
+      smoothScrollToTop()
     }
   }
 
@@ -248,7 +276,7 @@ export default function HomeHeroPromosCms() {
                           <img
                             src={localPreviews[idx] || it.imageUrl}
                             alt=""
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-fill"
                             loading="lazy"
                           />
                         </div>

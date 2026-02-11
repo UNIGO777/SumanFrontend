@@ -1,6 +1,3 @@
-import essentialImg1 from '../../../../assets/1312 × 668-6.jpg'
-import essentialImg2 from '../../../../assets/1312 × 668-7.jpg'
-import essentialImg3 from '../../../../assets/1312 × 668-8.jpg'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
@@ -8,6 +5,8 @@ import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 export default function HomeEssentialsSection({ cmsData }) {
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
+  const [loading, setLoading] = useState(!cmsData)
+  const [loaded, setLoaded] = useState(Boolean(cmsData))
 
   useEffect(() => {
     if (cmsData) return
@@ -21,22 +20,20 @@ export default function HomeEssentialsSection({ cmsData }) {
         if (!active) return
         setCms(null)
       })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
+      })
     return () => {
       active = false
     }
   }, [cmsData])
 
-  const sectionTitle = (cmsEffective?.title || '').trim() || '2026 Jewellery Essentials'
-  const sectionDescription =
-    (cmsEffective?.description || '').trim() || 'Everyday staples designed to match your mood, your outfit, and your moment.'
+  const sectionTitle = String(cmsEffective?.title || '').trim()
+  const sectionDescription = String(cmsEffective?.description || '').trim()
 
   const cards = useMemo(() => {
-    const fallback = [
-      { label: 'Timeless Pearls', img: essentialImg1, href: '', sortOrder: 0 },
-      { label: 'Stackable Collection', img: essentialImg2, href: '', sortOrder: 1 },
-      { label: 'Emerging Trends', img: essentialImg3, href: '', sortOrder: 2 },
-    ]
-
     const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => ({
@@ -48,17 +45,40 @@ export default function HomeEssentialsSection({ cmsData }) {
       .filter((it) => Boolean(it.label && it.img))
       .sort((a, b) => a.sortOrder - b.sortOrder)
 
-    if (normalized.length >= 3) return normalized.slice(0, 3)
-    if (normalized.length) return [...normalized, ...fallback.slice(normalized.length)]
-    return fallback
+    return normalized.slice(0, 3)
   }, [cmsEffective])
+
+  if (loading && !loaded) {
+    return (
+      <div className="mt-12 animate-pulse">
+        <section className="w-full">
+          <div className="mb-6 text-center">
+            <div className="mx-auto h-9 w-72 rounded bg-gray-200 sm:h-10 md:h-12" />
+            <div className="mx-auto mt-2 h-4 w-96 rounded bg-gray-200 sm:h-5" />
+          </div>
+
+          <div className="mx-auto flex max-w-[95vw] flex-col gap-8 md:flex-row">
+            {[0, 1, 2].map((k) => (
+              <div key={k} className={k === 2 ? 'md:flex-1' : 'md:w-[330px]'}>
+                <div className="relative h-[260px] overflow-hidden rounded-[40px] bg-gray-200" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!cards.length) return null
 
   return (
     <div className="mt-12">
       <section className="w-full">
         <div className="mb-6 text-center">
-          <div className="text-2xl font-bold text-[#0f2e40] sm:text-3xl md:text-4xl">{sectionTitle}</div>
-          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          {sectionTitle ? <div className="text-2xl font-bold text-[#0f2e40] sm:text-3xl md:text-4xl">{sectionTitle}</div> : null}
+          {sectionDescription ? (
+            <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          ) : null}
         </div>
 
         <div className="mx-auto flex max-w-[95vw] flex-col gap-8 md:flex-row">

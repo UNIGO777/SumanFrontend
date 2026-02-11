@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
-import recipientLeft from '../../assets/ShopByRecipient Left.png'
-import recipientRight from '../../assets/Shop By Recipient Right.png'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../AdminPanel/services/apiClient.js'
 
 export default function RecipientPanel({
-  title: titleProp = 'Shop By Recipient',
-  description: descriptionProp = "Find the perfect gift for your loved one, whether it's a special occasion or a regular gift.",
+  title: titleProp = '',
+  description: descriptionProp = '',
   items: itemsProp,
 }) {
   const [cms, setCms] = useState(null)
+  const hasOverride = Array.isArray(itemsProp) && itemsProp.length > 0
+  const hasTitleOverride = String(titleProp || '').trim().length > 0
+  const hasDescriptionOverride = String(descriptionProp || '').trim().length > 0
+  const [loading, setLoading] = useState(!(hasOverride && hasTitleOverride && hasDescriptionOverride))
+  const [loaded, setLoaded] = useState(hasOverride && hasTitleOverride && hasDescriptionOverride)
 
   useEffect(() => {
-    const hasOverride = Array.isArray(itemsProp) && itemsProp.length > 0
-    const hasTitleOverride = String(titleProp || '').trim().length > 0
-    const hasDescriptionOverride = String(descriptionProp || '').trim().length > 0
     if (hasOverride && hasTitleOverride && hasDescriptionOverride) return
 
     let active = true
@@ -27,42 +27,33 @@ export default function RecipientPanel({
         if (!active) return
         setCms(null)
       })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
+      })
 
     return () => {
       active = false
     }
-  }, [descriptionProp, itemsProp, titleProp])
-
-  const fallbackItems = useMemo(
-    () => [
-      {
-        label: 'Gifts for Him',
-        imageUrl: recipientLeft,
-        href: '/search/gifts-for-him',
-      },
-      {
-        label: 'Gifts for Her',
-        imageUrl: recipientRight,
-        href: '/search/gifts-for-her',
-      },
-    ],
-    []
-  )
+  }, [hasDescriptionOverride, hasOverride, hasTitleOverride, itemsProp, titleProp, descriptionProp])
 
   const title = useMemo(() => {
     const fromCms = String(cms?.title || '').trim()
-    return fromCms || titleProp
+    const fromProp = String(titleProp || '').trim()
+    return fromCms || fromProp
   }, [cms, titleProp])
 
   const description = useMemo(() => {
     const fromCms = String(cms?.description || '').trim()
-    return fromCms || descriptionProp
+    const fromProp = String(descriptionProp || '').trim()
+    return fromCms || fromProp
   }, [cms, descriptionProp])
 
   const items = useMemo(() => {
     const override = Array.isArray(itemsProp) ? itemsProp : []
     const cmsItems = Array.isArray(cms?.items) ? cms.items : []
-    const source = override.length ? override : cmsItems.length ? cmsItems : fallbackItems
+    const source = override.length ? override : cmsItems
 
     const normalized = source
       .map((it, idx) => ({
@@ -74,10 +65,34 @@ export default function RecipientPanel({
       .filter((it) => Boolean(it.imageUrl) && Boolean(it.label))
       .sort((a, b) => a.sortOrder - b.sortOrder)
 
-    if (normalized.length >= 2) return normalized.slice(0, 2)
-    if (normalized.length) return [...normalized, ...fallbackItems.slice(normalized.length)]
-    return fallbackItems
-  }, [cms, fallbackItems, itemsProp])
+    return normalized.slice(0, 2)
+  }, [cms, itemsProp])
+
+  if (loading && !loaded) {
+    return (
+      <section className="w-full animate-pulse">
+        <div className="mb-3 flex justify-center">
+          <div className="h-10 w-64 rounded bg-gray-200 sm:h-12 md:h-14" />
+        </div>
+        <div className="mb-6 flex justify-center">
+          <div className="h-5 w-96 rounded bg-gray-200" />
+        </div>
+        <div className="mx-auto grid max-w-[94vw] grid-cols-1 gap-8 sm:max-w-[80vw] sm:grid-cols-2 sm:gap-10">
+          {[0, 1].map((k) => (
+            <div key={k} className="relative overflow-hidden rounded-[44px] bg-gray-100 ring-1 ring-gray-200">
+              <div className="h-[240px] w-full bg-gray-200 sm:h-[320px]" />
+              <div className="px-4 pb-6">
+                <div className="mx-auto mt-5 h-7 w-40 rounded bg-gray-200" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  if (!items.length) return null
+  if (!title) return null
 
   return (
     <section className="w-full">

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ProductCard from './ProductCard.jsx'
 
 export default function BestSellerPanel({
-  title = 'Bestsellers',
+  title = '',
   description = '',
   products = [],
   autoScroll = true,
@@ -183,10 +183,12 @@ export default function BestSellerPanel({
 
   return (
     <section className="relative w-full">
-      <div className="mb-6 text-center">
-        <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{title}</div>
-        {description ? <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{description}</div> : null}
-      </div>
+      {title || description ? (
+        <div className="mb-6 text-center">
+          {title ? <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{title}</div> : null}
+          {description ? <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{description}</div> : null}
+        </div>
+      ) : null}
 
       {enableLoop && canScroll ? (
         <>

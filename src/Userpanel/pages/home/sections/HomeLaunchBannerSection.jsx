@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import launchBanner1 from '../../../../assets/1618 × 768-1.jpg'
-import launchBanner2 from '../../../../assets/1618 × 768-2.jpg'
-import launchBanner3 from '../../../../assets/1618 × 768-3.jpg'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
 export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
@@ -10,6 +7,8 @@ export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
 
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
+  const [loading, setLoading] = useState(!cmsData)
+  const [loaded, setLoaded] = useState(Boolean(cmsData))
 
   useEffect(() => {
     if (cmsData) return
@@ -23,18 +22,17 @@ export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
         if (!active) return
         setCms(null)
       })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
+      })
     return () => {
       active = false
     }
   }, [cmsData])
 
   const banners = useMemo(() => {
-    const fallback = [
-      { img: launchBanner1, href: '/search', sortOrder: 0 },
-      { img: launchBanner2, href: '/search', sortOrder: 1 },
-      { img: launchBanner3, href: '/search', sortOrder: 2 },
-    ]
-
     const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => ({
@@ -45,10 +43,11 @@ export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
       .filter((it) => Boolean(it.img))
       .sort((a, b) => a.sortOrder - b.sortOrder)
 
-    if (normalized.length >= 3) return normalized.slice(0, 3)
-    if (normalized.length) return [...normalized, ...fallback.slice(normalized.length)]
-    return fallback
+    return normalized.slice(0, 3)
   }, [cmsEffective])
+
+  const sectionTitle = String(cmsEffective?.title || '').trim()
+  const sectionDescription = String(cmsEffective?.description || '').trim()
 
   const track = useMemo(() => {
     if (!banners.length) return []
@@ -142,14 +141,35 @@ export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
     }
   }, [isAnimating])
 
+  if (loading && !loaded) {
+    return (
+      <div className="mt-10 animate-pulse">
+        <section className="w-full">
+          <div className="mx-auto mb-6 max-w-[92vw] text-center">
+            <div className="mx-auto h-9 w-56 rounded bg-gray-200 sm:h-10 md:h-12" />
+            <div className="mx-auto mt-2 h-4 w-80 rounded bg-gray-200 sm:h-5" />
+          </div>
+
+          <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden ' : 'overflow-hidden'}>
+            <div className="relative w-full select-none md:h-[550px]">
+              <div className="h-[220px] w-full bg-gray-200 sm:h-[280px] md:h-[550px]" />
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!banners.length) return null
+
   return (
     <div className="mt-10">
       <section className="w-full">
         <div className="mx-auto mb-6 max-w-[92vw] text-center">
-          <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{(cmsEffective?.title || '').trim() || 'New Launches'}</div>
-          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
-            {(cmsEffective?.description || '').trim() || 'Explore the latest campaigns, highlights, and just-dropped collections.'}
-          </div>
+          {sectionTitle ? <div className="text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">{sectionTitle}</div> : null}
+          {sectionDescription ? (
+            <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div>
+          ) : null}
         </div>
 
         <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden ' : 'overflow-hidden'}>

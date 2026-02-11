@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import occasionImg1 from '../../../../assets/876 × 1628-1.png'
-import occasionImg2 from '../../../../assets/876 × 1628-2.png'
-import occasionImg3 from '../../../../assets/876 × 1628-3.png'
-import occasionImg4 from '../../../../assets/876 × 1628-4.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
 export default function HomeOccasionSection({ cmsData }) {
   const occasionRef = useRef(null)
-  const [activeIdx, setActiveIdx] = useState(2)
+  const initialScrollRef = useRef(false)
+  const [activeIdx, setActiveIdx] = useState(0)
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
+  const [loading, setLoading] = useState(!cmsData)
+  const [loaded, setLoaded] = useState(Boolean(cmsData))
 
   useEffect(() => {
     if (cmsData) return
@@ -24,25 +23,17 @@ export default function HomeOccasionSection({ cmsData }) {
         if (!active) return
         setCms(null)
       })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setLoaded(true)
+      })
     return () => {
       active = false
     }
   }, [cmsData])
 
   const occasions = useMemo(() => {
-    const fallback = [
-      { label: "Valentine's Day", img: occasionImg1, href: '' },
-      { label: 'Temple Date', img: occasionImg2, href: '' },
-      { label: 'Propose Day', img: occasionImg3, href: '' },
-      { label: 'Date Night Ready', img: occasionImg4, href: '' },
-      { label: "Galentine's", img: occasionImg1, href: '' },
-      { label: 'Birthday', img: occasionImg2, href: '' },
-      { label: 'Anniversary', img: occasionImg3, href: '' },
-      { label: 'Wedding', img: occasionImg4, href: '' },
-      { label: 'Self Love', img: occasionImg1, href: '' },
-      { label: 'Festive', img: occasionImg2, href: '' },
-    ]
-
     const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => ({
@@ -54,23 +45,25 @@ export default function HomeOccasionSection({ cmsData }) {
       .filter((it) => Boolean(it.label && it.img))
       .sort((a, b) => a.sortOrder - b.sortOrder)
 
-    if (normalized.length) return normalized
-    return fallback
+    return normalized
   }, [cmsEffective])
 
-  const sectionTitle = (cmsEffective?.title || '').trim() || 'Shop by Occasion'
-  const sectionDescription =
-    (cmsEffective?.description || '').trim() || 'Find the perfect piece for every celebration, date night, and milestone.'
+  const sectionTitle = String(cmsEffective?.title || '').trim()
+  const sectionDescription = String(cmsEffective?.description || '').trim()
 
   useEffect(() => {
+    if (initialScrollRef.current) return
+    if (!occasions.length) return
     const container = occasionRef.current
     if (!container) return
-    const el = container.children?.[2]
+    const idx = Math.min(2, occasions.length - 1)
+    const el = container.children?.[idx]
     if (!el || typeof el.scrollIntoView !== 'function') return
+    initialScrollRef.current = true
     requestAnimationFrame(() => {
       el.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
     })
-  }, [])
+  }, [occasions.length])
 
   useEffect(() => {
     const container = occasionRef.current
@@ -117,16 +110,39 @@ export default function HomeOccasionSection({ cmsData }) {
     }
   }, [])
 
+  if (loading && !loaded) {
+    return (
+      <div className="mt-12 animate-pulse">
+        <section className="w-full rounded-3xl bg-[#f2f7f9] py-10">
+          <div className="mb-6 text-center">
+            <div className="mx-auto h-9 w-64 rounded bg-gray-200 sm:h-10 md:h-12" />
+            <div className="mx-auto mt-2 h-4 w-96 rounded bg-gray-200 sm:h-5" />
+          </div>
+
+          <div className="relative mx-auto max-w-[96vw] sm:max-w-[92vw] ">
+            <div className="no-scrollbar flex min-h-[420px] snap-x snap-mandatory items-end gap-6 overflow-x-auto px-4 py-8 sm:min-h-[480px] sm:gap-12 sm:px-8 sm:py-10 md:px-12 lg:px-20 scroll-px-4 sm:scroll-px-8 ">
+              {[0, 1, 2, 3, 4].map((k) => (
+                <div key={k} className="shrink-0 snap-center">
+                  <div className="relative h-[420px] w-[200px] overflow-hidden bg-gray-200 shadow-lg sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!occasions.length) return null
+
   return (
     <div className="mt-12">
       <section className="w-full rounded-3xl bg-[#f2f7f9] py-10">
         <div className="mb-6 text-center">
-          <div className="inline-block rounded-md px-6 py-1 text-2xl font-bold text-[#0f2e40] sm:text-3xl md:text-4xl">
-            {sectionTitle}
-          </div>
-          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
-            {sectionDescription}
-          </div>
+          {sectionTitle ? (
+            <div className="inline-block rounded-md px-6 py-1 text-2xl font-bold text-[#0f2e40] sm:text-3xl md:text-4xl">{sectionTitle}</div>
+          ) : null}
+          {sectionDescription ? <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">{sectionDescription}</div> : null}
         </div>
 
         <div className="relative mx-auto max-w-[96vw] sm:max-w-[92vw] ">
