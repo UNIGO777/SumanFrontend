@@ -26,7 +26,6 @@ export default function HomeEssentialsCms() {
   const [uploadingIdx, setUploadingIdx] = useState(-1)
   const [localPreviews, setLocalPreviews] = useState(['', '', ''])
   const [isDragActive, setIsDragActive] = useState([false, false, false])
-  const [previewNonce, setPreviewNonce] = useState(0)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -71,7 +70,7 @@ export default function HomeEssentialsCms() {
       setLoading(true)
       setError('')
       setStatus('')
-      const res = await getJson(`/api/admin/cms/${KEY}`)
+      const res = await getJson(`/api/admin/cms/${KEY}`, undefined, { noCache: true })
       setTitle(String(res?.data?.title || '').trim())
       setDescription(String(res?.data?.description || '').trim())
 
@@ -79,7 +78,6 @@ export default function HomeEssentialsCms() {
       const filled = [...serverItems]
       while (filled.length < 3) filled.push({ label: '', imageUrl: '', href: '', sortOrder: filled.length })
       setItems(filled.slice(0, 3).map((it, idx) => ({ ...it, sortOrder: idx })))
-      setPreviewNonce((v) => v + 1)
     } catch (e) {
       setError(e?.message || 'Failed to load CMS')
     } finally {
@@ -156,6 +154,19 @@ export default function HomeEssentialsCms() {
       setLoading(false)
     }
   }
+
+  const previewCms = useMemo(() => {
+    return {
+      title: String(title || '').trim(),
+      description: String(description || '').trim(),
+      items: items.map((it, idx) => ({
+        label: String(it?.label || '').trim(),
+        imageUrl: String(localPreviews[idx] || it?.imageUrl || '').trim(),
+        href: String(it?.href || '').trim(),
+        sortOrder: Number.isFinite(Number(it?.sortOrder)) ? Number(it.sortOrder) : idx,
+      })),
+    }
+  }, [description, items, localPreviews, title])
 
   return (
     <div className="space-y-6">
@@ -335,9 +346,8 @@ export default function HomeEssentialsCms() {
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
         <div className="mb-3 text-sm font-semibold text-gray-900">Preview</div>
-        <HomeEssentialsSection key={previewNonce} />
+        <HomeEssentialsSection cmsData={previewCms} />
       </div>
     </div>
   )
 }
-

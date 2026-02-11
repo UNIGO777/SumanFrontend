@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeEssentialsSection() {
+export default function HomeEssentialsSection({ cmsData }) {
   const [cms, setCms] = useState(null)
+  const cmsEffective = cmsData || cms
 
   useEffect(() => {
+    if (cmsData) return
     let active = true
     getJson('/api/cms/home-essentials')
       .then((res) => {
@@ -22,11 +24,11 @@ export default function HomeEssentialsSection() {
     return () => {
       active = false
     }
-  }, [])
+  }, [cmsData])
 
-  const sectionTitle = (cms?.title || '').trim() || '2026 Jewellery Essentials'
+  const sectionTitle = (cmsEffective?.title || '').trim() || '2026 Jewellery Essentials'
   const sectionDescription =
-    (cms?.description || '').trim() || 'Everyday staples designed to match your mood, your outfit, and your moment.'
+    (cmsEffective?.description || '').trim() || 'Everyday staples designed to match your mood, your outfit, and your moment.'
 
   const cards = useMemo(() => {
     const fallback = [
@@ -35,7 +37,7 @@ export default function HomeEssentialsSection() {
       { label: 'Emerging Trends', img: essentialImg3, href: '', sortOrder: 2 },
     ]
 
-    const rows = Array.isArray(cms?.items) ? cms.items : []
+    const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => ({
         label: String(it?.label || '').trim(),
@@ -49,7 +51,7 @@ export default function HomeEssentialsSection() {
     if (normalized.length >= 3) return normalized.slice(0, 3)
     if (normalized.length) return [...normalized, ...fallback.slice(normalized.length)]
     return fallback
-  }, [cms])
+  }, [cmsEffective])
 
   return (
     <div className="mt-12">

@@ -15,6 +15,7 @@ import RefundPolicy from './Userpanel/pages/RefundPolicy.jsx'
 import PrivacyPolicy from './Userpanel/pages/PrivacyPolicy.jsx'
 import ReturnPolicy from './Userpanel/pages/ReturnPolicy.jsx'
 import ShippingPolicy from './Userpanel/pages/ShippingPolicy.jsx'
+import TrackOrder from './Userpanel/pages/TrackOrder.jsx'
 
 function UserLayout() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path="privacy-policy" element={<PrivacyPolicy />} />
         <Route path="return-policy" element={<ReturnPolicy />} />
         <Route path="shipping-policy" element={<ShippingPolicy />} />
+        <Route path="track-order" element={<TrackOrder />} />
       </Route>
       <Route path="/admin/*" element={<AdminPanel />} />
       <Route path="*" element={<Navigate to="/" replace />} />

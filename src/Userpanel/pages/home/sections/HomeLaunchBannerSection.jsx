@@ -5,12 +5,14 @@ import launchBanner2 from '../../../../assets/1618 × 768-2.jpg'
 import launchBanner3 from '../../../../assets/1618 × 768-3.jpg'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeLaunchBannerSection({ fullBleed = true }) {
+export default function HomeLaunchBannerSection({ fullBleed = true, cmsData }) {
   const bannerSwipeRef = useRef({ isDragging: false, startX: 0, pointerId: null })
 
   const [cms, setCms] = useState(null)
+  const cmsEffective = cmsData || cms
 
   useEffect(() => {
+    if (cmsData) return
     let active = true
     getJson('/api/cms/home-launch-banners')
       .then((res) => {
@@ -24,7 +26,7 @@ export default function HomeLaunchBannerSection({ fullBleed = true }) {
     return () => {
       active = false
     }
-  }, [])
+  }, [cmsData])
 
   const banners = useMemo(() => {
     const fallback = [
@@ -33,7 +35,7 @@ export default function HomeLaunchBannerSection({ fullBleed = true }) {
       { img: launchBanner3, href: '/search', sortOrder: 2 },
     ]
 
-    const rows = Array.isArray(cms?.items) ? cms.items : []
+    const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => ({
         img: String(it?.imageUrl || '').trim(),
@@ -46,7 +48,7 @@ export default function HomeLaunchBannerSection({ fullBleed = true }) {
     if (normalized.length >= 3) return normalized.slice(0, 3)
     if (normalized.length) return [...normalized, ...fallback.slice(normalized.length)]
     return fallback
-  }, [cms])
+  }, [cmsEffective])
 
   const track = useMemo(() => {
     if (!banners.length) return []
@@ -144,9 +146,9 @@ export default function HomeLaunchBannerSection({ fullBleed = true }) {
     <div className="mt-10">
       <section className="w-full">
         <div className="mx-auto mb-6 max-w-[92vw] text-center">
-          <div className="text-3xl font-bold text-gray-900">{(cms?.title || '').trim() || 'New Launches'}</div>
+          <div className="text-3xl font-bold text-gray-900">{(cmsEffective?.title || '').trim() || 'New Launches'}</div>
           <div className="mt-2 text-sm font-semibold text-gray-600">
-            {(cms?.description || '').trim() || 'Explore the latest campaigns, highlights, and just-dropped collections.'}
+            {(cmsEffective?.description || '').trim() || 'Explore the latest campaigns, highlights, and just-dropped collections.'}
           </div>
         </div>
 

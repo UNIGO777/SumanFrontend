@@ -3,10 +3,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeInternationalShippingBanner() {
+export default function HomeInternationalShippingBanner({ cmsData, fullBleed = true }) {
   const [cms, setCms] = useState(null)
+  const cmsEffective = cmsData || cms
 
   useEffect(() => {
+    if (cmsData) return
     let active = true
     getJson('/api/cms/home-international-shipping')
       .then((res) => {
@@ -20,10 +22,10 @@ export default function HomeInternationalShippingBanner() {
     return () => {
       active = false
     }
-  }, [])
+  }, [cmsData])
 
   const banner = useMemo(() => {
-    const rows = Array.isArray(cms?.items) ? cms.items : []
+    const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const first = rows
       .map((it) => ({
         imageUrl: String(it?.imageUrl || '').trim(),
@@ -33,11 +35,11 @@ export default function HomeInternationalShippingBanner() {
       .filter((it) => Boolean(it.imageUrl))
       .sort((a, b) => a.sortOrder - b.sortOrder)[0]
     return first || { imageUrl: shippingBanner, href: '' }
-  }, [cms])
+  }, [cmsEffective])
 
-  const sectionTitle = (cms?.title || '').trim() || 'International Shipping'
+  const sectionTitle = (cmsEffective?.title || '').trim() || 'International Shipping'
   const sectionDescription =
-    (cms?.description || '').trim() || 'Send love across borders with secure packaging and reliable delivery.'
+    (cmsEffective?.description || '').trim() || 'Send love across borders with secure packaging and reliable delivery.'
 
   return (
     <div className="mt-10">
@@ -47,8 +49,8 @@ export default function HomeInternationalShippingBanner() {
           <div className="mt-2 text-sm font-semibold text-gray-600">{sectionDescription}</div>
         </div>
 
-        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden">
-          <div className="mx-auto w-full max-w-[92vw] md:max-w-none">
+        <div className={fullBleed ? 'relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden' : 'overflow-hidden'}>
+          <div className={fullBleed ? 'mx-auto w-full max-w-[92vw] md:max-w-none' : 'w-full'}>
             <div className="relative overflow-hidden bg-gray-100 ring-1 ring-gray-200 ">
               {banner.href ? (
                 <Link to={banner.href} className="block">

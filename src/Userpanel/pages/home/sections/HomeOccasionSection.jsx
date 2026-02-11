@@ -6,12 +6,14 @@ import occasionImg3 from '../../../../assets/876 × 1628-3.png'
 import occasionImg4 from '../../../../assets/876 × 1628-4.png'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeOccasionSection() {
+export default function HomeOccasionSection({ cmsData }) {
   const occasionRef = useRef(null)
   const [activeIdx, setActiveIdx] = useState(2)
   const [cms, setCms] = useState(null)
+  const cmsEffective = cmsData || cms
 
   useEffect(() => {
+    if (cmsData) return
     let active = true
     getJson('/api/cms/home-occasion')
       .then((res) => {
@@ -25,7 +27,7 @@ export default function HomeOccasionSection() {
     return () => {
       active = false
     }
-  }, [])
+  }, [cmsData])
 
   const occasions = useMemo(() => {
     const fallback = [
@@ -41,7 +43,7 @@ export default function HomeOccasionSection() {
       { label: 'Festive', img: occasionImg2, href: '' },
     ]
 
-    const rows = Array.isArray(cms?.items) ? cms.items : []
+    const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => ({
         label: String(it?.label || it?.title || '').trim(),
@@ -54,11 +56,11 @@ export default function HomeOccasionSection() {
 
     if (normalized.length) return normalized
     return fallback
-  }, [cms])
+  }, [cmsEffective])
 
-  const sectionTitle = (cms?.title || '').trim() || 'Shop by Occasion'
+  const sectionTitle = (cmsEffective?.title || '').trim() || 'Shop by Occasion'
   const sectionDescription =
-    (cms?.description || '').trim() || 'Find the perfect piece for every celebration, date night, and milestone.'
+    (cmsEffective?.description || '').trim() || 'Find the perfect piece for every celebration, date night, and milestone.'
 
   useEffect(() => {
     const container = occasionRef.current

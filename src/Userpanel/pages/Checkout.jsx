@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import productFallback from '../../assets/876 × 1628-1.png'
 import { getApiBase } from '../../AdminPanel/services/apiClient.js'
 import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } from '../UserServices/pricingService.js'
 
 const CART_KEY = 'sj_cart_v1'
 const CHECKOUT_KEY = 'sj_checkout_v1'
-const ORDERS_KEY = 'sj_orders_v1'
 
 const normalizeId = (id) => (id === undefined || id === null ? '' : String(id)).trim()
 const isMongoId = (id) => /^[a-f\d]{24}$/i.test(normalizeId(id))
@@ -54,38 +53,76 @@ const writeCheckoutDraft = (draft) => {
   }
 }
 
-const readOrders = () => {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = window.localStorage.getItem(ORDERS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-const writeOrders = (orders) => {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem(ORDERS_KEY, JSON.stringify(Array.isArray(orders) ? orders : []))
-  } catch {
-    return
-  }
-}
-
-const emptyCard = { number: '', name: '', expiry: '', cvv: '' }
-
 export default function Checkout() {
   const formatter = useMemo(() => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }), [])
   const navigate = useNavigate()
+  const location = useLocation()
   const apiBase = useMemo(() => getApiBase(), [])
 
   const [items, setItems] = useState(() => readCartItems())
   const [status, setStatus] = useState('')
   const [placedOrder, setPlacedOrder] = useState(null)
+  const [placing, setPlacing] = useState(false)
   const [silverRatePerGram, setSilverRatePerGram] = useState(0)
+  const [celebrating, setCelebrating] = useState(false)
+
+  const paymentFlag = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return String(params.get('payment') || '').toLowerCase()
+  }, [location.search])
+
+  const paymentSuccess = paymentFlag === 'success'
+
+  const placedOrderId = useMemo(() => {
+    return String(placedOrder?._id || placedOrder?.id || '').trim()
+  }, [placedOrder?._id, placedOrder?.id])
+
+  const trackingHref = useMemo(() => {
+    if (!placedOrderId) return '/track-order'
+    return `/track-order?orderId=${encodeURIComponent(placedOrderId)}`
+  }, [placedOrderId])
+
+  const celebrationPieces = useMemo(() => {
+    const orderSeed = String(placedOrder?._id || placedOrder?.id || '').trim()
+    if (!orderSeed || !paymentSuccess) return []
+
+    let h = 2166136261
+    for (let i = 0; i < orderSeed.length; i += 1) {
+      h ^= orderSeed.charCodeAt(i)
+      h = Math.imul(h, 16777619)
+    }
+    let s = h >>> 0
+    const rand = () => {
+      s ^= s << 13
+      s ^= s >>> 17
+      s ^= s << 5
+      return (s >>> 0) / 4294967296
+    }
+
+    const colors = ['#0f2e40', '#16a34a', '#f59e0b', '#2563eb', '#a855f7', '#ef4444']
+    const pieces = []
+    for (let i = 0; i < 44; i += 1) {
+      const size = 6 + Math.floor(rand() * 7)
+      const left = rand() * 100
+      const delayMs = Math.floor(rand() * 650)
+      const durMs = 2200 + Math.floor(rand() * 1500)
+      const driftVw = (rand() * 18 - 9).toFixed(2)
+      const rotateDeg = Math.floor(rand() * 360)
+      const shape = rand() > 0.5 ? '2px' : '999px'
+      pieces.push({
+        key: `p_${i}_${orderSeed}`,
+        left,
+        size,
+        delayMs,
+        durMs,
+        driftVw,
+        rotateDeg,
+        color: colors[i % colors.length],
+        radius: shape,
+      })
+    }
+    return pieces
+  }, [paymentSuccess, placedOrder?._id, placedOrder?.id])
 
   const toPublicUrl = useMemo(() => {
     return (p) => {
@@ -119,10 +156,8 @@ export default function Checkout() {
     giftWrap: Boolean(draft?.delivery?.giftWrap),
   }))
 
-  const [payment, setPayment] = useState(() => ({
-    method: draft?.payment?.method || 'cod',
-    upiId: draft?.payment?.upiId || '',
-    card: { ...emptyCard, ...(draft?.payment?.card || {}) },
+  const [payment] = useState(() => ({
+    method: 'online',
   }))
 
   useEffect(() => {
@@ -191,6 +226,46 @@ export default function Checkout() {
     writeCheckoutDraft({ contact, shipping, delivery, payment })
   }, [contact, delivery, payment, shipping])
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const orderId = params.get('orderId') || ''
+    if (!apiBase || !isMongoId(orderId)) return
+
+    let active = true
+    setStatus('')
+
+    fetch(`${apiBase}/api/orders/${orderId}`)
+      .then((r) => r.json().catch(() => null))
+      .then((json) => {
+        if (!active) return
+        if (!json?.ok) {
+          setStatus(json?.message || 'Failed to load order')
+          return
+        }
+        setPlacedOrder(json?.data || null)
+        const paymentFlag = String(params.get('payment') || '').toLowerCase()
+        if (paymentFlag === 'success') {
+          writeCartItems([])
+          setItems([])
+        }
+      })
+      .catch(() => {
+        if (!active) return
+        setStatus('Failed to load order')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [apiBase, location.search])
+
+  useEffect(() => {
+    if (!placedOrder || !paymentSuccess) return
+    setCelebrating(true)
+    const t = window.setTimeout(() => setCelebrating(false), 3500)
+    return () => window.clearTimeout(t)
+  }, [paymentSuccess, placedOrder])
+
   const subtotal = useMemo(() => {
     return (items || []).reduce((sum, it) => sum + (Number(it?.price) || 0) * (Number(it?.qty) || 1), 0)
   }, [items])
@@ -212,96 +287,215 @@ export default function Checkout() {
     if (!shipping.state.trim()) return 'State is required.'
     if (!shipping.pincode.trim()) return 'Pincode is required.'
 
-    if (payment.method === 'upi' && !payment.upiId.trim()) return 'UPI ID is required.'
-    if (payment.method === 'card') {
-      if (!payment.card.number.trim()) return 'Card number is required.'
-      if (!payment.card.name.trim()) return 'Name on card is required.'
-      if (!payment.card.expiry.trim()) return 'Expiry is required.'
-      if (!payment.card.cvv.trim()) return 'CVV is required.'
-    }
-
     return ''
   }
 
-  const placeOrder = () => {
+  const placeOrder = async () => {
     const err = validate()
     if (err) {
       setStatus(err)
       return
     }
 
-    const order = {
-      id: `SJ-${Date.now()}`,
-      placedAt: Date.now(),
-      contact,
-      shipping,
-      delivery,
-      payment: {
-        method: payment.method,
-        upiId: payment.method === 'upi' ? payment.upiId : '',
-      },
-      items: (items || []).map((it) => ({
-        key: String(it?.key || '').trim(),
-        id: it?.id,
-        sku: it?.sku,
-        title: it?.title || '',
-        price: Number(it?.price) || 0,
-        originalPrice: Number.isFinite(Number(it?.originalPrice)) ? Number(it.originalPrice) : undefined,
-        silverWeightGrams: Number.isFinite(Number(it?.silverWeightGrams)) ? Number(it.silverWeightGrams) : undefined,
-        qty: Math.max(1, Number.parseInt(it?.qty, 10) || 1),
-        images: Array.isArray(it?.images) ? it.images.filter(Boolean) : [],
-        imageUrl: it?.imageUrl || '',
-      })),
-      silverRatePerGram,
-      totals: { subtotal, gst, shippingFee, total },
+    if (!apiBase) {
+      setStatus('Backend API is not configured.')
+      return
     }
 
-    const orders = readOrders()
-    writeOrders([order, ...(orders || [])])
-    writeCartItems([])
-    setPlacedOrder(order)
-    setStatus('')
+    const payloadItems = (items || []).map((it) => ({
+      productId: it?.id,
+      quantity: Math.max(1, Number.parseInt(it?.qty, 10) || 1),
+    }))
+    const invalid = payloadItems.some((it) => !isMongoId(it.productId))
+    if (invalid) {
+      setStatus('Some items in your cart are invalid. Please refresh your cart.')
+      return
+    }
+
+    try {
+      setPlacing(true)
+      setStatus('')
+      const res = await fetch(`${apiBase}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: payloadItems, contact, shipping, delivery }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.ok) {
+        setStatus(json?.message || 'Failed to create order')
+        return
+      }
+      const redirectUrl = String(json?.data?.redirectUrl || '').trim()
+      if (!redirectUrl) {
+        setStatus('Payment redirect URL is missing')
+        return
+      }
+      window.location.href = redirectUrl
+    } catch (e) {
+      setStatus(e?.message || 'Failed to create order')
+    } finally {
+      setPlacing(false)
+    }
   }
 
   if (placedOrder) {
     return (
       <div className="mx-auto w-full max-w-4xl px-4 py-10">
+        <style>{`
+          .sj-checkout-celebrate {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 60;
+            overflow: hidden;
+          }
+
+          .sj-checkout-confetti {
+            position: absolute;
+            top: -12vh;
+            left: 0;
+            transform: translate3d(0, 0, 0);
+            animation: sj-checkout-confetti-fall var(--sj-dur, 2600ms) cubic-bezier(0.2, 0.8, 0.2, 1) var(--sj-delay, 0ms) forwards;
+          }
+
+          .sj-checkout-confetti-inner {
+            display: block;
+            width: var(--sj-size, 10px);
+            height: var(--sj-size, 10px);
+            border-radius: var(--sj-radius, 2px);
+            background: var(--sj-color, #0f2e40);
+            transform: rotate(var(--sj-rot, 0deg));
+            animation: sj-checkout-confetti-spin 900ms linear var(--sj-delay, 0ms) infinite;
+          }
+
+          @keyframes sj-checkout-confetti-fall {
+            0% {
+              opacity: 0;
+              transform: translate3d(0, -4vh, 0);
+            }
+            8% {
+              opacity: 1;
+            }
+            100% {
+              opacity: 0;
+              transform: translate3d(calc(var(--sj-drift, 0) * 1vw), 112vh, 0);
+            }
+          }
+
+          @keyframes sj-checkout-confetti-spin {
+            0% { transform: rotate(var(--sj-rot, 0deg)); }
+            100% { transform: rotate(calc(var(--sj-rot, 0deg) + 720deg)); }
+          }
+
+          .sj-checkout-pop {
+            animation: sj-checkout-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both;
+          }
+
+          @keyframes sj-checkout-pop {
+            0% { transform: scale(0.6); opacity: 0; }
+            55% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+
+          .sj-checkout-glow {
+            animation: sj-checkout-glow 1400ms ease-in-out 0ms 2 both;
+          }
+
+          @keyframes sj-checkout-glow {
+            0% { box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+            45% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.18); }
+            100% { box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+          }
+        `}</style>
+
+        {celebrating ? (
+          <div className="sj-checkout-celebrate" aria-hidden="true">
+            {celebrationPieces.map((p) => (
+              <span
+                key={p.key}
+                className="sj-checkout-confetti"
+                style={{
+                  left: `${p.left}%`,
+                  '--sj-delay': `${p.delayMs}ms`,
+                  '--sj-dur': `${p.durMs}ms`,
+                  '--sj-drift': p.driftVw,
+                }}
+              >
+                <i
+                  className="sj-checkout-confetti-inner"
+                  style={{
+                    '--sj-size': `${p.size}px`,
+                    '--sj-color': p.color,
+                    '--sj-rot': `${p.rotateDeg}deg`,
+                    '--sj-radius': p.radius,
+                  }}
+                />
+              </span>
+            ))}
+          </div>
+        ) : null}
+
         <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-          <div className="text-2xl font-semibold text-gray-900">Order placed successfully</div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div
+              className={[
+                'flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 ring-1 ring-emerald-200',
+                celebrating ? 'sj-checkout-pop sj-checkout-glow' : '',
+              ].join(' ')}
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6 text-emerald-600">
+                <path
+                  fill="currentColor"
+                  d="M9.55 16.2L5.8 12.45l1.4-1.4 2.35 2.35 7.1-7.1 1.4 1.4-8.5 8.5z"
+                />
+              </svg>
+            </div>
+            <div className="text-2xl font-semibold text-gray-900">Order placed successfully</div>
+          </div>
           <div className="mt-2 text-sm font-semibold text-gray-600">
-            Order ID: <span className="text-gray-900">{placedOrder.id}</span>
+            Order ID: <span className="text-gray-900">{placedOrder._id || placedOrder.id}</span>
           </div>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
-              <div className="text-sm font-semibold text-gray-900">Delivery details</div>
-              <div className="mt-2 text-sm text-gray-700">
-                <div className="font-semibold text-gray-900">{placedOrder.contact.fullName}</div>
-                <div>{placedOrder.contact.phone}</div>
-                {placedOrder.contact.email ? <div>{placedOrder.contact.email}</div> : null}
-                <div className="mt-2">
-                  {placedOrder.shipping.address1}
-                  {placedOrder.shipping.address2 ? <span>, {placedOrder.shipping.address2}</span> : null}
-                  <div>
-                    {placedOrder.shipping.city}, {placedOrder.shipping.state} - {placedOrder.shipping.pincode}
-                  </div>
-                  <div>{placedOrder.shipping.country}</div>
-                </div>
-              </div>
-            </div>
-
+          <div className="mt-6 grid gap-6 md:grid-cols-1">
             <div className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
               <div className="text-sm font-semibold text-gray-900">Payment</div>
               <div className="mt-2 text-sm text-gray-700">
-                <div className="font-semibold text-gray-900">
-                  {placedOrder.payment.method === 'cod'
-                    ? 'Cash on Delivery'
-                    : placedOrder.payment.method === 'upi'
-                      ? 'UPI'
-                      : 'Card'}
+                <div className="font-semibold text-gray-900">Online Payment (PhonePe)</div>
+                <div className="mt-1 text-xs font-semibold text-gray-500">
+                  Status: {placedOrder.paymentStatus || 'pending'}
                 </div>
-                {placedOrder.payment.method === 'upi' && placedOrder.payment.upiId ? (
-                  <div>UPI ID: {placedOrder.payment.upiId}</div>
+
+                {placedOrder.shipping ? (
+                  <div className="mt-4 rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                    <div className="flex items-center justify-between text-xs font-semibold text-gray-600">
+                      <span>Tracking</span>
+                      <span className="text-gray-800">{placedOrder.shipping?.status || 'pending'}</span>
+                    </div>
+                    {placedOrder.shipping?.courierName || placedOrder.shipping?.awbCode ? (
+                      <div className="mt-2 text-xs font-semibold text-gray-700">
+                        {placedOrder.shipping?.courierName ? (
+                          <div className="truncate">Courier: {placedOrder.shipping.courierName}</div>
+                        ) : null}
+                        {placedOrder.shipping?.awbCode ? <div className="truncate">AWB: {placedOrder.shipping.awbCode}</div> : null}
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-xs font-semibold text-gray-700">Tracking will be available after dispatch</div>
+                    )}
+
+                    <a
+                      href={trackingHref}
+                      className="mt-3 inline-flex items-center justify-center rounded-lg bg-[#0f2e40] px-3 py-2 text-xs font-semibold text-white hover:bg-[#13384d]"
+                    >
+                      Track order
+                    </a>
+
+                    {placedOrder.shipping?.lastErrorMessage ? (
+                      <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                        Shipping note: {placedOrder.shipping.lastErrorMessage}
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -310,39 +504,44 @@ export default function Checkout() {
           <div className="mt-6 rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
             <div className="text-sm font-semibold text-gray-900">Order summary</div>
             <div className="mt-3 space-y-3">
-              {placedOrder.items.map((it) => (
-                <div key={it.key} className="flex items-center justify-between gap-4">
+              {(placedOrder.items || []).map((it, idx) => (
+                <div key={String(it?.product || it?._id || idx)} className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-gray-900">{it.title}</div>
-                    {Number(it.silverWeightGrams) > 0 ? (
-                      <div className="text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
-                    ) : null}
-                    <div className="text-xs font-semibold text-gray-500">Qty: {it.qty}</div>
+                    <div className="truncate text-sm font-semibold text-gray-900">{it.name || it.title}</div>
+                    <div className="text-xs font-semibold text-gray-500">Qty: {it.quantity || it.qty}</div>
                   </div>
-                  <div className="text-sm font-bold text-gray-900">₹{formatter.format(it.price * it.qty)}</div>
+                  <div className="text-sm font-bold text-gray-900">
+                    ₹{formatter.format((Number(it?.price) || 0) * (Number(it?.quantity) || Number(it?.qty) || 1))}
+                  </div>
                 </div>
               ))}
             </div>
             <div className="mt-4 border-t border-gray-200 pt-3 text-sm text-gray-800">
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
-                <span>₹{formatter.format(placedOrder.totals.subtotal)}</span>
+                <span>₹{formatter.format(Number(placedOrder.subtotal || placedOrder.totals?.subtotal || 0))}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span>92.5 Silver Rate</span>
-                <span>{placedOrder.silverRatePerGram ? `₹${formatter.format(placedOrder.silverRatePerGram)}/g` : '—'}</span>
+                <span>
+                  {placedOrder.silverRatePerGram ? `₹${formatter.format(placedOrder.silverRatePerGram)}/g` : '—'}
+                </span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span>GST (18%)</span>
-                <span>₹{formatter.format(placedOrder.totals.gst || 0)}</span>
+                <span>₹{formatter.format(Number(placedOrder.gst || placedOrder.totals?.gst || 0))}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span>Shipping</span>
-                <span>{placedOrder.totals.shippingFee ? `₹${formatter.format(placedOrder.totals.shippingFee)}` : 'Free'}</span>
+                <span>
+                  {Number(placedOrder.shippingFee || placedOrder.totals?.shippingFee || 0)
+                    ? `₹${formatter.format(Number(placedOrder.shippingFee || placedOrder.totals?.shippingFee || 0))}`
+                    : 'Free'}
+                </span>
               </div>
               <div className="mt-2 flex items-center justify-between text-base font-semibold text-gray-900">
                 <span>Total</span>
-                <span>₹{formatter.format(placedOrder.totals.total)}</span>
+                <span>₹{formatter.format(Number(placedOrder.total || placedOrder.totals?.total || 0))}</span>
               </div>
             </div>
           </div>
@@ -537,84 +736,9 @@ export default function Checkout() {
 
           <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
             <div className="text-lg font-semibold text-gray-900">Payment method</div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {[
-                { key: 'cod', label: 'Cash on Delivery' },
-                { key: 'upi', label: 'UPI' },
-                { key: 'card', label: 'Card' },
-              ].map((m) => (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => setPayment((p) => ({ ...p, method: m.key }))}
-                  className={`rounded-xl px-4 py-3 text-left text-sm font-semibold ring-1 ${
-                    payment.method === m.key
-                      ? 'bg-[#0f2e40] text-white ring-[#0f2e40]'
-                      : 'bg-white text-gray-900 ring-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
+            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
+              Online payment only (PhonePe)
             </div>
-
-            {payment.method === 'upi' ? (
-              <div className="mt-4">
-                <label className="block">
-                  <div className="text-sm font-semibold text-gray-700">UPI ID</div>
-                  <input
-                    value={payment.upiId}
-                    onChange={(e) => setPayment((p) => ({ ...p, upiId: e.target.value }))}
-                    className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-gray-400"
-                    placeholder="name@bank"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            {payment.method === 'card' ? (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="block sm:col-span-2">
-                  <div className="text-sm font-semibold text-gray-700">Card number</div>
-                  <input
-                    value={payment.card.number}
-                    onChange={(e) => setPayment((p) => ({ ...p, card: { ...p.card, number: e.target.value } }))}
-                    className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-gray-400"
-                    placeholder="1234 5678 9012 3456"
-                  />
-                </label>
-
-                <label className="block sm:col-span-2">
-                  <div className="text-sm font-semibold text-gray-700">Name on card</div>
-                  <input
-                    value={payment.card.name}
-                    onChange={(e) => setPayment((p) => ({ ...p, card: { ...p.card, name: e.target.value } }))}
-                    className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-gray-400"
-                    placeholder="Name"
-                  />
-                </label>
-
-                <label className="block">
-                  <div className="text-sm font-semibold text-gray-700">Expiry</div>
-                  <input
-                    value={payment.card.expiry}
-                    onChange={(e) => setPayment((p) => ({ ...p, card: { ...p.card, expiry: e.target.value } }))}
-                    className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-gray-400"
-                    placeholder="MM/YY"
-                  />
-                </label>
-
-                <label className="block">
-                  <div className="text-sm font-semibold text-gray-700">CVV</div>
-                  <input
-                    value={payment.card.cvv}
-                    onChange={(e) => setPayment((p) => ({ ...p, card: { ...p.card, cvv: e.target.value } }))}
-                    className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-gray-400"
-                    placeholder="***"
-                  />
-                </label>
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -684,13 +808,11 @@ export default function Checkout() {
             <button
               type="button"
               onClick={placeOrder}
-              className="mt-5 w-full rounded-xl bg-[#0f2e40] px-4 py-3 text-sm font-semibold text-white hover:bg-[#13384d]"
+              disabled={placing}
+              className="mt-5 w-full rounded-xl bg-[#0f2e40] px-4 py-3 text-sm font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
             >
-              Place order
+              {placing ? 'Redirecting...' : 'Pay now'}
             </button>
-            <div className="mt-3 text-center text-xs font-semibold text-gray-500">
-              This is a demo checkout. Order is saved in your browser.
-            </div>
           </div>
         </div>
       </div>

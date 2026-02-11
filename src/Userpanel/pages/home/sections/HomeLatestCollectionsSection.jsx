@@ -9,10 +9,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeLatestCollectionsSection() {
+export default function HomeLatestCollectionsSection({ cmsData }) {
   const [cms, setCms] = useState(null)
+  const cmsEffective = cmsData || cms
 
   useEffect(() => {
+    if (cmsData) return
     let active = true
     getJson('/api/cms/home-latest-collections')
       .then((res) => {
@@ -26,7 +28,7 @@ export default function HomeLatestCollectionsSection() {
     return () => {
       active = false
     }
-  }, [])
+  }, [cmsData])
 
   const latestCollections = useMemo(() => {
     const fallback = [
@@ -71,7 +73,7 @@ export default function HomeLatestCollectionsSection() {
       },
     ]
 
-    const rows = Array.isArray(cms?.items) ? cms.items : []
+    const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it, idx) => {
         const thumbs = Array.isArray(it?.thumbImageUrls) ? it.thumbImageUrls : []
@@ -104,11 +106,11 @@ export default function HomeLatestCollectionsSection() {
     }
 
     return fallback
-  }, [cms])
+  }, [cmsEffective])
 
-  const sectionTitle = (cms?.title || '').trim() || 'Latest Collections'
+  const sectionTitle = (cmsEffective?.title || '').trim() || 'Latest Collections'
   const sectionDescription =
-    (cms?.description || '').trim() || 'Fresh designs, new stories, and styles you’ll want to wear on repeat.'
+    (cmsEffective?.description || '').trim() || 'Fresh designs, new stories, and styles you’ll want to wear on repeat.'
 
   return (
     <div className="mt-14">
@@ -151,9 +153,9 @@ export default function HomeLatestCollectionsSection() {
                   {c.items.map((it, idx) => (
                     <div
                       key={it.id || `${c.id}-${idx}`}
-                      className="grid h-[120px] w-[120px] place-items-center rounded-3xl bg-white shadow-md ring-1 ring-gray-200"
+                      className="grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-3xl bg-white shadow-md ring-1 ring-gray-200"
                     >
-                      <img src={it.img} alt="" className="h-[72px] w-[72px] object-contain" loading="lazy" />
+                      <img src={it.img} alt="" className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   ))}
                 </div>

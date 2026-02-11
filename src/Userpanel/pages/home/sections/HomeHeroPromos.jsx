@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
-export default function HomeHeroPromos() {
+export default function HomeHeroPromos({ cmsData }) {
   const [cms, setCms] = useState(null)
+  const cmsEffective = cmsData || cms
 
   useEffect(() => {
+    if (cmsData) return
     let active = true
     getJson('/api/cms/home-hero-promos')
       .then((res) => {
@@ -22,7 +24,7 @@ export default function HomeHeroPromos() {
     return () => {
       active = false
     }
-  }, [])
+  }, [cmsData])
 
   const items = useMemo(() => {
     const fallback = [
@@ -30,7 +32,7 @@ export default function HomeHeroPromos() {
       { imageUrl: promoBanner1, href: '', badgeText: 'Upto 80% OFF' },
       { imageUrl: promoBanner2, href: '', badgeText: 'BOGO - Buy 1 Get 1' },
     ]
-    const rows = Array.isArray(cms?.items) ? cms.items : []
+    const rows = Array.isArray(cmsEffective?.items) ? cmsEffective.items : []
     const normalized = rows
       .map((it) => ({
         imageUrl: String(it?.imageUrl || '').trim(),
@@ -44,7 +46,7 @@ export default function HomeHeroPromos() {
     if (normalized.length >= 3) return normalized.slice(0, 3)
     if (normalized.length) return [...normalized, ...fallback.slice(normalized.length)]
     return fallback
-  }, [cms])
+  }, [cmsEffective])
 
   return (
     <section className="space-y-4">

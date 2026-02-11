@@ -58,7 +58,7 @@ export default function HomeHeroPromosCms() {
       setLoading(true)
       setError('')
       setStatus('')
-      const res = await getJson(`/api/admin/cms/${KEY}`)
+      const res = await getJson(`/api/admin/cms/${KEY}`, undefined, { noCache: true })
       const serverItems = normalizeItems(res?.data?.items)
       const filled = [...serverItems]
       while (filled.length < 3) filled.push({ imageUrl: '', href: '' })
@@ -143,6 +143,16 @@ export default function HomeHeroPromosCms() {
       setLoading(false)
     }
   }
+
+  const previewCms = useMemo(() => {
+    return {
+      items: items.map((it, idx) => ({
+        imageUrl: String(localPreviews[idx] || it?.imageUrl || '').trim(),
+        href: String(it?.href || '').trim(),
+        sortOrder: Number.isFinite(Number(it?.sortOrder)) ? Number(it.sortOrder) : idx,
+      })),
+    }
+  }, [items, localPreviews])
 
   return (
     <div className="space-y-6">
@@ -297,7 +307,7 @@ export default function HomeHeroPromosCms() {
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
         <div className="mb-3 text-sm font-semibold text-gray-900">Preview</div>
-        <HomeHeroPromos />
+        <HomeHeroPromos cmsData={previewCms} />
       </div>
     </div>
   )

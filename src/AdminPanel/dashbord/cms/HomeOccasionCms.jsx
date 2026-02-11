@@ -23,7 +23,6 @@ export default function HomeOccasionCms() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
-  const [previewNonce, setPreviewNonce] = useState(0)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -100,12 +99,11 @@ export default function HomeOccasionCms() {
       setLoading(true)
       setError('')
       setStatus('')
-      const res = await getJson(`/api/admin/cms/${KEY}`)
+      const res = await getJson(`/api/admin/cms/${KEY}`, undefined, { noCache: true })
       setTitle(String(res?.data?.title || '').trim())
       setDescription(String(res?.data?.description || '').trim())
       const serverItems = normalizeItems(res?.data?.items)
       setItems(serverItems.length ? serverItems : [{ label: '', imageUrl: '', href: '', sortOrder: 0 }])
-      setPreviewNonce((v) => v + 1)
     } catch (e) {
       setError(e?.message || 'Failed to load CMS')
     } finally {
@@ -182,6 +180,19 @@ export default function HomeOccasionCms() {
       setLoading(false)
     }
   }
+
+  const previewCms = useMemo(() => {
+    return {
+      title: String(title || '').trim(),
+      description: String(description || '').trim(),
+      items: items.map((it, idx) => ({
+        label: String(it?.label || '').trim(),
+        imageUrl: String(localPreviews[idx] || it?.imageUrl || '').trim(),
+        href: String(it?.href || '').trim(),
+        sortOrder: Number.isFinite(Number(it?.sortOrder)) ? Number(it.sortOrder) : idx,
+      })),
+    }
+  }, [description, items, localPreviews, title])
 
   return (
     <div className="space-y-6">
@@ -401,7 +412,7 @@ export default function HomeOccasionCms() {
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
         <div className="mb-3 text-sm font-semibold text-gray-900">Preview</div>
-        <HomeOccasionSection key={previewNonce} />
+        <HomeOccasionSection cmsData={previewCms} />
       </div>
     </div>
   )

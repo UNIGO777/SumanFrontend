@@ -39,6 +39,9 @@ export default function Footer() {
               <Link to="/shipping-policy" className="block hover:text-white">
                 Shipping Policy
               </Link>
+              <Link to="/track-order" className="block hover:text-white">
+                Track Order
+              </Link>
               <Link to="/policies" className="block hover:text-white">
                 All Policies
               </Link>
