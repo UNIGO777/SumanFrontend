@@ -149,7 +149,7 @@ export default function HomeLatestCollectionsSection({ cmsData }) {
                   )}
                 </div>
 
-                <div className="absolute bottom-2 left-1/2 flex -translate-y-12 -translate-x-1/2 items-center gap-3 sm:gap-4 md:gap-5">
+                <div className="absolute bottom-2 left-1/2 flex -translate-y-9 -translate-x-1/2 items-center gap-2 sm:-translate-y-12 sm:gap-4 md:-translate-y-14 md:gap-5">
                   {c.items.map((it, idx) => (
                     <div
                       key={it.id || `${c.id}-${idx}`}

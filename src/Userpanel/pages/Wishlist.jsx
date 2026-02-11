@@ -157,8 +157,8 @@ export default function Wishlist() {
         <div className="mx-auto  px-10  py-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <div className="text-2xl font-semibold text-gray-900">Your Wishlist</div>
-            <div className="mt-1 text-sm text-gray-600">{items.length ? `${items.length} items` : 'No items added yet'}</div>
+            <div className="text-xl font-semibold text-gray-900 sm:text-2xl md:text-3xl">Your Wishlist</div>
+            <div className="mt-1 text-xs text-gray-600 sm:text-sm">{items.length ? `${items.length} items` : 'No items added yet'}</div>
           </div>
           <div className="flex items-center gap-2">
             <Link
@@ -187,7 +187,7 @@ export default function Wishlist() {
 
         {!items.length ? (
           <div className="rounded-2xl bg-gray-50 px-6 py-10 text-center ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Your wishlist is empty</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Your wishlist is empty</div>
             <div className="mt-2 text-sm text-gray-600">Tap the heart icon on products to save them here.</div>
             <div className="mt-6">
               <Link

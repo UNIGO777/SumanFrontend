@@ -2,13 +2,14 @@ import heroBanner from '../../../../assets/2048 × 626.jpg'
 import promoBanner1 from '../../../../assets/1312 × 668.jpg'
 import promoBanner2 from '../../../../assets/1312 × 668-2.jpg'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
 export default function HomeHeroPromos({ cmsData }) {
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
   const scrolledToTopRef = useRef(false)
+  const location = useLocation()
 
   useEffect(() => {
     if (cmsData) return
@@ -29,13 +30,14 @@ export default function HomeHeroPromos({ cmsData }) {
 
   useEffect(() => {
     if (scrolledToTopRef.current) return
-    if (!cms) return
+    if (cmsData) return
+    if (String(location?.pathname || '').startsWith('/admin')) return
     if (typeof window === 'undefined') return
     scrolledToTopRef.current = true
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     })
-  }, [cms])
+  }, [cmsData, location?.pathname])
 
   const items = useMemo(() => {
     const fallback = [
@@ -94,7 +96,7 @@ export default function HomeHeroPromos({ cmsData }) {
           )}
           <div className="pointer-events-none absolute inset-0 " />
           {items[1]?.badgeText ? (
-            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-[11px] font-bold text-gray-900 sm:text-xs">
+            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-[10px] font-bold text-gray-900 sm:text-xs md:text-sm">
               {items[1].badgeText}
             </div>
           ) : null}
@@ -115,7 +117,7 @@ export default function HomeHeroPromos({ cmsData }) {
           )}
           <div className="pointer-events-none absolute inset-0 " />
           {items[2]?.badgeText ? (
-            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-[11px] font-bold text-gray-900 sm:text-xs">
+            <div className="absolute bottom-4 left-4 rounded-full bg-white/85 px-4 py-2 text-[10px] font-bold text-gray-900 sm:text-xs md:text-sm">
               {items[2].badgeText}
             </div>
           ) : null}

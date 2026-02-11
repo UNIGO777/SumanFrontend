@@ -451,7 +451,7 @@ export default function Checkout() {
                 />
               </svg>
             </div>
-            <div className="text-2xl font-semibold text-gray-900">Order placed successfully</div>
+            <div className="text-xl font-semibold text-gray-900 sm:text-2xl md:text-3xl">Order placed successfully</div>
           </div>
           <div className="mt-2 text-sm font-semibold text-gray-600">
             Order ID: <span className="text-gray-900">{placedOrder._id || placedOrder.id}</span>
@@ -574,7 +574,7 @@ export default function Checkout() {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-10">
         <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-          <div className="text-xl font-semibold text-gray-900">Checkout</div>
+          <div className="text-lg font-semibold text-gray-900 sm:text-xl md:text-2xl">Checkout</div>
           <div className="mt-2 text-sm text-gray-600">Your cart is empty.</div>
           <div className="mt-6">
             <Link
@@ -593,7 +593,7 @@ export default function Checkout() {
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div className="text-2xl font-semibold text-gray-900">Checkout</div>
+          <div className="text-xl font-semibold text-gray-900 sm:text-2xl md:text-3xl">Checkout</div>
           <div className="mt-1 text-sm text-gray-600">Enter your details and confirm your order.</div>
         </div>
         <Link to="/cart" className="text-sm font-semibold text-[#0f2e40] hover:underline">
@@ -610,7 +610,7 @@ export default function Checkout() {
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Contact details</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Contact details</div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <div className="text-sm font-semibold text-gray-700">Full name</div>
@@ -645,7 +645,7 @@ export default function Checkout() {
           </div>
 
           <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Shipping address</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Shipping address</div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block sm:col-span-2">
                 <div className="text-sm font-semibold text-gray-700">Address line 1</div>
@@ -710,7 +710,7 @@ export default function Checkout() {
           </div>
 
           <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Delivery preferences</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Delivery preferences</div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
                 <input
@@ -735,7 +735,7 @@ export default function Checkout() {
           </div>
 
           <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Payment method</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Payment method</div>
             <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
               Online payment only (PhonePe)
             </div>
@@ -744,7 +744,7 @@ export default function Checkout() {
 
         <div className="lg:col-span-1">
           <div className="sticky top-24 rounded-2xl bg-white p-6 ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Order summary</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Order summary</div>
             <div className="mt-4 space-y-4">
               {items.map((it) => {
                 const qty = Math.max(1, Number.parseInt(it?.qty, 10) || 1)

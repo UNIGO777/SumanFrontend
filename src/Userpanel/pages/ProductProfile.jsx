@@ -687,7 +687,7 @@ const ProductProfile = () => {
 
           <div className="space-y-5">
             <div>
-              <div className="text-3xl font-semibold text-gray-900">{product.title}</div>
+              <div className="text-xl font-semibold text-gray-900 sm:text-2xl md:text-3xl">{product.title}</div>
 
               {Number.isFinite(displayRating) && Number(displayRatingCount || 0) > 0 ? (
                 <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
@@ -702,9 +702,9 @@ const ProductProfile = () => {
             </div>
 
             <div className="flex flex-wrap items-end gap-3">
-              <div className="text-2xl font-bold text-gray-900">₹{formatter.format(product.price)}</div>
+              <div className="text-xl font-bold text-gray-900 sm:text-2xl">₹{formatter.format(product.price)}</div>
               {showOriginal ? (
-                <div className="pb-0.5 text-lg font-semibold text-gray-500 line-through">
+                <div className="pb-0.5 text-base font-semibold text-gray-500 line-through sm:text-lg">
                   ₹{formatter.format(product.originalPrice)}
                 </div>
               ) : null}
@@ -994,7 +994,7 @@ const ProductProfile = () => {
 
         <div className="mt-12">
           <div className="mb-5 flex items-center justify-between">
-            <div className="text-lg font-semibold text-gray-900">You may also like</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">You may also like</div>
             <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f2e40]">
               View all
               <span className="text-[#0f2e40]">→</span>

@@ -13,8 +13,8 @@ export default function Policies() {
     <div className="bg-white">
       <div className="w-full bg-gray-100">
         <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
-          <div className="text-4xl font-semibold text-gray-900">Policies</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
+          <div className="text-2xl font-semibold text-gray-900 sm:text-3xl md:text-4xl">Policies</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             Quick access to our legal and customer service policies.
           </div>
         </div>

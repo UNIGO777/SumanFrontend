@@ -170,8 +170,8 @@ export default function CartPage() {
         <div className="mx-auto  px-10 py-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <div className="text-2xl font-semibold text-gray-900">Your Cart</div>
-            <div className="mt-1 text-sm text-gray-600">{items.length ? `${items.length} items` : 'No items added yet'}</div>
+            <div className="text-xl font-semibold text-gray-900 sm:text-2xl md:text-3xl">Your Cart</div>
+            <div className="mt-1 text-xs text-gray-600 sm:text-sm">{items.length ? `${items.length} items` : 'No items added yet'}</div>
           </div>
           <div className="flex items-center gap-2">
             <Link
@@ -200,7 +200,7 @@ export default function CartPage() {
 
         {!items.length ? (
           <div className="rounded-2xl bg-gray-50 px-6 py-10 text-center ring-1 ring-gray-200">
-            <div className="text-lg font-semibold text-gray-900">Your cart is empty</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Your cart is empty</div>
             <div className="mt-2 text-sm text-gray-600">Add items from product pages to see them here.</div>
             <div className="mt-6">
               <Link
@@ -287,7 +287,7 @@ export default function CartPage() {
 
             <div className="lg:col-span-1">
               <div className="sticky top-28 rounded-2xl bg-white p-5 ring-1 ring-gray-200">
-                <div className="text-lg font-semibold text-gray-900">Order Summary</div>
+                <div className="text-base font-semibold text-gray-900 sm:text-lg">Order Summary</div>
                 <div className="mt-4 space-y-3 text-sm font-semibold">
                   <div className="flex items-center justify-between text-gray-700">
                     <span>Subtotal</span>

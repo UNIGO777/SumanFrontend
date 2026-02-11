@@ -5,17 +5,17 @@ export default function TermsAndConditions() {
     <div className="bg-white">
       <div className="w-full bg-gray-100">
         <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
-          <div className="text-4xl font-semibold text-gray-900">Terms and Conditions</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
+          <div className="text-2xl font-semibold text-gray-900 sm:text-3xl md:text-4xl">Terms and Conditions</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             Please read these terms carefully before using our website.
           </div>
         </div>
       </div>
 
       <div className="w-full px-8 py-10 sm:px-12 md:px-8 lg:px-14">
-        <div className="mx-auto max-w-4xl space-y-8 text-sm text-gray-700">
+        <div className="mx-auto max-w-4xl space-y-8 text-sm text-gray-700 sm:text-base">
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">1. Acceptance of terms</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">1. Acceptance of terms</div>
             <div>
               By accessing or using this website, you agree to be bound by these Terms and Conditions and all applicable
               laws and regulations.
@@ -23,7 +23,7 @@ export default function TermsAndConditions() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">2. Products and pricing</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">2. Products and pricing</div>
             <div>
               Product images are for illustration purposes. Prices, availability, and specifications may change without
               notice. We reserve the right to cancel any order in case of pricing or listing errors.
@@ -31,7 +31,7 @@ export default function TermsAndConditions() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">3. Orders and payments</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">3. Orders and payments</div>
             <div>
               An order is confirmed only after successful payment (where applicable) and confirmation. We may request
               additional verification for certain transactions.
@@ -39,7 +39,7 @@ export default function TermsAndConditions() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">4. Shipping and delivery</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">4. Shipping and delivery</div>
             <div>
               Delivery timelines are estimates and may vary due to location, courier constraints, or other factors beyond
               our control.
@@ -50,7 +50,7 @@ export default function TermsAndConditions() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">5. Returns and refunds</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">5. Returns and refunds</div>
             <div>
               Returns and refunds (if any) are governed by our policies.
             </div>
@@ -67,7 +67,7 @@ export default function TermsAndConditions() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">6. Privacy</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">6. Privacy</div>
             <div>
               We respect your privacy and process personal data as described in our Privacy Policy.
             </div>

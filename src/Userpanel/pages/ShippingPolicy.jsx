@@ -5,17 +5,17 @@ export default function ShippingPolicy() {
     <div className="bg-white">
       <div className="w-full bg-gray-100">
         <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
-          <div className="text-4xl font-semibold text-gray-900">Shipping Policy</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">
+          <div className="text-2xl font-semibold text-gray-900 sm:text-3xl md:text-4xl">Shipping Policy</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             Shipping, delivery timelines, and order tracking information.
           </div>
         </div>
       </div>
 
       <div className="w-full px-8 py-10 sm:px-12 md:px-8 lg:px-14">
-        <div className="mx-auto max-w-4xl space-y-8 text-sm text-gray-700">
+        <div className="mx-auto max-w-4xl space-y-8 text-sm text-gray-700 sm:text-base">
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">Order processing</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Order processing</div>
             <div>
               Orders are processed after confirmation. Processing times may vary during high-demand periods, promotions,
               or due to verification requirements.
@@ -23,7 +23,7 @@ export default function ShippingPolicy() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">Delivery timelines</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Delivery timelines</div>
             <div>
               Delivery timelines depend on your location and courier operations. The estimated timeline shown during
               checkout is an estimate and not a guarantee.
@@ -31,14 +31,14 @@ export default function ShippingPolicy() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">Tracking</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Tracking</div>
             <div>
               If tracking is available for your order, tracking details will be shared after dispatch.
             </div>
           </div>
 
           <div className="space-y-2">
-            <div className="text-lg font-semibold text-gray-900">Shipping issues</div>
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Shipping issues</div>
             <div>
               For delivery issues such as non-delivery or damaged packaging, please contact us with your order details.
             </div>

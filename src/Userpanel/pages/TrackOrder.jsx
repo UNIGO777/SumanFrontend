@@ -58,8 +58,10 @@ export default function TrackOrder() {
     <div className="bg-white">
       <div className="w-full bg-gray-100">
         <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
-          <div className="text-4xl font-semibold text-gray-900">Track Order</div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">Enter your Order ID to track delivery status.</div>
+          <div className="text-2xl font-semibold text-gray-900 sm:text-3xl md:text-4xl">Track Order</div>
+          <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
+            Enter your Order ID to track delivery status.
+          </div>
         </div>
       </div>
 
@@ -122,4 +124,3 @@ export default function TrackOrder() {
     </div>
   )
 }
-
