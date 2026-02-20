@@ -20,6 +20,7 @@ export default function RefundPolicy() {
               Refunds may be initiated in eligible cases such as order cancellation before dispatch, damaged item
               received, incorrect item received, or non-delivery (subject to verification).
             </div>
+            <div>As per the conditions, Customer can return the product within 7 days of delivery.</div>
           </div>
 
           <div className="space-y-2">
@@ -28,6 +29,7 @@ export default function RefundPolicy() {
               Once approved, refunds are processed to the original payment method as per the payment provider’s timeline.
               Bank or UPI settlement times may vary.
             </div>
+            <div>Approved Refund amount will be credited within 10 busiess days.</div>
           </div>
 
           <div className="space-y-2">

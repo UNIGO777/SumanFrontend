@@ -16,6 +16,9 @@ import PrivacyPolicy from './Userpanel/pages/PrivacyPolicy.jsx'
 import ReturnPolicy from './Userpanel/pages/ReturnPolicy.jsx'
 import ShippingPolicy from './Userpanel/pages/ShippingPolicy.jsx'
 import TrackOrder from './Userpanel/pages/TrackOrder.jsx'
+import WhatWeDo from './Userpanel/pages/WhatWeDo.jsx'
+import AvailableServices from './Userpanel/pages/AvailableServices.jsx'
+import FAQs from './Userpanel/pages/FAQs.jsx'
 import { useEffect } from 'react'
 
 function UserLayout() {
@@ -65,6 +68,9 @@ function App() {
           <Route path="return-policy" element={<ReturnPolicy />} />
           <Route path="shipping-policy" element={<ShippingPolicy />} />
           <Route path="track-order" element={<TrackOrder />} />
+          <Route path="what-we-do" element={<WhatWeDo />} />
+          <Route path="available-services" element={<AvailableServices />} />
+          <Route path="faqs" element={<FAQs />} />
         </Route>
         <Route path="/admin/*" element={<AdminPanel />} />
         <Route path="*" element={<Navigate to="/" replace />} />

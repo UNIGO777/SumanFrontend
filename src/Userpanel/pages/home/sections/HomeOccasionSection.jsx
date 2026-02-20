@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 import { getJson } from '../../../../AdminPanel/services/apiClient.js'
 
 export default function HomeOccasionSection({ cmsData }) {
+  const CLONE_COUNT = 2
   const occasionRef = useRef(null)
   const initialScrollRef = useRef(false)
   const [activeIdx, setActiveIdx] = useState(0)
+  const activeIdxRef = useRef(0)
   const [cms, setCms] = useState(null)
   const cmsEffective = cmsData || cms
   const [loading, setLoading] = useState(!cmsData)
@@ -51,19 +53,31 @@ export default function HomeOccasionSection({ cmsData }) {
   const sectionTitle = String(cmsEffective?.title || '').trim()
   const sectionDescription = String(cmsEffective?.description || '').trim()
 
+  const displayOccasions = useMemo(() => {
+    if (occasions.length <= 1) return occasions
+    const n = Math.min(CLONE_COUNT, occasions.length)
+    return [...occasions.slice(-n), ...occasions, ...occasions.slice(0, n)]
+  }, [CLONE_COUNT, occasions])
+
+  useEffect(() => {
+    activeIdxRef.current = activeIdx
+  }, [activeIdx])
+
   useEffect(() => {
     if (initialScrollRef.current) return
-    if (!occasions.length) return
+    if (!displayOccasions.length) return
     const container = occasionRef.current
     if (!container) return
-    const idx = Math.min(2, occasions.length - 1)
+    const baseIdx = Math.min(2, occasions.length - 1)
+    const idx = occasions.length > 1 ? baseIdx + Math.min(CLONE_COUNT, occasions.length) : baseIdx
     const el = container.children?.[idx]
     if (!el || typeof el.scrollIntoView !== 'function') return
     initialScrollRef.current = true
     requestAnimationFrame(() => {
+      setActiveIdx(idx)
       el.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
     })
-  }, [occasions.length])
+  }, [CLONE_COUNT, displayOccasions.length, occasions.length])
 
   useEffect(() => {
     const container = occasionRef.current
@@ -92,6 +106,30 @@ export default function HomeOccasionSection({ cmsData }) {
       }
 
       setActiveIdx((prev) => (prev === bestIndex ? prev : bestIndex))
+
+      if (occasions.length > 1) {
+        const n = Math.min(CLONE_COUNT, occasions.length)
+        const firstOriginal = n
+        const trailingStart = n + occasions.length
+
+        if (bestIndex < firstOriginal) {
+          const originalIndex = occasions.length - n + bestIndex
+          const targetIndex = firstOriginal + originalIndex
+          const jumpEl = container.children?.[targetIndex]
+          if (jumpEl && typeof jumpEl.scrollIntoView === 'function') {
+            jumpEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+            setActiveIdx((prev) => (prev === targetIndex ? prev : targetIndex))
+          }
+        } else if (bestIndex >= trailingStart) {
+          const originalIndex = bestIndex - trailingStart
+          const targetIndex = firstOriginal + originalIndex
+          const jumpEl = container.children?.[targetIndex]
+          if (jumpEl && typeof jumpEl.scrollIntoView === 'function') {
+            jumpEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+            setActiveIdx((prev) => (prev === targetIndex ? prev : targetIndex))
+          }
+        }
+      }
     }
 
     const onScroll = () => {
@@ -108,7 +146,36 @@ export default function HomeOccasionSection({ cmsData }) {
       container.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
-  }, [])
+  }, [CLONE_COUNT, occasions.length])
+
+  useEffect(() => {
+    if (occasions.length <= 1) return
+    const container = occasionRef.current
+    if (!container) return
+
+    const intervalId = window.setInterval(() => {
+      const current = activeIdxRef.current
+      const n = Math.min(CLONE_COUNT, occasions.length)
+      const firstOriginal = n
+      const trailingStart = n + occasions.length
+
+      let normalized = current - firstOriginal
+      normalized = ((normalized % occasions.length) + occasions.length) % occasions.length
+
+      const nextDisplayIndex =
+        normalized === occasions.length - 1 ? trailingStart : Math.min(current + 1, container.children.length - 1)
+
+      const el = container.children?.[nextDisplayIndex]
+      if (!el || typeof el.scrollIntoView !== 'function') return
+      window.requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+      })
+    }, 2000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [CLONE_COUNT, occasions.length])
 
   if (loading && !loaded) {
     return (
@@ -133,7 +200,7 @@ export default function HomeOccasionSection({ cmsData }) {
     )
   }
 
-  if (!occasions.length) return null
+  if (!displayOccasions.length) return null
 
   return (
     <div className="mt-12">
@@ -153,22 +220,18 @@ export default function HomeOccasionSection({ cmsData }) {
             ref={occasionRef}
             className="no-scrollbar flex min-h-[420px] snap-x snap-mandatory items-end gap-6 overflow-x-auto px-4 py-8 sm:min-h-[480px] sm:gap-12 sm:px-8 sm:py-10 md:px-12 lg:px-20 scroll-px-4 sm:scroll-px-8 "
           >
-            {occasions.map((it, idx) => {
-              const distance = Math.abs(idx - activeIdx)
-              const opacityClass =
-                distance === 0 ? 'opacity-100' : distance === 1 ? 'opacity-80' : 'opacity-60'
-              const scaleClass =
-                distance === 0 ? 'scale-[1.12] z-20' : distance === 1 ? 'scale-[1.06] z-10' : 'scale-100 z-0'
+            {displayOccasions.map((it, idx) => {
+              const isActive = idx === activeIdx
+              const cardClassName = isActive
+                ? 'shadow-xl ring-2 ring-[#0f2e40]/40'
+                : 'shadow-lg ring-1 ring-[#0f2e40]/10'
 
               return (
-                <div
-                  key={it.label}
-                  className={`shrink-0 snap-center transition-transform duration-300 ${opacityClass} ${scaleClass}`}
-                >
+                <div key={`${it.label}-${idx}`} className="shrink-0 snap-center">
                   {it.href ? (
                     <Link
                       to={it.href}
-                      className="relative block h-[420px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]"
+                      className={`relative block h-[420px] w-[200px] overflow-hidden ${cardClassName} sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]`}
                     >
                       <img
                         src={it.img}
@@ -181,7 +244,7 @@ export default function HomeOccasionSection({ cmsData }) {
                       </div>
                     </Link>
                   ) : (
-                    <div className="relative h-[420px] w-[200px] overflow-hidden shadow-lg ring-1 ring-[#0f2e40]/10 sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]">
+                    <div className={`relative h-[420px] w-[200px] overflow-hidden ${cardClassName} sm:h-[360px] sm:w-[320px] md:h-[490px] md:w-[330px]`}>
                       <img
                         src={it.img}
                         alt={it.label}

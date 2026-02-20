@@ -51,18 +51,15 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="text-sm font-semibold text-white">Company</div>
             <div className="space-y-2 text-sm text-gray-400">
-              <a href="#" className="block hover:text-white">
+              <Link to="/what-we-do" className="block hover:text-white">
                 What We Do
-              </a>
-              <a href="#" className="block hover:text-white">
+              </Link>
+              <Link to="/available-services" className="block hover:text-white">
                 Available Services
-              </a>
-              <a href="#" className="block hover:text-white">
-                Latest Posts
-              </a>
-              <a href="#" className="block hover:text-white">
+              </Link>
+              <Link to="/faqs" className="block hover:text-white">
                 FAQs
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -71,18 +68,16 @@ export default function Footer() {
             <div className="space-y-3 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-gray-300" />
-                <span>jewellerymarket@gmail.com</span>
+                <span>suman92.5.official@gmail.com</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gray-300" />
-                <span>+1 (234) 567 789</span>
+                <span>+91 95277 72027</span>
               </div>
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 text-gray-300" />
                 <span>
-                  Jone street 123,
-                  <br />
-                  New imperial palace
+                  Shop No 04, 911, Ravi Apartment,<br/> 859,Road: Near Manik Lodge, Laxmi Road, Raviwar Peth,<br/> Raviwar Peth, Pune, Maharashtra, 411002
                 </span>
               </div>
             </div>
