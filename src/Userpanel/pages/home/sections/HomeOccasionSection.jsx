@@ -13,6 +13,14 @@ export default function HomeOccasionSection({ cmsData }) {
   const [loading, setLoading] = useState(!cmsData)
   const [loaded, setLoaded] = useState(Boolean(cmsData))
 
+  const scrollToIndex = (container, index, behavior) => {
+    const el = container?.children?.[index]
+    if (!el) return
+    const elWidth = el.offsetWidth || 0
+    const targetLeft = el.offsetLeft - (container.clientWidth - elWidth) / 2
+    container.scrollTo({ left: Math.max(0, targetLeft), behavior })
+  }
+
   useEffect(() => {
     if (cmsData) return
     let active = true
@@ -71,11 +79,11 @@ export default function HomeOccasionSection({ cmsData }) {
     const baseIdx = Math.min(2, occasions.length - 1)
     const idx = occasions.length > 1 ? baseIdx + Math.min(CLONE_COUNT, occasions.length) : baseIdx
     const el = container.children?.[idx]
-    if (!el || typeof el.scrollIntoView !== 'function') return
+    if (!el) return
     initialScrollRef.current = true
     requestAnimationFrame(() => {
       setActiveIdx(idx)
-      el.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+      scrollToIndex(container, idx, 'auto')
     })
   }, [CLONE_COUNT, displayOccasions.length, occasions.length])
 
@@ -115,19 +123,17 @@ export default function HomeOccasionSection({ cmsData }) {
         if (bestIndex < firstOriginal) {
           const originalIndex = occasions.length - n + bestIndex
           const targetIndex = firstOriginal + originalIndex
-          const jumpEl = container.children?.[targetIndex]
-          if (jumpEl && typeof jumpEl.scrollIntoView === 'function') {
-            jumpEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+          requestAnimationFrame(() => {
+            scrollToIndex(container, targetIndex, 'auto')
             setActiveIdx((prev) => (prev === targetIndex ? prev : targetIndex))
-          }
+          })
         } else if (bestIndex >= trailingStart) {
           const originalIndex = bestIndex - trailingStart
           const targetIndex = firstOriginal + originalIndex
-          const jumpEl = container.children?.[targetIndex]
-          if (jumpEl && typeof jumpEl.scrollIntoView === 'function') {
-            jumpEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' })
+          requestAnimationFrame(() => {
+            scrollToIndex(container, targetIndex, 'auto')
             setActiveIdx((prev) => (prev === targetIndex ? prev : targetIndex))
-          }
+          })
         }
       }
     }
@@ -165,10 +171,8 @@ export default function HomeOccasionSection({ cmsData }) {
       const nextDisplayIndex =
         normalized === occasions.length - 1 ? trailingStart : Math.min(current + 1, container.children.length - 1)
 
-      const el = container.children?.[nextDisplayIndex]
-      if (!el || typeof el.scrollIntoView !== 'function') return
       window.requestAnimationFrame(() => {
-        el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+        scrollToIndex(container, nextDisplayIndex, 'smooth')
       })
     }, 2000)
 
