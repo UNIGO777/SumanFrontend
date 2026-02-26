@@ -1,5 +1,5 @@
 import { Search as SearchIcon, Truck, CreditCard, Headphones } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import productFallback from '../../assets/876 × 1628-1.png'
@@ -30,6 +30,12 @@ const getAttrValue = (attributes, key) => {
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const searchParamsRef = useRef(searchParams)
+  const skipUrlSyncRef = useRef(false)
+
+  useEffect(() => {
+    searchParamsRef.current = searchParams
+  }, [searchParams])
 
   const qParam = String(searchParams.get('q') || '').trim()
   const categoryIdParam = String(searchParams.get('categoryId') || '').trim()
@@ -189,14 +195,20 @@ export default function SearchPage() {
   }, [qParam])
 
   useEffect(() => {
+    skipUrlSyncRef.current = true
     setSelectedCategoryId(categoryIdParam)
     setSelectedSubCategoryId(subCategoryIdParam)
   }, [categoryIdParam, subCategoryIdParam])
 
   useEffect(() => {
-    const currentCat = String(searchParams.get('categoryId') || '').trim()
-    const currentSub = String(searchParams.get('subCategoryId') || '').trim()
-    const next = new URLSearchParams(searchParams)
+    if (skipUrlSyncRef.current) {
+      skipUrlSyncRef.current = false
+      return
+    }
+    const params = searchParamsRef.current
+    const currentCat = String(params.get('categoryId') || '').trim()
+    const currentSub = String(params.get('subCategoryId') || '').trim()
+    const next = new URLSearchParams(params)
 
     const nextCat = String(selectedCategoryId || '').trim()
     const nextSub = String(selectedSubCategoryId || '').trim()
@@ -211,7 +223,7 @@ export default function SearchPage() {
     if (!hasChange) return
 
     setSearchParams(next, { replace: true })
-  }, [searchParams, selectedCategoryId, selectedSubCategoryId, setSearchParams])
+  }, [selectedCategoryId, selectedSubCategoryId, setSearchParams])
 
   const activeSubcategories = useMemo(() => {
     if (!selectedCategoryId) return subcategories
