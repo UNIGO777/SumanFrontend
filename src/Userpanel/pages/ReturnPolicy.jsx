@@ -6,6 +6,7 @@ export default function ReturnPolicy() {
       <div className="w-full bg-gray-100">
         <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
           <div className="text-2xl font-semibold text-gray-900 sm:text-3xl md:text-4xl">Return Policy</div>
+          <div className="mt-2 text-xs font-semibold text-red-600 italic sm:text-sm md:text-base">NO EXCHANGE/REPLACEMENT</div>
           <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             Return rules for orders placed on our website.
           </div>
