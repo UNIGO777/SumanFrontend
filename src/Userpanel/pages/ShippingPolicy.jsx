@@ -9,6 +9,7 @@ export default function ShippingPolicy() {
           <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             Shipping, delivery timelines, and order tracking information.
           </div>
+          <div className="mt-2 text-xs font-semibold text-gray-900 sm:text-sm md:text-base">ESTIMATED SHIPPING DELIVERY TIME IS 5-8 DAYS</div>
         </div>
       </div>
 
