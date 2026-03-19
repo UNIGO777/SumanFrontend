@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { listCategories } from '../services/categories.js'
 import { getApiBase } from '../services/apiClient.js'
-import { uploadImages, uploadVideo } from '../services/files.js'
+import { uploadImage, uploadImages, uploadVideo } from '../services/files.js'
 import { createProduct } from '../services/products.js'
 import { listSubcategories } from '../services/subcategories.js'
 
@@ -174,9 +174,11 @@ export default function AdminProductsNew() {
   const [image, setImage] = useState('')
   const [images, setImages] = useState([])
   const [video, setVideo] = useState('')
+  const [localMainImage, setLocalMainImage] = useState('')
   const [localImages, setLocalImages] = useState([])
   const [localVideo, setLocalVideo] = useState('')
   const [localVideoName, setLocalVideoName] = useState('')
+  const [isMainImageDragActive, setIsMainImageDragActive] = useState(false)
   const [isImagesDragActive, setIsImagesDragActive] = useState(false)
   const [dragImageKey, setDragImageKey] = useState('')
   const [isVideoDragActive, setIsVideoDragActive] = useState(false)
@@ -209,6 +211,44 @@ export default function AdminProductsNew() {
   }
 
   const maxUploadBytes = 5 * 1024 * 1024
+
+  const handleMainImageSelected = async (file) => {
+    if (!file) return
+    setError('')
+
+    if ((file?.size || 0) > maxUploadBytes) {
+      setError(`"${file.name}" is larger than 5 MB`)
+      return
+    }
+
+    const localUrl = URL.createObjectURL(file)
+    setLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return localUrl
+    })
+
+    try {
+      setLoading(true)
+      const res = await uploadImage(file)
+      const path = String(res?.path || '').trim()
+      if (!path) throw new Error('Upload failed')
+      setImage(path)
+      setImages((arr) => {
+        const list = Array.isArray(arr) ? arr.map((x) => String(x)) : []
+        const first = String(path)
+        const next = [first, ...list.filter((x) => x && x !== first)]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setLocalMainImage((prev) => {
+        safeRevokeUrl(prev)
+        return ''
+      })
+    } catch (err) {
+      setError(err?.message || 'Failed to upload image')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleImagesSelected = async (fileList) => {
     setError('')
@@ -808,14 +848,108 @@ export default function AdminProductsNew() {
                       </div>
 
                       <div className="md:col-span-3">
-                        <label className="mb-2 block text-xs font-semibold text-gray-600">Main Image URL</label>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <label className="block text-xs font-semibold text-gray-600">Main Image URL</label>
+                          {Array.isArray(images) && images.length ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (loading) return
+                                const first = String(images[0] || '').trim()
+                                if (!first) return
+                                setImage(first)
+                              }}
+                              disabled={loading}
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                            >
+                              Use first image
+                            </button>
+                          ) : null}
+                        </div>
+                        <div
+                          className={`rounded-xl border-2 border-dashed bg-white p-4 transition-colors ${
+                            isMainImageDragActive ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
+                          }`}
+                          onDragEnter={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (loading) return
+                            setIsMainImageDragActive(true)
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (loading) return
+                            setIsMainImageDragActive(true)
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (e.currentTarget !== e.target) return
+                            setIsMainImageDragActive(false)
+                          }}
+                          onDrop={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsMainImageDragActive(false)
+                            if (loading) return
+                            const f = e.dataTransfer?.files?.[0]
+                            await handleMainImageSelected(f)
+                          }}
+                        >
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">Drag & drop main image here</div>
+                              <div className="mt-1 text-xs font-medium text-gray-500">PNG, JPG, WEBP, HEIC. Max 5 MB.</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (loading) return
+                                document.getElementById('product-main-image')?.click()
+                              }}
+                              disabled={loading}
+                              className="rounded-lg bg-[#0f2e40] px-4 py-2 text-xs font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
+                            >
+                              Browse file
+                            </button>
+                          </div>
+
+                          {image || localMainImage ? (
+                            <div className="mt-4 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
+                              <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                <img
+                                  src={image ? toPublicUrl(image) : localMainImage}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                              <div className="text-xs font-semibold text-gray-700">Main image selected</div>
+                            </div>
+                          ) : null}
+                        </div>
                         <input
-                          value={image || ''}
+                          id="product-main-image"
+                          type="file"
+                          accept="image/*,.heic,.heif,.jfif"
+                          disabled={loading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            await handleMainImageSelected(file)
+                          }}
+                          className="hidden"
+                        />
+                        <input
+                          value={image ? toPublicUrl(image) : ''}
                           onChange={(e) => setImage(e.target.value)}
                           className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
                           placeholder="Optional"
                           disabled={loading}
                         />
+                        {Array.isArray(images) && images.length && !String(image || '').trim() ? (
+                          <div className="mt-2 text-[11px] font-medium text-gray-500">Default will be first uploaded image.</div>
+                        ) : null}
                       </div>
                       <div className="md:col-span-3">
                         <div className="flex items-center justify-between gap-2">
@@ -896,7 +1030,7 @@ export default function AdminProductsNew() {
                           multiple
                           disabled={loading}
                           onChange={async (e) => {
-                            const fileList = e.target.files
+                            const fileList = Array.from(e.target.files || [])
                             e.target.value = ''
                             await handleImagesSelected(fileList)
                           }}

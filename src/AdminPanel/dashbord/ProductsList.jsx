@@ -1,9 +1,10 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listCategories } from '../services/categories.js'
-import { uploadImages, uploadVideo } from '../services/files.js'
+import { uploadImage, uploadImages, uploadVideo } from '../services/files.js'
 import { deleteProduct, listProducts, updateProduct } from '../services/products.js'
 import { listSubcategories } from '../services/subcategories.js'
+import { getApiBase } from '../services/apiClient.js'
 
 export default function AdminProductsList({ activeOnly = false }) {
   const navigate = useNavigate()
@@ -25,6 +26,7 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [editCategoryId, setEditCategoryId] = useState('')
   const [editSubCategoryId, setEditSubCategoryId] = useState('')
   const [editSku, setEditSku] = useState('')
+  const [editDescription, setEditDescription] = useState('')
   const [editStock, setEditStock] = useState('0')
   const [editOccasionKey, setEditOccasionKey] = useState('')
   const [editSilverWeightGrams, setEditSilverWeightGrams] = useState('')
@@ -37,8 +39,37 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [editIsBestseller, setEditIsBestseller] = useState(false)
   const [editIsSpecialOccasion, setEditIsSpecialOccasion] = useState(false)
   const [editIsMostGifted, setEditIsMostGifted] = useState(false)
+  const [editLocalMainImage, setEditLocalMainImage] = useState('')
+  const [editLocalImages, setEditLocalImages] = useState([])
+  const [editLocalVideo, setEditLocalVideo] = useState('')
+  const [editLocalVideoName, setEditLocalVideoName] = useState('')
+  const [isEditMainImageDragActive, setIsEditMainImageDragActive] = useState(false)
+  const [isEditImagesDragActive, setIsEditImagesDragActive] = useState(false)
+  const [isEditVideoDragActive, setIsEditVideoDragActive] = useState(false)
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
+  const apiBase = useMemo(() => getApiBase(), [])
+  const maxUploadBytes = 5 * 1024 * 1024
+
+  const toPublicUrl = (p) => {
+    if (!p) return ''
+    if (/^https?:\/\//i.test(p)) return p
+    if (!apiBase) return p
+    if (String(p).startsWith('/')) return `${apiBase}${p}`
+    return `${apiBase}/${p}`
+  }
+
+  const safeRevokeUrl = (u) => {
+    try {
+      if (u) URL.revokeObjectURL(u)
+    } catch {
+      return
+    }
+  }
+
+  const safeRevokeUrls = (urls) => {
+    ;(urls || []).forEach((u) => safeRevokeUrl(u))
+  }
 
   const categoryMap = useMemo(() => {
     const map = new Map()
@@ -105,6 +136,7 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditCategoryId(row.category || '')
     setEditSubCategoryId(row.subCategory || '')
     setEditSku(row.sku || '')
+    setEditDescription(row.description || '')
     setEditStock(row.stock !== undefined && row.stock !== null ? String(row.stock) : '0')
     setEditOccasionKey(row.occasionKey || '')
     setEditSilverWeightGrams(
@@ -121,6 +153,19 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditIsBestseller(Boolean(row.isBestseller))
     setEditIsSpecialOccasion(Boolean(row.isSpecialOccasion))
     setEditIsMostGifted(Boolean(row.isMostGifted))
+    setEditLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return ''
+    })
+    setEditLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return []
+    })
+    setEditLocalVideo((prev) => {
+      safeRevokeUrl(prev)
+      return ''
+    })
+    setEditLocalVideoName('')
   }
 
   const cancelEdit = () => {
@@ -130,6 +175,7 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditCategoryId('')
     setEditSubCategoryId('')
     setEditSku('')
+    setEditDescription('')
     setEditStock('0')
     setEditOccasionKey('')
     setEditSilverWeightGrams('')
@@ -142,6 +188,123 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditIsBestseller(false)
     setEditIsSpecialOccasion(false)
     setEditIsMostGifted(false)
+    setEditLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return ''
+    })
+    setEditLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return []
+    })
+    setEditLocalVideo((prev) => {
+      safeRevokeUrl(prev)
+      return ''
+    })
+    setEditLocalVideoName('')
+    setIsEditMainImageDragActive(false)
+    setIsEditImagesDragActive(false)
+    setIsEditVideoDragActive(false)
+  }
+
+  const handleEditMainImageSelected = async (file) => {
+    if (!file) return
+    setError('')
+    if ((file?.size || 0) > maxUploadBytes) {
+      setError(`"${file.name}" is larger than 5 MB`)
+      return
+    }
+    const localUrl = URL.createObjectURL(file)
+    setEditLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return localUrl
+    })
+    try {
+      setLoading(true)
+      const res = await uploadImage(file)
+      const path = String(res?.path || '').trim()
+      if (!path) throw new Error('Upload failed')
+      setEditImage(path)
+      setEditImages((arr) => {
+        const list = Array.isArray(arr) ? arr.map((x) => String(x)) : []
+        const first = String(path)
+        const next = [first, ...list.filter((x) => x && x !== first)]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setEditLocalMainImage((prev) => {
+        safeRevokeUrl(prev)
+        return ''
+      })
+    } catch (e) {
+      setError(e?.message || 'Failed to upload image')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditImagesSelected = async (fileList) => {
+    setError('')
+    const files = Array.isArray(fileList) ? fileList : Array.from(fileList || [])
+    if (!files.length) return
+    const tooLarge = files.find((f) => (f?.size || 0) > maxUploadBytes)
+    if (tooLarge) {
+      setError(`"${tooLarge.name}" is larger than 5 MB`)
+      return
+    }
+    const localUrls = files.map((f) => URL.createObjectURL(f))
+    setEditLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return localUrls
+    })
+    try {
+      setLoading(true)
+      const res = await uploadImages(files)
+      const paths = res?.paths || []
+      if (!paths.length) throw new Error('Upload failed')
+      setEditImages((arr) => {
+        const next = Array.isArray(arr) ? [...arr, ...paths] : [...paths]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setEditImage((v) => String(v || '').trim() || paths[0] || '')
+      setEditLocalImages((prev) => {
+        safeRevokeUrls(prev)
+        return []
+      })
+    } catch (e) {
+      setError(e?.message || 'Failed to upload images')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditVideoSelected = async (file) => {
+    if (!file) return
+    setError('')
+    if ((file?.size || 0) > maxUploadBytes) {
+      setError(`"${file.name}" is larger than 5 MB`)
+      return
+    }
+    const localUrl = URL.createObjectURL(file)
+    setEditLocalVideo((prev) => {
+      safeRevokeUrl(prev)
+      return localUrl
+    })
+    setEditLocalVideoName(file.name || '')
+    try {
+      setLoading(true)
+      const res = await uploadVideo(file)
+      const path = res?.path
+      if (!path) throw new Error('Upload failed')
+      setEditVideo(path)
+      setEditLocalVideo((prev) => {
+        safeRevokeUrl(prev)
+        return ''
+      })
+      setEditLocalVideoName('')
+    } catch (e) {
+      setError(e?.message || 'Failed to upload video')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const onSaveEdit = async () => {
@@ -209,6 +372,8 @@ export default function AdminProductsList({ activeOnly = false }) {
       }
       payload.otherCharges = n
     }
+
+    payload.description = String(editDescription || '')
 
     const imageTrim = String(editImage || '').trim()
     const imagesOut = (Array.isArray(editImages) ? editImages : []).map((s) => String(s)).filter(Boolean)
@@ -463,6 +628,16 @@ export default function AdminProductsList({ activeOnly = false }) {
                                 disabled={loading}
                               />
                             </div>
+                            <div className="md:col-span-3">
+                              <div className="text-xs font-semibold text-gray-600">Description</div>
+                              <textarea
+                                value={editDescription}
+                                onChange={(e) => setEditDescription(e.target.value)}
+                                placeholder="Optional"
+                                className="mt-2 min-h-28 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
                             <div className="md:col-span-1">
                               <div className="text-xs font-semibold text-gray-600">Silver Weight (grams)</div>
                               <input
@@ -564,9 +739,102 @@ export default function AdminProductsList({ activeOnly = false }) {
                           </div>
                           <div className="mt-4 grid gap-3 md:grid-cols-2">
                             <div className="md:col-span-1">
-                              <div className="text-xs font-semibold text-gray-600">Main Image URL</div>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="text-xs font-semibold text-gray-600">Main Image URL</div>
+                                {Array.isArray(editImages) && editImages.length ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (loading) return
+                                      const first = String(editImages[0] || '').trim()
+                                      if (!first) return
+                                      setEditImage(first)
+                                    }}
+                                    disabled={loading}
+                                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                                  >
+                                    Use first image
+                                  </button>
+                                ) : null}
+                              </div>
+                              <div
+                                className={`mt-2 rounded-xl border-2 border-dashed bg-white p-4 transition-colors ${
+                                  isEditMainImageDragActive ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
+                                }`}
+                                onDragEnter={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (loading) return
+                                  setIsEditMainImageDragActive(true)
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (loading) return
+                                  setIsEditMainImageDragActive(true)
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (e.currentTarget !== e.target) return
+                                  setIsEditMainImageDragActive(false)
+                                }}
+                                onDrop={async (e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setIsEditMainImageDragActive(false)
+                                  if (loading) return
+                                  const f = e.dataTransfer?.files?.[0]
+                                  await handleEditMainImageSelected(f)
+                                }}
+                              >
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <div className="text-sm font-semibold text-gray-900">Drag & drop main image here</div>
+                                    <div className="mt-1 text-xs font-medium text-gray-500">PNG, JPG, WEBP, HEIC. Max 5 MB.</div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (loading) return
+                                      document.getElementById('edit-main-image-file')?.click()
+                                    }}
+                                    disabled={loading}
+                                    className="rounded-lg bg-[#0f2e40] px-4 py-2 text-xs font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
+                                  >
+                                    Browse file
+                                  </button>
+                                </div>
+
+                                {editLocalMainImage || editImage ? (
+                                  <div className="mt-4 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
+                                    <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                      <img
+                                        src={editLocalMainImage || toPublicUrl(editImage)}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </div>
+                                    <div className="text-xs font-semibold text-gray-700">Main image selected</div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-3 text-xs text-gray-500">No main image selected</div>
+                                )}
+                              </div>
                               <input
-                                value={editImage}
+                                id="edit-main-image-file"
+                                type="file"
+                                accept="image/*,.heic,.heif,.jfif"
+                                disabled={loading}
+                                onChange={async (e) => {
+                                  const f = e.target.files?.[0]
+                                  e.target.value = ''
+                                  await handleEditMainImageSelected(f)
+                                }}
+                                className="hidden"
+                              />
+                              <input
+                                value={editImage ? toPublicUrl(editImage) : ''}
                                 onChange={(e) => setEditImage(e.target.value)}
                                 placeholder="Optional"
                                 className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
@@ -574,83 +842,186 @@ export default function AdminProductsList({ activeOnly = false }) {
                               />
                             </div>
                             <div className="md:col-span-1">
-                              <div className="text-xs font-semibold text-gray-600">Upload Images</div>
+                              <div className="text-xs font-semibold text-gray-600">Images</div>
+                              <div
+                                className={`mt-2 rounded-xl border-2 border-dashed bg-white p-4 transition-colors ${
+                                  isEditImagesDragActive ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
+                                }`}
+                                onDragEnter={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (loading) return
+                                  setIsEditImagesDragActive(true)
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (loading) return
+                                  setIsEditImagesDragActive(true)
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (e.currentTarget !== e.target) return
+                                  setIsEditImagesDragActive(false)
+                                }}
+                                onDrop={async (e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setIsEditImagesDragActive(false)
+                                  if (loading) return
+                                  await handleEditImagesSelected(e.dataTransfer?.files)
+                                }}
+                              >
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <div className="text-sm font-semibold text-gray-900">Drag & drop images here</div>
+                                    <div className="mt-1 text-xs font-medium text-gray-500">PNG, JPG, WEBP, HEIC. Max 5 MB each.</div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (loading) return
+                                      document.getElementById('edit-images-file')?.click()
+                                    }}
+                                    disabled={loading}
+                                    className="rounded-lg bg-[#0f2e40] px-4 py-2 text-xs font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
+                                  >
+                                    Browse files
+                                  </button>
+                                </div>
+
+                                {Array.isArray(editLocalImages) && editLocalImages.length ? (
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {editLocalImages.map((u) => (
+                                      <div key={u} className="h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                        <img src={u} alt="" className="h-full w-full object-cover" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : null}
+
+                                {Array.isArray(editImages) && editImages.length ? (
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {editImages.map((p) => (
+                                      <div key={p} className="relative h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                        <img src={toPublicUrl(p)} alt="" className="h-full w-full object-cover" />
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditImages((arr) => (Array.isArray(arr) ? arr.filter((x) => x !== p) : []))}
+                                          disabled={loading}
+                                          className="absolute right-1 top-1 rounded bg-white/90 px-2 py-1 text-[10px] font-semibold text-gray-800 disabled:opacity-60"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="mt-3 text-xs text-gray-500">No images uploaded</div>
+                                )}
+                              </div>
                               <input
+                                id="edit-images-file"
                                 type="file"
-                                accept="image/png,image/jpeg,image/webp"
+                                accept="image/*,.heic,.heif,.jfif"
                                 multiple
                                 disabled={loading}
                                 onChange={async (e) => {
-                                  const files = e.target.files
+                                  const files = Array.from(e.target.files || [])
                                   e.target.value = ''
-                                  if (!files || files.length === 0) return
-                                  try {
-                                    setLoading(true)
-                                    const res = await uploadImages(files)
-                                    const paths = res?.paths || []
-                                    setEditImages((arr) => (Array.isArray(arr) ? [...arr, ...paths] : [...paths]))
-                                    setEditImage((v) => String(v || '').trim() || paths[0] || '')
-                                  } catch (err) {
-                                    setError(err?.message || 'Failed to upload images')
-                                  } finally {
-                                    setLoading(false)
-                                  }
+                                  await handleEditImagesSelected(files)
                                 }}
-                                className="mt-2 block w-full text-sm"
+                                className="hidden"
                               />
-                              {Array.isArray(editImages) && editImages.length ? (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  {editImages.map((p) => (
-                                    <button
-                                      key={p}
-                                      type="button"
-                                      onClick={() => setEditImages((arr) => (Array.isArray(arr) ? arr.filter((x) => x !== p) : []))}
-                                      disabled={loading}
-                                      className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-700 disabled:opacity-60"
-                                    >
-                                      {String(p).split('/').slice(-1)[0]}
-                                    </button>
-                                  ))}
-                                </div>
-                              ) : null}
                             </div>
                             <div className="md:col-span-1">
-                              <div className="text-xs font-semibold text-gray-600">Upload Video (optional)</div>
+                              <div className="text-xs font-semibold text-gray-600">Video (optional)</div>
+                              <div
+                                className={`mt-2 rounded-xl border-2 border-dashed bg-white p-4 transition-colors ${
+                                  isEditVideoDragActive ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
+                                }`}
+                                onDragEnter={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (loading) return
+                                  setIsEditVideoDragActive(true)
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (loading) return
+                                  setIsEditVideoDragActive(true)
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (e.currentTarget !== e.target) return
+                                  setIsEditVideoDragActive(false)
+                                }}
+                                onDrop={async (e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setIsEditVideoDragActive(false)
+                                  if (loading) return
+                                  const f = e.dataTransfer?.files?.[0]
+                                  await handleEditVideoSelected(f)
+                                }}
+                              >
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <div className="text-sm font-semibold text-gray-900">Drag & drop video here</div>
+                                    <div className="mt-1 text-xs font-medium text-gray-500">MP4, WEBM, MOV. Max 5 MB.</div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (loading) return
+                                      document.getElementById('edit-video-file')?.click()
+                                    }}
+                                    disabled={loading}
+                                    className="rounded-lg bg-[#0f2e40] px-4 py-2 text-xs font-semibold text-white hover:bg-[#13384d] disabled:opacity-60"
+                                  >
+                                    Browse file
+                                  </button>
+                                </div>
+
+                                {editLocalVideo || editVideo ? (
+                                  <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                                    <video className="w-full" controls src={editLocalVideo || toPublicUrl(editVideo)} />
+                                  </div>
+                                ) : (
+                                  <div className="mt-3 text-xs text-gray-500">No video uploaded</div>
+                                )}
+
+                                {editLocalVideoName ? <div className="mt-2 text-xs text-gray-600">{editLocalVideoName}</div> : null}
+
+                                {editVideo ? (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <div className="text-xs text-gray-600">{String(editVideo).split('/').slice(-1)[0]}</div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditVideo('')}
+                                      disabled={loading}
+                                      className="text-xs font-semibold text-red-700 disabled:opacity-60"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ) : null}
+                              </div>
                               <input
+                                id="edit-video-file"
                                 type="file"
                                 accept="video/mp4,video/webm,video/quicktime"
                                 disabled={loading}
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0]
                                   e.target.value = ''
-                                  if (!file) return
-                                  try {
-                                    setLoading(true)
-                                    const res = await uploadVideo(file)
-                                    const path = res?.path
-                                    if (!path) throw new Error('Upload failed')
-                                    setEditVideo(path)
-                                  } catch (err) {
-                                    setError(err?.message || 'Failed to upload video')
-                                  } finally {
-                                    setLoading(false)
-                                  }
+                                  await handleEditVideoSelected(file)
                                 }}
-                                className="mt-2 block w-full text-sm"
+                                className="hidden"
                               />
-                              {editVideo ? (
-                                <div className="mt-2 flex items-center gap-2">
-                                  <div className="text-xs text-gray-600">{String(editVideo).split('/').slice(-1)[0]}</div>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditVideo('')}
-                                    disabled={loading}
-                                    className="text-xs font-semibold text-red-700 disabled:opacity-60"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              ) : null}
                             </div>
                           </div>
                         </div>
