@@ -183,6 +183,20 @@ export default function AdminProductsNew() {
   const [dragImageKey, setDragImageKey] = useState('')
   const [isVideoDragActive, setIsVideoDragActive] = useState(false)
 
+  const [hasPairVariant, setHasPairVariant] = useState(false)
+  const [pairName, setPairName] = useState('Pair')
+  const [pairDescription, setPairDescription] = useState('')
+  const [pairStock, setPairStock] = useState('0')
+  const [pairSilverWeightGrams, setPairSilverWeightGrams] = useState('')
+  const [pairDiscountPercent, setPairDiscountPercent] = useState('')
+  const [pairMakingCost, setPairMakingCost] = useState('')
+  const [pairOtherCharges, setPairOtherCharges] = useState('')
+  const [pairIsActive, setPairIsActive] = useState(true)
+  const [pairImage, setPairImage] = useState('')
+  const [pairImages, setPairImages] = useState([])
+  const [pairLocalMainImage, setPairLocalMainImage] = useState('')
+  const [pairLocalImages, setPairLocalImages] = useState([])
+
   const filteredSubcategories = useMemo(() => {
     if (!categoryId) return subcategories
     return subcategories.filter((s) => String(s.category) === String(categoryId))
@@ -278,6 +292,82 @@ export default function AdminProductsNew() {
       })
       setImage((prev) => String(prev || '').trim() || paths[0] || '')
       setLocalImages((prev) => {
+        safeRevokeUrls(prev)
+        return []
+      })
+    } catch (err) {
+      setError(err?.message || 'Failed to upload images')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePairMainImageSelected = async (file) => {
+    if (!file) return
+    setError('')
+
+    if ((file?.size || 0) > maxUploadBytes) {
+      setError(`"${file.name}" is larger than 5 MB`)
+      return
+    }
+
+    const localUrl = URL.createObjectURL(file)
+    setPairLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return localUrl
+    })
+
+    try {
+      setLoading(true)
+      const res = await uploadImage(file)
+      const path = String(res?.path || '').trim()
+      if (!path) throw new Error('Upload failed')
+      setPairImage(path)
+      setPairImages((arr) => {
+        const list = Array.isArray(arr) ? arr.map((x) => String(x)) : []
+        const first = String(path)
+        const next = [first, ...list.filter((x) => x && x !== first)]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setPairLocalMainImage((prev) => {
+        safeRevokeUrl(prev)
+        return ''
+      })
+    } catch (err) {
+      setError(err?.message || 'Failed to upload image')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePairImagesSelected = async (fileList) => {
+    setError('')
+    const files = Array.isArray(fileList) ? fileList : Array.from(fileList || [])
+    if (!files.length) return
+
+    const tooLarge = files.find((f) => (f?.size || 0) > maxUploadBytes)
+    if (tooLarge) {
+      setError(`"${tooLarge.name}" is larger than 5 MB`)
+      return
+    }
+
+    const localUrls = files.map((f) => URL.createObjectURL(f))
+    setPairLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return localUrls
+    })
+
+    try {
+      setLoading(true)
+      const res = await uploadImages(files)
+      const paths = res?.paths || []
+      if (!paths.length) throw new Error('Upload failed')
+      setPairImages((arr) => {
+        const next = Array.isArray(arr) ? [...arr, ...paths] : [...paths]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setPairImage((prev) => String(prev || '').trim() || paths[0] || '')
+      setPairLocalImages((prev) => {
         safeRevokeUrls(prev)
         return []
       })
@@ -473,6 +563,72 @@ export default function AdminProductsNew() {
     if (categoryId) payload.categoryId = categoryId
     if (subCategoryId) payload.subCategoryId = subCategoryId
     if (attributes !== undefined) payload.attributes = attributes
+
+    if (hasPairVariant) {
+      if (!htmlToText(pairDescription).trim()) {
+        setError('Pair description is required')
+        return
+      }
+
+      const pairStockNum = String(pairStock || '').trim() ? Number(pairStock) : 0
+      if (!Number.isFinite(pairStockNum) || pairStockNum < 0) {
+        setError('Pair stock must be a valid number')
+        return
+      }
+
+      const v = {
+        name: String(pairName || '').trim() || 'Pair',
+        variantKey: 'pair',
+        description: String(pairDescription || ''),
+        stock: pairStockNum,
+        isActive: Boolean(pairIsActive),
+      }
+
+      const pairImageTrim = String(pairImage || '').trim()
+      if (pairImageTrim) v.image = pairImageTrim
+
+      const pairImagesOut = (Array.isArray(pairImages) ? pairImages : []).map((s) => String(s)).filter(Boolean)
+      if (pairImagesOut.length) v.images = pairImagesOut
+      if (!v.image && pairImagesOut.length) v.image = pairImagesOut[0]
+
+      if (String(pairMakingCost || '').trim()) {
+        const n = Number(pairMakingCost)
+        if (!Number.isFinite(n) || n < 0) {
+          setError('Pair making cost must be a valid number')
+          return
+        }
+        v.makingCost = n
+      }
+
+      if (String(pairOtherCharges || '').trim()) {
+        const n = Number(pairOtherCharges)
+        if (!Number.isFinite(n) || n < 0) {
+          setError('Pair other charges must be a valid number')
+          return
+        }
+        v.otherCharges = n
+      }
+
+      if (String(pairSilverWeightGrams || '').trim()) {
+        const n = Number(pairSilverWeightGrams)
+        if (!Number.isFinite(n) || n < 0) {
+          setError('Pair silver weight must be a valid number')
+          return
+        }
+        v.silverWeightGrams = n
+      }
+
+      if (String(pairDiscountPercent || '').trim()) {
+        const n = Number(pairDiscountPercent)
+        if (!Number.isFinite(n) || n < 0 || n > 100) {
+          setError('Pair discount must be between 0 and 100')
+          return
+        }
+        v.discountPercent = n
+      }
+
+      payload.variants = [v]
+    }
 
     try {
       setLoading(true)
@@ -1222,6 +1378,224 @@ export default function AdminProductsNew() {
                           className="hidden"
                         />
                       </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-gray-100 pt-5">
+                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">Pair Variant (optional)</div>
+                          <div className="mt-1 text-xs text-gray-500">Add separate description, pricing, and images for pair</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setHasPairVariant((v) => !v)}
+                          disabled={loading}
+                          className="flex h-10 items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-800 disabled:opacity-60"
+                        >
+                          <span>{hasPairVariant ? 'Enabled' : 'Disabled'}</span>
+                          <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${hasPairVariant ? 'primary-bg' : 'bg-gray-200'}`}>
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${hasPairVariant ? 'translate-x-4' : 'translate-x-1'}`} />
+                          </span>
+                        </button>
+                      </div>
+
+                      {hasPairVariant ? (
+                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-6">
+                          <div className="md:col-span-3">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Name</label>
+                            <input
+                              value={pairName}
+                              onChange={(e) => setPairName(e.target.value)}
+                              className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              placeholder="Pair"
+                              disabled={loading}
+                            />
+                          </div>
+                          <div className="md:col-span-3">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Stock</label>
+                            <input
+                              value={pairStock}
+                              onChange={(e) => setPairStock(e.target.value)}
+                              className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              inputMode="numeric"
+                              placeholder="0"
+                              disabled={loading}
+                            />
+                          </div>
+
+                          <div className="md:col-span-6">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Description</label>
+                            <RichTextEditor value={pairDescription} onChange={setPairDescription} placeholder="Pair description" disabled={loading} />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Silver Weight (grams)</label>
+                            <input
+                              value={pairSilverWeightGrams}
+                              onChange={(e) => setPairSilverWeightGrams(e.target.value)}
+                              className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              placeholder="Optional"
+                              inputMode="decimal"
+                              disabled={loading}
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Discount (%)</label>
+                            <input
+                              value={pairDiscountPercent}
+                              onChange={(e) => setPairDiscountPercent(e.target.value)}
+                              className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              placeholder="0"
+                              inputMode="decimal"
+                              disabled={loading}
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Active</label>
+                            <button
+                              type="button"
+                              onClick={() => setPairIsActive((v) => !v)}
+                              disabled={loading}
+                              className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                            >
+                              <span>{pairIsActive ? 'Active' : 'Inactive'}</span>
+                              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${pairIsActive ? 'primary-bg' : 'bg-gray-200'}`}>
+                                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${pairIsActive ? 'translate-x-4' : 'translate-x-1'}`} />
+                              </span>
+                            </button>
+                          </div>
+
+                          <div className="md:col-span-3">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Making Cost</label>
+                            <input
+                              value={pairMakingCost}
+                              onChange={(e) => setPairMakingCost(e.target.value)}
+                              className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              placeholder="Optional"
+                              inputMode="decimal"
+                              disabled={loading}
+                            />
+                          </div>
+                          <div className="md:col-span-3">
+                            <label className="mb-2 block text-xs font-semibold text-gray-600">Pair Other Charges</label>
+                            <input
+                              value={pairOtherCharges}
+                              onChange={(e) => setPairOtherCharges(e.target.value)}
+                              className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              placeholder="Optional"
+                              inputMode="decimal"
+                              disabled={loading}
+                            />
+                          </div>
+
+                          <div className="md:col-span-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <label className="block text-xs font-semibold text-gray-600">Pair Main Image</label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (loading) return
+                                  document.getElementById('pair-main-image')?.click()
+                                }}
+                                disabled={loading}
+                                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                              >
+                                Upload
+                              </button>
+                            </div>
+                            <input
+                              id="pair-main-image"
+                              type="file"
+                              accept="image/*,.heic,.heif,.jfif"
+                              disabled={loading}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0]
+                                e.target.value = ''
+                                await handlePairMainImageSelected(file)
+                              }}
+                              className="hidden"
+                            />
+                            {pairImage || pairLocalMainImage ? (
+                              <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
+                                <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                  <img src={pairImage ? toPublicUrl(pairImage) : pairLocalMainImage} alt="" className="h-full w-full object-cover" />
+                                </div>
+                                <div className="text-xs font-semibold text-gray-700">Pair main image selected</div>
+                              </div>
+                            ) : (
+                              <div className="mt-3 text-xs text-gray-500">No pair main image uploaded</div>
+                            )}
+                            <input
+                              value={pairImage ? toPublicUrl(pairImage) : ''}
+                              onChange={(e) => setPairImage(e.target.value)}
+                              className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                              placeholder="Optional"
+                              disabled={loading}
+                            />
+                          </div>
+
+                          <div className="md:col-span-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <label className="block text-xs font-semibold text-gray-600">Pair Images</label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (loading) return
+                                  document.getElementById('pair-images')?.click()
+                                }}
+                                disabled={loading}
+                                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                              >
+                                Upload
+                              </button>
+                            </div>
+                            <input
+                              id="pair-images"
+                              type="file"
+                              accept="image/*,.heic,.heif,.jfif"
+                              multiple
+                              disabled={loading}
+                              onChange={async (e) => {
+                                const fileList = e.target.files
+                                e.target.value = ''
+                                await handlePairImagesSelected(fileList)
+                              }}
+                              className="hidden"
+                            />
+                            {Array.isArray(pairImages) && pairImages.length ? (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {pairImages.slice(0, 12).map((p) => (
+                                  <div key={p} className="relative h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                    <img src={toPublicUrl(p)} alt="" className="h-full w-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPairImages((arr) => (Array.isArray(arr) ? arr.filter((x) => x !== p) : []))
+                                        setPairImage((cur) => (String(cur || '') === String(p) ? '' : cur))
+                                      }}
+                                      disabled={loading}
+                                      className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-xs font-semibold text-gray-700 ring-1 ring-gray-200 disabled:opacity-60"
+                                      aria-label="Remove image"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : Array.isArray(pairLocalImages) && pairLocalImages.length ? (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {pairLocalImages.map((u) => (
+                                  <div key={u} className="h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                                    <img src={u} alt="" className="h-full w-full object-cover" />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="mt-3 text-xs text-gray-500">No pair images uploaded</div>
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>

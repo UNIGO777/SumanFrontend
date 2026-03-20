@@ -47,6 +47,22 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [isEditImagesDragActive, setIsEditImagesDragActive] = useState(false)
   const [isEditVideoDragActive, setIsEditVideoDragActive] = useState(false)
 
+  const [editHadPairVariant, setEditHadPairVariant] = useState(false)
+  const [editHasPairVariant, setEditHasPairVariant] = useState(false)
+  const [editPairName, setEditPairName] = useState('Pair')
+  const [editPairDescription, setEditPairDescription] = useState('')
+  const [editPairStock, setEditPairStock] = useState('0')
+  const [editPairSilverWeightGrams, setEditPairSilverWeightGrams] = useState('')
+  const [editPairDiscountPercent, setEditPairDiscountPercent] = useState('')
+  const [editPairMakingCost, setEditPairMakingCost] = useState('')
+  const [editPairOtherCharges, setEditPairOtherCharges] = useState('')
+  const [editPairIsActive, setEditPairIsActive] = useState(true)
+  const [editPairImage, setEditPairImage] = useState('')
+  const [editPairImages, setEditPairImages] = useState([])
+  const [editPairLocalMainImage, setEditPairLocalMainImage] = useState('')
+  const [editPairLocalImages, setEditPairLocalImages] = useState([])
+  const [editOtherVariants, setEditOtherVariants] = useState([])
+
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
   const apiBase = useMemo(() => getApiBase(), [])
   const maxUploadBytes = 5 * 1024 * 1024
@@ -130,6 +146,11 @@ export default function AdminProductsList({ activeOnly = false }) {
   }, [editingId, editCategoryId, editSubCategoryId, filteredEditSubcategories])
 
   const startEdit = (row) => {
+    const variantsRaw = Array.isArray(row?.variants) ? row.variants : []
+    const pairVariant =
+      variantsRaw.find((v) => String(v?.variantKey || v?.key || '').trim().toLowerCase() === 'pair') || null
+    const otherVariants = variantsRaw.filter((v) => String(v?.variantKey || v?.key || '').trim().toLowerCase() !== 'pair')
+
     setEditingId(row._id)
     setEditName(row.name || '')
     setEditActive(Boolean(row.isActive))
@@ -153,6 +174,35 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditIsBestseller(Boolean(row.isBestseller))
     setEditIsSpecialOccasion(Boolean(row.isSpecialOccasion))
     setEditIsMostGifted(Boolean(row.isMostGifted))
+    setEditHadPairVariant(Boolean(pairVariant))
+    setEditHasPairVariant(Boolean(pairVariant))
+    setEditOtherVariants(otherVariants)
+    setEditPairName(pairVariant?.name || 'Pair')
+    setEditPairDescription(pairVariant?.description || '')
+    setEditPairStock(pairVariant?.stock !== undefined && pairVariant?.stock !== null ? String(pairVariant.stock) : '0')
+    setEditPairSilverWeightGrams(
+      pairVariant?.silverWeightGrams === undefined || pairVariant?.silverWeightGrams === null ? '' : String(pairVariant.silverWeightGrams)
+    )
+    setEditPairDiscountPercent(
+      pairVariant?.discountPercent === undefined || pairVariant?.discountPercent === null ? '' : String(pairVariant.discountPercent)
+    )
+    setEditPairMakingCost(
+      pairVariant?.makingCost?.amount !== undefined && pairVariant?.makingCost?.amount !== null
+        ? String(pairVariant.makingCost.amount)
+        : pairVariant?.makingCost !== undefined && pairVariant?.makingCost !== null
+          ? String(pairVariant.makingCost)
+          : ''
+    )
+    setEditPairOtherCharges(
+      pairVariant?.otherCharges?.amount !== undefined && pairVariant?.otherCharges?.amount !== null
+        ? String(pairVariant.otherCharges.amount)
+        : pairVariant?.otherCharges !== undefined && pairVariant?.otherCharges !== null
+          ? String(pairVariant.otherCharges)
+          : ''
+    )
+    setEditPairIsActive(pairVariant?.isActive === undefined ? true : Boolean(pairVariant.isActive))
+    setEditPairImage(pairVariant?.image || '')
+    setEditPairImages(Array.isArray(pairVariant?.images) ? pairVariant.images : [])
     setEditLocalMainImage((prev) => {
       safeRevokeUrl(prev)
       return ''
@@ -166,6 +216,14 @@ export default function AdminProductsList({ activeOnly = false }) {
       return ''
     })
     setEditLocalVideoName('')
+    setEditPairLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return ''
+    })
+    setEditPairLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return []
+    })
   }
 
   const cancelEdit = () => {
@@ -204,6 +262,27 @@ export default function AdminProductsList({ activeOnly = false }) {
     setIsEditMainImageDragActive(false)
     setIsEditImagesDragActive(false)
     setIsEditVideoDragActive(false)
+    setEditHadPairVariant(false)
+    setEditHasPairVariant(false)
+    setEditPairName('Pair')
+    setEditPairDescription('')
+    setEditPairStock('0')
+    setEditPairSilverWeightGrams('')
+    setEditPairDiscountPercent('')
+    setEditPairMakingCost('')
+    setEditPairOtherCharges('')
+    setEditPairIsActive(true)
+    setEditPairImage('')
+    setEditPairImages([])
+    setEditOtherVariants([])
+    setEditPairLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return ''
+    })
+    setEditPairLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return []
+    })
   }
 
   const handleEditMainImageSelected = async (file) => {
@@ -307,6 +386,76 @@ export default function AdminProductsList({ activeOnly = false }) {
     }
   }
 
+  const handleEditPairMainImageSelected = async (file) => {
+    if (!file) return
+    setError('')
+    if ((file?.size || 0) > maxUploadBytes) {
+      setError(`"${file.name}" is larger than 5 MB`)
+      return
+    }
+    const localUrl = URL.createObjectURL(file)
+    setEditPairLocalMainImage((prev) => {
+      safeRevokeUrl(prev)
+      return localUrl
+    })
+    try {
+      setLoading(true)
+      const res = await uploadImage(file)
+      const path = String(res?.path || '').trim()
+      if (!path) throw new Error('Upload failed')
+      setEditPairImage(path)
+      setEditPairImages((arr) => {
+        const list = Array.isArray(arr) ? arr.map((x) => String(x)) : []
+        const first = String(path)
+        const next = [first, ...list.filter((x) => x && x !== first)]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setEditPairLocalMainImage((prev) => {
+        safeRevokeUrl(prev)
+        return ''
+      })
+    } catch (e) {
+      setError(e?.message || 'Failed to upload image')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditPairImagesSelected = async (fileList) => {
+    setError('')
+    const files = Array.isArray(fileList) ? fileList : Array.from(fileList || [])
+    if (!files.length) return
+    const tooLarge = files.find((f) => (f?.size || 0) > maxUploadBytes)
+    if (tooLarge) {
+      setError(`"${tooLarge.name}" is larger than 5 MB`)
+      return
+    }
+    const localUrls = files.map((f) => URL.createObjectURL(f))
+    setEditPairLocalImages((prev) => {
+      safeRevokeUrls(prev)
+      return localUrls
+    })
+    try {
+      setLoading(true)
+      const res = await uploadImages(files)
+      const paths = res?.paths || []
+      if (!paths.length) throw new Error('Upload failed')
+      setEditPairImages((arr) => {
+        const next = Array.isArray(arr) ? [...arr, ...paths] : [...paths]
+        return Array.from(new Set(next.map((s) => String(s)).filter(Boolean)))
+      })
+      setEditPairImage((v) => String(v || '').trim() || paths[0] || '')
+      setEditPairLocalImages((prev) => {
+        safeRevokeUrls(prev)
+        return []
+      })
+    } catch (e) {
+      setError(e?.message || 'Failed to upload images')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const onSaveEdit = async () => {
     setError('')
     if (!editName.trim()) {
@@ -383,6 +532,73 @@ export default function AdminProductsList({ activeOnly = false }) {
 
     const videoTrim = String(editVideo || '').trim()
     if (videoTrim) payload.video = videoTrim
+
+    const shouldSendVariants = editHasPairVariant || editHadPairVariant
+    if (shouldSendVariants) {
+      const variants = Array.isArray(editOtherVariants) ? editOtherVariants : []
+
+      if (editHasPairVariant) {
+        const stockNum = String(editPairStock || '').trim() ? Number(editPairStock) : 0
+        if (!Number.isFinite(stockNum) || stockNum < 0) {
+          setError('Pair stock must be a valid number')
+          return
+        }
+
+        const v = {
+          name: String(editPairName || '').trim() || 'Pair',
+          variantKey: 'pair',
+          description: String(editPairDescription || ''),
+          stock: stockNum,
+          isActive: Boolean(editPairIsActive),
+        }
+
+        const imageTrim = String(editPairImage || '').trim()
+        const imagesOut = (Array.isArray(editPairImages) ? editPairImages : []).map((s) => String(s)).filter(Boolean)
+        if (imagesOut.length) v.images = imagesOut
+        if (imageTrim) v.image = imageTrim
+        else if (imagesOut.length) v.image = imagesOut[0]
+
+        if (String(editPairSilverWeightGrams || '').trim()) {
+          const n = Number(editPairSilverWeightGrams)
+          if (!Number.isFinite(n) || n < 0) {
+            setError('Pair silver weight must be a valid number')
+            return
+          }
+          v.silverWeightGrams = n
+        }
+
+        if (String(editPairDiscountPercent || '').trim()) {
+          const n = Number(editPairDiscountPercent)
+          if (!Number.isFinite(n) || n < 0 || n > 100) {
+            setError('Pair discount must be between 0 and 100')
+            return
+          }
+          v.discountPercent = n
+        }
+
+        if (String(editPairMakingCost || '').trim()) {
+          const n = Number(editPairMakingCost)
+          if (!Number.isFinite(n) || n < 0) {
+            setError('Pair making cost must be a valid number')
+            return
+          }
+          v.makingCost = n
+        }
+
+        if (String(editPairOtherCharges || '').trim()) {
+          const n = Number(editPairOtherCharges)
+          if (!Number.isFinite(n) || n < 0) {
+            setError('Pair other charges must be a valid number')
+            return
+          }
+          v.otherCharges = n
+        }
+
+        variants.push(v)
+      }
+
+      payload.variants = variants
+    }
 
     try {
       setLoading(true)
@@ -1022,6 +1238,242 @@ export default function AdminProductsList({ activeOnly = false }) {
                                 }}
                                 className="hidden"
                               />
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-4">
+                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                  <div>
+                                    <div className="text-sm font-semibold text-gray-900">Pair Variant (optional)</div>
+                                    <div className="mt-1 text-xs text-gray-500">Separate pricing, images, and description for pair</div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditHasPairVariant((v) => !v)}
+                                    disabled={loading}
+                                    className="flex h-10 items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-800 disabled:opacity-60"
+                                  >
+                                    <span>{editHasPairVariant ? 'Enabled' : 'Disabled'}</span>
+                                    <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editHasPairVariant ? 'primary-bg' : 'bg-gray-200'}`}>
+                                      <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${editHasPairVariant ? 'translate-x-4' : 'translate-x-1'}`} />
+                                    </span>
+                                  </button>
+                                </div>
+
+                                {editHasPairVariant ? (
+                                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Name</div>
+                                      <input
+                                        value={editPairName}
+                                        onChange={(e) => setEditPairName(e.target.value)}
+                                        placeholder="Pair"
+                                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Stock</div>
+                                      <input
+                                        value={editPairStock}
+                                        onChange={(e) => setEditPairStock(e.target.value)}
+                                        inputMode="numeric"
+                                        placeholder="0"
+                                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <div className="text-xs font-semibold text-gray-600">Pair Description</div>
+                                      <textarea
+                                        value={editPairDescription}
+                                        onChange={(e) => setEditPairDescription(e.target.value)}
+                                        placeholder="Optional"
+                                        className="mt-2 min-h-24 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Silver Weight (grams)</div>
+                                      <input
+                                        value={editPairSilverWeightGrams}
+                                        onChange={(e) => setEditPairSilverWeightGrams(e.target.value)}
+                                        inputMode="decimal"
+                                        placeholder="Optional"
+                                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Discount (%)</div>
+                                      <input
+                                        value={editPairDiscountPercent}
+                                        onChange={(e) => setEditPairDiscountPercent(e.target.value)}
+                                        inputMode="decimal"
+                                        placeholder="0"
+                                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Making Cost</div>
+                                      <input
+                                        value={editPairMakingCost}
+                                        onChange={(e) => setEditPairMakingCost(e.target.value)}
+                                        inputMode="decimal"
+                                        placeholder="Optional"
+                                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Other Charges</div>
+                                      <input
+                                        value={editPairOtherCharges}
+                                        onChange={(e) => setEditPairOtherCharges(e.target.value)}
+                                        inputMode="decimal"
+                                        placeholder="Optional"
+                                        className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-semibold text-gray-600">Pair Active</div>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditPairIsActive((v) => !v)}
+                                        disabled={loading}
+                                        className="mt-2 flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 disabled:opacity-60"
+                                      >
+                                        <span>{editPairIsActive ? 'Active' : 'Inactive'}</span>
+                                        <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editPairIsActive ? 'primary-bg' : 'bg-gray-200'}`}>
+                                          <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${editPairIsActive ? 'translate-x-4' : 'translate-x-1'}`} />
+                                        </span>
+                                      </button>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <div className="flex flex-col gap-3 md:flex-row md:items-start">
+                                        <div className="w-full md:w-1/2">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="text-xs font-semibold text-gray-600">Pair Main Image</div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                if (loading) return
+                                                document.getElementById(`edit-pair-main-image-file-${editingId}`)?.click()
+                                              }}
+                                              disabled={loading}
+                                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                                            >
+                                              Upload
+                                            </button>
+                                          </div>
+                                          <input
+                                            id={`edit-pair-main-image-file-${editingId}`}
+                                            type="file"
+                                            accept="image/*,.heic,.heif,.jfif"
+                                            disabled={loading}
+                                            onChange={async (e) => {
+                                              const f = e.target.files?.[0]
+                                              e.target.value = ''
+                                              await handleEditPairMainImageSelected(f)
+                                            }}
+                                            className="hidden"
+                                          />
+                                          {editPairLocalMainImage || editPairImage ? (
+                                            <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2">
+                                              <div className="h-14 w-14 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                                                <img
+                                                  src={editPairLocalMainImage || toPublicUrl(editPairImage)}
+                                                  alt=""
+                                                  className="h-full w-full object-cover"
+                                                />
+                                              </div>
+                                              <div className="text-xs font-semibold text-gray-700">Pair main image selected</div>
+                                            </div>
+                                          ) : (
+                                            <div className="mt-3 text-xs text-gray-500">No pair main image selected</div>
+                                          )}
+                                          <input
+                                            value={editPairImage ? toPublicUrl(editPairImage) : ''}
+                                            onChange={(e) => setEditPairImage(e.target.value)}
+                                            placeholder="Optional"
+                                            className="mt-2 h-10 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-gray-300"
+                                            disabled={loading}
+                                          />
+                                        </div>
+
+                                        <div className="w-full md:w-1/2">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="text-xs font-semibold text-gray-600">Pair Images</div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                if (loading) return
+                                                document.getElementById(`edit-pair-images-file-${editingId}`)?.click()
+                                              }}
+                                              disabled={loading}
+                                              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                                            >
+                                              Upload
+                                            </button>
+                                          </div>
+                                          <input
+                                            id={`edit-pair-images-file-${editingId}`}
+                                            type="file"
+                                            accept="image/*,.heic,.heif,.jfif"
+                                            multiple
+                                            disabled={loading}
+                                            onChange={async (e) => {
+                                              const files = Array.from(e.target.files || [])
+                                              e.target.value = ''
+                                              await handleEditPairImagesSelected(files)
+                                            }}
+                                            className="hidden"
+                                          />
+                                          {Array.isArray(editPairImages) && editPairImages.length ? (
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                              {editPairImages.slice(0, 12).map((p) => (
+                                                <div
+                                                  key={p}
+                                                  className="relative h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-white"
+                                                >
+                                                  <img src={toPublicUrl(p)} alt="" className="h-full w-full object-cover" />
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setEditPairImages((arr) => (Array.isArray(arr) ? arr.filter((x) => x !== p) : []))
+                                                      setEditPairImage((cur) => (String(cur || '') === String(p) ? '' : cur))
+                                                    }}
+                                                    disabled={loading}
+                                                    className="absolute right-1 top-1 rounded bg-white/90 px-2 py-1 text-[10px] font-semibold text-gray-800 disabled:opacity-60"
+                                                  >
+                                                    Remove
+                                                  </button>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : Array.isArray(editPairLocalImages) && editPairLocalImages.length ? (
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                              {editPairLocalImages.map((u) => (
+                                                <div key={u} className="h-16 w-16 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                                  <img src={u} alt="" className="h-full w-full object-cover" />
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="mt-3 text-xs text-gray-500">No pair images uploaded</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : editHadPairVariant ? (
+                                  <div className="mt-3 text-xs font-semibold text-amber-700">
+                                    Pair variant exists on this product. Disable + Save to remove it.
+                                  </div>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
                         </div>

@@ -9,6 +9,51 @@ import { computeProductPricing, getSilver925RatePerGram, getSilverWeightGrams } 
 const CART_KEY = 'sj_cart_v1'
 const WISHLIST_KEY = 'sj_wishlist_v1'
 
+function ReturnIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12a8 8 0 0 1 13.7-5.6" />
+      <path d="M18 3v4h-4" />
+      <path d="M8 12h8a2 2 0 0 1 2 2v6H6v-6a2 2 0 0 1 2-2Z" />
+      <path d="M9 12V10a3 3 0 1 1 6 0v2" />
+    </svg>
+  )
+}
+
+function PlatingIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6 2.7-6 6-6Z" />
+      <path d="M12 5V3" />
+      <path d="M9.5 4.2 10 6" />
+      <path d="M14.5 4.2 14 6" />
+      <path d="M18.2 9.5 16.4 10" />
+      <path d="M5.8 9.5 7.6 10" />
+    </svg>
+  )
+}
+
+function WarrantyIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 3h10v6c0 7-5 10-5 10S7 16 7 9V3Z" />
+      <path d="M9.2 11.1c.4-1.2 1.4-1.9 2.7-1.9 1.6 0 2.8 1 2.8 2.7 0 1.7-1.2 2.9-2.9 2.9-1.4 0-2.5-.7-2.9-1.9" />
+      <path d="M9.1 12h3.8" />
+    </svg>
+  )
+}
+
+function Silver925Icon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8" />
+      <text x="12" y="14" textAnchor="middle" fontSize="6.5" fill="currentColor" stroke="none" fontFamily="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial">
+        925
+      </text>
+    </svg>
+  )
+}
+
 const escapeHtml = (s) =>
   String(s || '')
     .replace(/&/g, '&amp;')
@@ -84,12 +129,12 @@ const pickPrimaryVariant = (product) => {
 
 const toUiProduct = (apiProduct, silverPricePerGram = 0) => {
   const v = pickPrimaryVariant(apiProduct) || {}
-  const images = dedupeUrls([
+  const baseImages = dedupeUrls([
     apiProduct?.image,
     ...(Array.isArray(apiProduct?.images) ? apiProduct.images : []),
-    v?.image,
-    ...(Array.isArray(v?.images) ? v.images : []),
   ]).filter(Boolean)
+  const fallbackImages = dedupeUrls([v?.image, ...(Array.isArray(v?.images) ? v.images : [])]).filter(Boolean)
+  const images = baseImages.length ? baseImages : fallbackImages
   const cover = images[0] || productFallback
   const pricing = computeProductPricing(apiProduct, silverPricePerGram)
   const gramsNum = getSilverWeightGrams(apiProduct)
@@ -112,7 +157,8 @@ const toUiProduct = (apiProduct, silverPricePerGram = 0) => {
     description: apiProduct?.description || '',
     tags: Array.isArray(apiProduct?.tags) ? apiProduct.tags : ['Jewellery'],
     attributes,
-    sku: v?.sku || '',
+    sku: apiProduct?.sku || '',
+    variants: Array.isArray(apiProduct?.variants) ? apiProduct.variants : undefined,
   }
 }
 
@@ -343,13 +389,6 @@ const ProductProfile = () => {
       .filter(([k, v]) => k && v)
   }, [product.attributes])
 
-  const descriptionHtml = useMemo(() => {
-    const raw = String(product.description || '')
-    if (!raw) return ''
-    if (looksLikeHtml(raw)) return raw
-    return plainTextToHtml(raw)
-  }, [product.description])
-
   const breadcrumbs = useMemo(() => {
     const b = location?.state?.breadcrumbs
     if (Array.isArray(b) && b.length) return b
@@ -374,8 +413,60 @@ const ProductProfile = () => {
   })
   const [justAdded, setJustAdded] = useState(false)
 
+  const variants = useMemo(() => {
+    const v = apiProduct?.variants
+    if (Array.isArray(v)) return v
+    const pv = product?.variants
+    return Array.isArray(pv) ? pv : []
+  }, [apiProduct?.variants, product?.variants])
+
+  const pairVariant = useMemo(() => {
+    return (
+      variants.find(
+        (v) => String(v?.variantKey || v?.key || '').trim().toLowerCase() === 'pair' && v?.isActive !== false
+      ) || null
+    )
+  }, [variants])
+
+  const [purchaseType, setPurchaseType] = useState('single')
+
+  useEffect(() => {
+    if (!pairVariant) setPurchaseType('single')
+  }, [pairVariant])
+
+  const selectedVariantKey = purchaseType === 'pair' && pairVariant ? 'pair' : ''
+  const selectedVariant = purchaseType === 'pair' ? pairVariant : null
+
+  const displayImages = useMemo(() => {
+    const base = Array.isArray(product?.images) ? product.images : []
+    if (!selectedVariant) return base
+    const raw = dedupeUrls([selectedVariant?.image, ...(Array.isArray(selectedVariant?.images) ? selectedVariant.images : [])])
+      .map((u) => toPublicUrl(u))
+      .filter(Boolean)
+    return raw.length ? raw : base
+  }, [product?.images, selectedVariant, toPublicUrl])
+
+  const displayPricing = useMemo(() => {
+    if (!apiProduct) {
+      return {
+        price: Number.isFinite(product.price) ? product.price : 0,
+        originalPrice: Number.isFinite(product.originalPrice) ? product.originalPrice : undefined,
+      }
+    }
+    return computeProductPricing(apiProduct, silverPricePerGram, selectedVariantKey || undefined)
+  }, [apiProduct, product.originalPrice, product.price, selectedVariantKey, silverPricePerGram])
+
+  const displayDescriptionHtml = useMemo(() => {
+    const raw = String((selectedVariant?.description || product.description) ?? '')
+    if (!raw) return ''
+    if (looksLikeHtml(raw)) return raw
+    return plainTextToHtml(raw)
+  }, [product.description, selectedVariant?.description])
+
   const showOriginal =
-    Number.isFinite(product.originalPrice) && Number.isFinite(product.price) && product.originalPrice > product.price
+    Number.isFinite(displayPricing?.originalPrice) &&
+    Number.isFinite(displayPricing?.price) &&
+    Number(displayPricing.originalPrice) > Number(displayPricing.price)
 
   const displayRating = useMemo(() => {
     if (Number(reviewsSummary?.count || 0) > 0) return Number(reviewsSummary?.avg || 0)
@@ -388,7 +479,7 @@ const ProductProfile = () => {
   }, [product.ratingCount, reviewsSummary?.count])
 
   const safeQty = Number.isFinite(qty) && qty > 0 ? qty : 1
-  const mainUrl = product.images[Math.min(Math.max(activeImage, 0), product.images.length - 1)]
+  const mainUrl = displayImages[Math.min(Math.max(activeImage, 0), displayImages.length - 1)]
 
   const slug = useMemo(() => {
     const idPart = normalizeText(product?.id || productId || '')
@@ -419,11 +510,15 @@ const ProductProfile = () => {
   }, [zoomEnabled])
 
   useEffect(() => {
+    setActiveImage(0)
+  }, [purchaseType])
+
+  useEffect(() => {
     setActiveImage((idx) => {
-      const nextMax = Math.max(0, (product.images?.length || 1) - 1)
+      const nextMax = Math.max(0, (displayImages?.length || 1) - 1)
       return Math.min(Math.max(0, idx), nextMax)
     })
-  }, [product.images])
+  }, [displayImages])
 
   useEffect(() => {
     const id = normalizeText(product?.id || productId || '')
@@ -520,17 +615,23 @@ const ProductProfile = () => {
   }, [itemKey])
 
   const addToCart = (goToCart = false) => {
-    const key = decodeURIComponent(slug || '')
-    const cover = product.images?.[0] || ''
+    const baseKey = decodeURIComponent(slug || '')
+    const variantKey = selectedVariantKey || 'single'
+    const key = `${baseKey}::${variantKey}`
+    const cover = displayImages?.[0] || ''
+    const variantTitle =
+      String(selectedVariant?.name || selectedVariant?.title || '').trim() || (variantKey === 'pair' ? 'Pair' : '')
 
     const nextItem = {
       key,
+      variantKey,
+      variantTitle: variantTitle || undefined,
       id: product.id || location?.state?.product?.id,
       sku: product.sku,
       title: product.title,
-      price: Number.isFinite(product.price) ? product.price : 0,
-      originalPrice: Number.isFinite(product.originalPrice) ? product.originalPrice : undefined,
-      images: Array.isArray(product.images) ? product.images.filter(Boolean) : cover ? [cover] : [],
+      price: Number.isFinite(displayPricing?.price) ? displayPricing.price : 0,
+      originalPrice: Number.isFinite(displayPricing?.originalPrice) ? displayPricing.originalPrice : undefined,
+      images: Array.isArray(displayImages) ? displayImages.filter(Boolean) : cover ? [cover] : [],
       imageUrl: cover,
       qty: safeQty,
     }
@@ -554,15 +655,15 @@ const ProductProfile = () => {
   }
 
   const toggleWishlist = () => {
-    const cover = product.images?.[0] || ''
+    const cover = displayImages?.[0] || ''
     const nextItem = {
       key: itemKey,
       id: product.id || location?.state?.product?.id,
       sku: product.sku,
       title: product.title,
-      price: Number.isFinite(product.price) ? product.price : 0,
-      originalPrice: Number.isFinite(product.originalPrice) ? product.originalPrice : undefined,
-      images: Array.isArray(product.images) ? product.images.filter(Boolean) : cover ? [cover] : [],
+      price: Number.isFinite(displayPricing?.price) ? displayPricing.price : 0,
+      originalPrice: Number.isFinite(displayPricing?.originalPrice) ? displayPricing.originalPrice : undefined,
+      images: Array.isArray(displayImages) ? displayImages.filter(Boolean) : cover ? [cover] : [],
       imageUrl: cover,
     }
 
@@ -664,9 +765,9 @@ const ProductProfile = () => {
               />
             </div>
 
-            {product.images.length > 1 ? (
+            {displayImages.length > 1 ? (
               <div className="mt-4 grid grid-cols-5 gap-3">
-                {product.images.slice(0, 10).map((u, idx) => {
+                {displayImages.slice(0, 10).map((u, idx) => {
                   const isActive = idx === activeImage
                   return (
                     <button
@@ -702,18 +803,65 @@ const ProductProfile = () => {
             </div>
 
             <div className="flex flex-wrap items-end gap-3">
-              <div className="text-xl font-bold text-gray-900 sm:text-2xl">₹{formatter.format(product.price)}</div>
+              <div className="text-xl font-bold text-gray-900 sm:text-2xl">
+                ₹{formatter.format(Number(displayPricing?.price) || 0)}
+              </div>
               {showOriginal ? (
                 <div className="pb-0.5 text-base font-semibold text-gray-500 line-through sm:text-lg">
-                  ₹{formatter.format(product.originalPrice)}
+                  ₹{formatter.format(Number(displayPricing?.originalPrice) || 0)}
                 </div>
               ) : null}
             </div>
 
             <div
               className="text-sm leading-relaxed text-gray-600 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_a]:text-[#0f2e40] [&_a]:underline"
-              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              dangerouslySetInnerHTML={{ __html: displayDescriptionHtml }}
             />
+
+            <div className="grid grid-cols-2 gap-x-10 gap-y-6 pt-2">
+              <div className="flex items-center gap-3">
+                <ReturnIcon className="h-7 w-7 text-[#b85b6f]" />
+                <div className="text-sm font-medium text-gray-700">Easy 15 Day Return</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <PlatingIcon className="h-7 w-7 text-[#b85b6f]" />
+                <div className="text-sm font-medium text-gray-700">Lifetime Plating</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <WarrantyIcon className="h-7 w-7 text-[#b85b6f]" />
+                <div className="text-sm font-medium text-gray-700">6-Month Warranty</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Silver925Icon className="h-7 w-7 text-[#b85b6f]" />
+                <div className="text-sm font-medium text-gray-700">Fine 925 Silver</div>
+              </div>
+            </div>
+
+            {pairVariant ? (
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-gray-700">TYPE</div>
+                <div className="inline-flex items-center overflow-hidden rounded-xl ring-1 ring-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setPurchaseType('single')}
+                    className={`h-10 px-4 text-sm font-semibold transition-colors ${
+                      purchaseType === 'single' ? 'bg-[#0f2e40] text-white' : 'bg-white text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    Single
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPurchaseType('pair')}
+                    className={`h-10 px-4 text-sm font-semibold transition-colors ${
+                      purchaseType === 'pair' ? 'bg-[#0f2e40] text-white' : 'bg-white text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    Pair
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <div className="text-xs font-semibold text-gray-700">QTY</div>
@@ -834,7 +982,7 @@ const ProductProfile = () => {
             {activeTab === 'description' ? (
               <div
                 className="max-w-4xl text-sm leading-relaxed text-gray-700 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_a]:text-[#0f2e40] [&_a]:underline"
-                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                dangerouslySetInnerHTML={{ __html: displayDescriptionHtml }}
               />
             ) : null}
             {activeTab === 'details' ? (

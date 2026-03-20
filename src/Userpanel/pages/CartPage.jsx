@@ -30,6 +30,8 @@ const writeCart = (items) => {
       .filter((it) => it && typeof it === 'object')
       .map((it) => ({
         key: String(it.key || '').trim(),
+        variantKey: String(it.variantKey || '').trim() || undefined,
+        variantTitle: String(it.variantTitle || '').trim() || undefined,
         id: it.id,
         sku: it.sku,
         title: it.title || '',
@@ -112,10 +114,10 @@ export default function CartPage() {
           .map((it) => {
             if (!isMongoId(it?.id)) return it
             const p = byId.get(normalizeId(it.id))
-            const pricing = computeProductPricing(p, rate)
+            const pricing = computeProductPricing(p, rate, it?.variantKey || undefined)
             const priceNum = Number.isFinite(pricing?.price) ? pricing.price : 0
             const originalNum = Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined
-            const gramsNum = getSilverWeightGrams(p)
+            const gramsNum = getSilverWeightGrams(p, it?.variantKey || undefined)
             if (Math.abs((Number(it.price) || 0) - priceNum) > 0.0001) updatedPrices = true
             if (Math.abs((Number(it.originalPrice) || 0) - (Number(originalNum) || 0)) > 0.0001) updatedPrices = true
             if (Math.abs((Number(it.silverWeightGrams) || 0) - (Number(gramsNum) || 0)) > 0.0001) updatedPrices = true
@@ -226,6 +228,11 @@ export default function CartPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="truncate text-base font-semibold text-gray-900">{it.title}</div>
+                            {String(it?.variantTitle || it?.variantKey || '').trim() ? (
+                              <div className="mt-1 inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700">
+                                {String(it.variantTitle || it.variantKey).trim()}
+                              </div>
+                            ) : null}
                             {Number(it.silverWeightGrams) > 0 ? (
                               <div className="mt-1 text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
                             ) : null}

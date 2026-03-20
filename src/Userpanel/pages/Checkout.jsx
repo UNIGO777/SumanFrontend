@@ -195,10 +195,10 @@ export default function Checkout() {
           .map((it) => {
             if (!isMongoId(it?.id)) return it
             const p = byId.get(normalizeId(it.id))
-            const pricing = computeProductPricing(p, rate)
+            const pricing = computeProductPricing(p, rate, it?.variantKey || undefined)
             const priceNum = Number.isFinite(pricing?.price) ? pricing.price : 0
             const originalNum = Number.isFinite(pricing?.originalPrice) ? pricing.originalPrice : undefined
-            const gramsNum = getSilverWeightGrams(p)
+            const gramsNum = getSilverWeightGrams(p, it?.variantKey || undefined)
             if (Math.abs((Number(it.price) || 0) - priceNum) > 0.0001) changed = true
             if (Math.abs((Number(it.originalPrice) || 0) - (Number(originalNum) || 0)) > 0.0001) changed = true
             if (Math.abs((Number(it.silverWeightGrams) || 0) - (Number(gramsNum) || 0)) > 0.0001) changed = true
@@ -305,6 +305,7 @@ export default function Checkout() {
     const payloadItems = (items || []).map((it) => ({
       productId: it?.id,
       quantity: Math.max(1, Number.parseInt(it?.qty, 10) || 1),
+      variantKey: String(it?.variantKey || '').trim() || undefined,
     }))
     const invalid = payloadItems.some((it) => !isMongoId(it.productId))
     if (invalid) {

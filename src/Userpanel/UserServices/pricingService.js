@@ -17,6 +17,18 @@ const pickPrimaryVariant = (product) => {
   return active || variants[0]
 }
 
+const pickVariantByKey = (product, variantKey) => {
+  const key = String(variantKey || '').trim().toLowerCase()
+  if (!key) return null
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+  const v = variants.find(
+    (x) => String(x?.variantKey || x?.key || '').trim().toLowerCase() === key
+  )
+  if (!v) return null
+  if (v?.isActive === false) return null
+  return v
+}
+
 const getAttrNumber = (attributes, key) => {
   if (!attributes || typeof attributes !== 'object') return 0
   const target = String(key || '').trim().toLowerCase()
@@ -27,16 +39,23 @@ const getAttrNumber = (attributes, key) => {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
-export const getSilverWeightGrams = (product) => {
-  const v = pickPrimaryVariant(product) || {}
+export const getSilverWeightGrams = (product, variantKey) => {
+  const hasVariantKey = Boolean(String(variantKey || '').trim())
+  const v = hasVariantKey ? pickVariantByKey(product, variantKey) : pickPrimaryVariant(product)
+  if (hasVariantKey && v) {
+    const fromVariant = Number(v?.silverWeightGrams)
+    if (Number.isFinite(fromVariant) && fromVariant > 0) return fromVariant
+    const fromVariantLegacy = Number(v?.grams)
+    if (Number.isFinite(fromVariantLegacy) && fromVariantLegacy > 0) return fromVariantLegacy
+  }
   const direct = Number(product?.silverWeightGrams)
   if (Number.isFinite(direct) && direct > 0) return direct
   const directLegacy = Number(product?.grams)
   if (Number.isFinite(directLegacy) && directLegacy > 0) return directLegacy
   const fromVariant = Number(v?.silverWeightGrams)
-  if (Number.isFinite(fromVariant) && fromVariant > 0) return fromVariant
+  if (!hasVariantKey && Number.isFinite(fromVariant) && fromVariant > 0) return fromVariant
   const fromVariantLegacy = Number(v?.grams)
-  if (Number.isFinite(fromVariantLegacy) && fromVariantLegacy > 0) return fromVariantLegacy
+  if (!hasVariantKey && Number.isFinite(fromVariantLegacy) && fromVariantLegacy > 0) return fromVariantLegacy
   const attrs = product?.attributes
   return (
     getAttrNumber(attrs, 'silverWeightGrams') ||
@@ -48,17 +67,22 @@ export const getSilverWeightGrams = (product) => {
   )
 }
 
-export const computeProductBasePrice = (product) => {
-  const v = pickPrimaryVariant(product) || {}
+export const computeProductBasePrice = (product, variantKey) => {
+  const hasVariantKey = Boolean(String(variantKey || '').trim())
+  const v = hasVariantKey ? pickVariantByKey(product, variantKey) : pickPrimaryVariant(product)
   const baseFromProduct = getPriceAmount(product?.makingCost) + getPriceAmount(product?.otherCharges)
-  const baseFromVariant = getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges)
+  const baseFromVariant = v ? getPriceAmount(v?.makingCost) + getPriceAmount(v?.otherCharges) : 0
+  if (hasVariantKey) return baseFromVariant > 0 ? baseFromVariant : baseFromProduct
   return baseFromProduct > 0 ? baseFromProduct : baseFromVariant
 }
 
-export const getDiscountPercent = (product) => {
-  const v = pickPrimaryVariant(product) || {}
-  const rawVariant = Number(v?.discountPercent)
-  if (Number.isFinite(rawVariant) && rawVariant > 0) return Math.min(100, Math.max(0, rawVariant))
+export const getDiscountPercent = (product, variantKey) => {
+  const hasVariantKey = Boolean(String(variantKey || '').trim())
+  if (hasVariantKey) {
+    const v = pickVariantByKey(product, variantKey)
+    const rawVariant = Number(v?.discountPercent)
+    if (Number.isFinite(rawVariant) && rawVariant > 0) return Math.min(100, Math.max(0, rawVariant))
+  }
   const rawProduct = Number(product?.discountPercent)
   if (Number.isFinite(rawProduct) && rawProduct > 0) return Math.min(100, Math.max(0, rawProduct))
 
@@ -67,14 +91,14 @@ export const getDiscountPercent = (product) => {
   return fromAttrs ? Math.min(100, Math.max(0, fromAttrs)) : 0
 }
 
-export const computeProductPricing = (product, silverPricePerGram) => {
-  const base = computeProductBasePrice(product)
-  const weightGrams = getSilverWeightGrams(product)
+export const computeProductPricing = (product, silverPricePerGram, variantKey) => {
+  const base = computeProductBasePrice(product, variantKey)
+  const weightGrams = getSilverWeightGrams(product, variantKey)
   const rate = Number(silverPricePerGram)
   const silverAdd = Number.isFinite(rate) && rate > 0 ? weightGrams * rate : 0
   const originalTotal = base + silverAdd
   const original = Number.isFinite(originalTotal) ? originalTotal : 0
-  const discountPercent = getDiscountPercent(product)
+  const discountPercent = getDiscountPercent(product, variantKey)
   const discounted = discountPercent > 0 ? original * (1 - discountPercent / 100) : original
   const price = Number.isFinite(discounted) ? discounted : 0
 
