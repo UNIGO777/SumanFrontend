@@ -6,7 +6,7 @@ export default function ReturnPolicy() {
       <div className="w-full bg-gray-100">
         <div className="w-full px-8 py-10 text-center sm:px-12 md:px-8 lg:px-14">
           <div className="text-2xl font-semibold text-gray-900 sm:text-3xl md:text-4xl">Return Policy</div>
-          <div className="mt-2 text-xs font-semibold text-red-600 italic sm:text-sm md:text-base">NO EXCHANGE/REPLACEMENT</div>
+          <div className="mt-2 text-xs font-semibold text-red-600 italic sm:text-sm md:text-base">5-DAYS RETURN POLICY</div>
           <div className="mt-2 text-xs font-semibold text-gray-600 sm:text-sm md:text-base">
             Return rules for orders placed on our website.
           </div>
@@ -16,9 +16,9 @@ export default function ReturnPolicy() {
       <div className="w-full px-8 py-10 sm:px-12 md:px-8 lg:px-14">
         <div className="mx-auto max-w-4xl space-y-8 text-sm text-gray-700 sm:text-base">
           <div className="rounded-xl bg-amber-50 p-5 ring-1 ring-amber-200">
-            <div className="text-sm font-semibold text-amber-900">My Business does not support returns</div>
+            <div className="text-sm font-semibold text-amber-900">We have a 5-days return policy</div>
             <div className="mt-2 text-sm text-amber-900/90">
-              We currently do not accept returns. Please review product details carefully before placing an order.
+              You may return items within 5 days of delivery. Please review product details carefully before placing an order.
             </div>
           </div>
 
@@ -27,6 +27,13 @@ export default function ReturnPolicy() {
             <div>
               If you receive a damaged or incorrect item, please contact us as soon as possible with your order details
               and supporting photos/videos. We will review the request and help with a resolution.
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-base font-semibold text-gray-900 sm:text-lg">Replacements / Exchanges</div>
+            <div>
+              If replacements and exchanges are accepted, they will be delivered to you within 3-4 working days.
             </div>
           </div>
 

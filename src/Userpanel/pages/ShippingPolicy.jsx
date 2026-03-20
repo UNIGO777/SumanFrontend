@@ -19,7 +19,7 @@ export default function ShippingPolicy() {
             <div className="text-base font-semibold text-gray-900 sm:text-lg">Order processing</div>
             <div>
               Orders are processed after confirmation. Processing times may vary during high-demand periods, promotions,
-              or due to verification requirements.
+              or due to verification requirements. 
             </div>
           </div>
 
@@ -27,7 +27,7 @@ export default function ShippingPolicy() {
             <div className="text-base font-semibold text-gray-900 sm:text-lg">Delivery timelines</div>
             <div>
               Delivery timelines depend on your location and courier operations. The estimated timeline shown during
-              checkout is an estimate and not a guarantee.
+              checkout is an estimate and not a guarantee. that order will get delivered to your end within 3 to 4 working days.
             </div>
           </div>
 
