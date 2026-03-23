@@ -114,7 +114,7 @@ export default function TermsAndConditions() {
                 These Terms and any dispute or claim relating to it, or its enforceability, shall be governed by and
                 construed in accordance with the laws of India.
               </li>
-              <li>All disputes arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts in and .</li>
+              <li>All disputes arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts in india.</li>
               <li>
                 All concerns or communications relating to these Terms must be communicated to us using the contact
                 information provided on this website.

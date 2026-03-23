@@ -17,9 +17,9 @@ export default function RefundPolicy() {
           <div className="space-y-2">
             <div className="text-base font-semibold text-gray-900 sm:text-lg">Eligibility</div>
             <div>
-              As per the conditions, Customer can return the product within 7 days of delivery Approved Refund amount will be credited within 10 busiess days
+              As per the conditions, Customer can return the product within 5 days of delivery Approved Refund amount will be credited within 10 busiess days
             </div>
-            <div>As per the conditions, Customer can return the product within 7 days of delivery.</div>
+            <div>As per the conditions, Customer can return the product within 5 days of delivery.</div>
           </div>
 
           <div className="space-y-2">
