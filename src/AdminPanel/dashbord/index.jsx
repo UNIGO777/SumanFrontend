@@ -1,10 +1,12 @@
 import { Navigate, NavLink, Outlet, Route, Routes } from 'react-router-dom'
 import AdminLogin from './Login.jsx'
+import Dashboard from './Dashboard.jsx'
 import { useMemo, useState } from 'react'
 import AdminCategories from './Categories.jsx'
 import AdminSubcategories from './Subcategories.jsx'
 import AdminProductsNew from './ProductsNew.jsx'
 import AdminProductsList from './ProductsList.jsx'
+import AdminBulkUpload from './BulkUpload.jsx'
 import AdminSilverPrice from './SilverPrice.jsx'
 import AdminSpecialOccasionCms from './SpecialOccasionCms.jsx'
 import AdminOrders, { AdminOrderDetail } from './Orders.jsx'
@@ -118,6 +120,9 @@ function AdminLayout() {
                 <NavLink to="/admin/products/new" className={subLinkCls}>
                   Add New Product
                 </NavLink>
+                <NavLink to="/admin/products/bulk" className={subLinkCls}>
+                  Bulk Upload
+                </NavLink>
                 <NavLink to="/admin/products" className={subLinkCls} end>
                   All Product
                 </NavLink>
@@ -214,10 +219,11 @@ export default function AdminPanelRoutes() {
           </RequireAdmin>
         }
       >
-        <Route path="dashboard" element={<AdminStub title="Dashboard" />} />
+        <Route path="dashboard" element={<Dashboard />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="subcategories" element={<AdminSubcategories />} />
         <Route path="products/new" element={<AdminProductsNew />} />
+        <Route path="products/bulk" element={<AdminBulkUpload />} />
         <Route path="products" element={<AdminProductsList />} />
         <Route path="products/active" element={<AdminProductsList activeOnly />} />
         <Route path="orders" element={<AdminOrders />} />

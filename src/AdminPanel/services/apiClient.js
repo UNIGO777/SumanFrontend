@@ -63,6 +63,12 @@ export const requestJson = async ({ method, path, query, body, headers, options 
     })
     const data = await res.json().catch(() => null)
     if (!res.ok) {
+      if (res.status === 401 && token) {
+        window.localStorage.removeItem('admin_token')
+        window.sessionStorage.removeItem('admin_token')
+        window.location.replace('/admin/login')
+        return new Promise(() => {})
+      }
       const message = data?.message || 'Request failed'
       throw new Error(message)
     }
@@ -94,6 +100,12 @@ export const requestForm = async ({ path, formData, headers }) => {
   })
   const data = await res.json().catch(() => null)
   if (!res.ok) {
+    if (res.status === 401 && token) {
+      window.localStorage.removeItem('admin_token')
+      window.sessionStorage.removeItem('admin_token')
+      window.location.replace('/admin/login')
+      return new Promise(() => {})
+    }
     const message = data?.message || 'Request failed'
     throw new Error(message)
   }

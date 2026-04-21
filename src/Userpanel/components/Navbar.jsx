@@ -114,6 +114,20 @@ export default function Navbar({
   const topCategories = useMemo(() => categoriesSorted.slice(0, 9), [categoriesSorted])
   const moreCategories = useMemo(() => categoriesSorted.slice(9), [categoriesSorted])
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [expandedCat, setExpandedCat] = useState(null)
+  const [pincodeOpen, setPincodeOpen] = useState(false)
+  const [pincodeInput, setPincodeInput] = useState('')
+  const [savedPincode, setSavedPincode] = useState(() => {
+    try { return window.localStorage.getItem('sj_pincode_v1') || '' } catch { return '' }
+  })
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+    setExpandedCat(null)
+  }, [location.pathname])
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
       <div className="primary-bg h-10 w-full px-4 text-white">
@@ -126,7 +140,7 @@ export default function Navbar({
         <div className="mx-auto  px-5 md:px-10">
           <div className="flex h-16 items-center justify-between md:hidden">
             <div className="flex items-center gap-3">
-              <button type="button" className="p-2 text-gray-900">
+              <button type="button" onClick={() => setMobileMenuOpen(true)} className="p-2 text-gray-900" aria-label="Open menu">
                 <Menu className="h-6 w-6" />
               </button>
               <div className="text-3xl font-semibold tracking-widest text-gray-900">
@@ -135,7 +149,7 @@ export default function Navbar({
             </div>
 
             <div className="flex items-center gap-3 text-gray-900">
-              <button type="button" className="p-2">
+              <button type="button" onClick={() => navigate('/available-services')} className="p-2" aria-label="Our store">
                 <Store className="h-6 w-6" />
               </button>
               <Link to="/wishlist" className="p-2">
@@ -155,12 +169,41 @@ export default function Navbar({
           <div className="md:hidden">
             <button
               type="button"
+              onClick={() => { setPincodeOpen((v) => !v); setPincodeInput(savedPincode) }}
               className="flex w-full items-center gap-2 py-3 text-sm text-gray-900"
             >
               <MapPin className="h-4 w-4 text-primary" />
-              <span className="font-medium">Update Delivery Pincode</span>
-              <ChevronDown className="h-4 w-4" />
+              <span className="font-medium">
+                {savedPincode ? `Deliver to: ${savedPincode}` : 'Update Delivery Pincode'}
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${pincodeOpen ? 'rotate-180' : ''}`} />
             </button>
+            {pincodeOpen && (
+              <div className="flex gap-2 pb-3">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pincodeInput}
+                  onChange={(e) => setPincodeInput(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter 6-digit pincode"
+                  className="h-10 flex-1 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:border-gray-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (pincodeInput.length === 6) {
+                      window.localStorage.setItem('sj_pincode_v1', pincodeInput)
+                      setSavedPincode(pincodeInput)
+                      setPincodeOpen(false)
+                    }
+                  }}
+                  className="rounded-lg bg-[#0f2e40] px-4 text-sm font-semibold text-white"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
 
             {!isSearchPage ? (
               <div className="pb-4">
@@ -336,6 +379,124 @@ export default function Navbar({
           </div>
         </div>
       </nav>
+      {/* Mobile menu drawer */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Drawer */}
+          <div className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white shadow-xl">
+            {/* Header */}
+            <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
+              <img src={LOGO} alt={brandText} className="h-10 w-auto" />
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-lg text-gray-500 hover:bg-gray-100"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Nav links */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <div className="mb-3 px-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                Shop by Category
+              </div>
+
+              {categoriesSorted.map((c) => {
+                const id = String(c?._id || c?.id || '')
+                const subs = id ? subByCategoryId.get(id) || [] : []
+                const isOpen = expandedCat === id
+                return (
+                  <div key={id}>
+                    <div className="flex items-center">
+                      <Link
+                        to={buildSearchHref({ categoryId: id })}
+                        className="flex-1 rounded-lg px-2 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                      >
+                        {c?.name}
+                      </Link>
+                      {subs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedCat(isOpen ? null : id)}
+                          className="grid h-9 w-9 place-items-center rounded-lg text-gray-400 hover:bg-gray-50"
+                        >
+                          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      )}
+                    </div>
+                    {isOpen && subs.length > 0 && (
+                      <div className="mb-1 ml-3 border-l-2 border-gray-100 pl-3">
+                        {subs.map((s) => {
+                          const subId = String(s?._id || s?.id || '')
+                          return (
+                            <Link
+                              key={subId}
+                              to={buildSearchHref({ categoryId: id, subCategoryId: subId })}
+                              className="block rounded-lg px-2 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            >
+                              {s?.name}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              <div className="my-4 border-t border-gray-100" />
+
+              <div className="mb-3 px-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                Quick Links
+              </div>
+              {[
+                { to: '/cart', label: 'Cart' },
+                { to: '/wishlist', label: 'Wishlist' },
+                { to: '/track-order', label: 'Track Order' },
+                { to: '/available-services', label: 'Our Store' },
+                { to: '/faqs', label: 'FAQs' },
+              ].map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="block rounded-lg px-2 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Search at bottom */}
+            <div className="border-t border-gray-100 p-3">
+              <div className="relative">
+                <input
+                  className="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 pr-10 text-sm outline-none focus:border-gray-400"
+                  placeholder="Search products…"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') goSearch() }}
+                />
+                <button
+                  type="button"
+                  onClick={goSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                  aria-label="Search"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   )
 }

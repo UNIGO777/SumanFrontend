@@ -322,7 +322,7 @@ export default function CartPage() {
                 >
                   Checkout
                 </Link>
-                <div className="mt-3 text-center text-xs font-semibold text-gray-500">Dummy checkout for now</div>
+                <div className="mt-3 text-center text-xs text-gray-400">Secure checkout · GST included</div>
               </div>
             </div>
           </div>
