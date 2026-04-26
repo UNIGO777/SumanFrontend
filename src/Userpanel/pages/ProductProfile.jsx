@@ -423,7 +423,7 @@ const ProductProfile = () => {
   const pairVariant = useMemo(() => {
     return (
       variants.find(
-        (v) => String(v?.variantKey || v?.key || '').trim().toLowerCase() === 'pair' && v?.isActive !== false
+        (v) => String(v?.key || '').trim().toLowerCase() === 'pair' && v?.isActive !== false
       ) || null
     )
   }, [variants])
@@ -620,7 +620,7 @@ const ProductProfile = () => {
     const key = `${baseKey}::${variantKey}`
     const cover = displayImages?.[0] || ''
     const variantTitle =
-      String(selectedVariant?.name || selectedVariant?.title || '').trim() || (variantKey === 'pair' ? 'Pair' : '')
+      String(selectedVariant?.title || '').trim() || (variantKey === 'pair' ? 'Pair' : '')
 
     const nextItem = {
       key,

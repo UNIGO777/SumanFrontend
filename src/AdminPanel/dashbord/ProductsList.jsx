@@ -27,6 +27,7 @@ export default function AdminProductsList({ activeOnly = false }) {
   const [editSubCategoryId, setEditSubCategoryId] = useState('')
   const [editSku, setEditSku] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [editDetails, setEditDetails] = useState('')
   const [editStock, setEditStock] = useState('0')
   const [editOccasionKey, setEditOccasionKey] = useState('')
   const [editSilverWeightGrams, setEditSilverWeightGrams] = useState('')
@@ -148,8 +149,8 @@ export default function AdminProductsList({ activeOnly = false }) {
   const startEdit = (row) => {
     const variantsRaw = Array.isArray(row?.variants) ? row.variants : []
     const pairVariant =
-      variantsRaw.find((v) => String(v?.variantKey || v?.key || '').trim().toLowerCase() === 'pair') || null
-    const otherVariants = variantsRaw.filter((v) => String(v?.variantKey || v?.key || '').trim().toLowerCase() !== 'pair')
+      variantsRaw.find((v) => String(v?.key || '').trim().toLowerCase() === 'pair') || null
+    const otherVariants = variantsRaw.filter((v) => String(v?.key || '').trim().toLowerCase() !== 'pair')
 
     setEditingId(row._id)
     setEditName(row.name || '')
@@ -158,6 +159,7 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditSubCategoryId(row.subCategory || '')
     setEditSku(row.sku || '')
     setEditDescription(row.description || '')
+    setEditDetails(String(row.attributes?.details || ''))
     setEditStock(row.stock !== undefined && row.stock !== null ? String(row.stock) : '0')
     setEditOccasionKey(row.occasionKey || '')
     setEditSilverWeightGrams(
@@ -177,7 +179,7 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditHadPairVariant(Boolean(pairVariant))
     setEditHasPairVariant(Boolean(pairVariant))
     setEditOtherVariants(otherVariants)
-    setEditPairName(pairVariant?.name || 'Pair')
+    setEditPairName(pairVariant?.title || 'Pair')
     setEditPairDescription(pairVariant?.description || '')
     setEditPairStock(pairVariant?.stock !== undefined && pairVariant?.stock !== null ? String(pairVariant.stock) : '0')
     setEditPairSilverWeightGrams(
@@ -234,6 +236,7 @@ export default function AdminProductsList({ activeOnly = false }) {
     setEditSubCategoryId('')
     setEditSku('')
     setEditDescription('')
+    setEditDetails('')
     setEditStock('0')
     setEditOccasionKey('')
     setEditSilverWeightGrams('')
@@ -524,6 +527,9 @@ export default function AdminProductsList({ activeOnly = false }) {
 
     payload.description = String(editDescription || '')
 
+    const detailsTrim = String(editDetails || '').trim()
+    payload.attributes = detailsTrim ? { details: detailsTrim } : undefined
+
     const imageTrim = String(editImage || '').trim()
     const imagesOut = (Array.isArray(editImages) ? editImages : []).map((s) => String(s)).filter(Boolean)
     if (imagesOut.length) payload.images = imagesOut
@@ -545,8 +551,8 @@ export default function AdminProductsList({ activeOnly = false }) {
         }
 
         const v = {
-          name: String(editPairName || '').trim() || 'Pair',
-          variantKey: 'pair',
+          key: 'pair',
+          title: String(editPairName || '').trim() || 'Pair',
           description: String(editPairDescription || ''),
           stock: stockNum,
           isActive: Boolean(editPairIsActive),
@@ -851,6 +857,16 @@ export default function AdminProductsList({ activeOnly = false }) {
                                 onChange={(e) => setEditDescription(e.target.value)}
                                 placeholder="Optional"
                                 className="mt-2 min-h-28 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-300"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="md:col-span-3">
+                              <div className="text-xs font-semibold text-gray-600">Details</div>
+                              <textarea
+                                value={editDetails}
+                                onChange={(e) => setEditDetails(e.target.value)}
+                                placeholder="Optional"
+                                className="mt-2 min-h-20 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-300"
                                 disabled={loading}
                               />
                             </div>

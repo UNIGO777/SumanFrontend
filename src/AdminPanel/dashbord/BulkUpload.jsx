@@ -409,6 +409,8 @@ export default function AdminBulkUpload() {
                   ['PAIR_NAME', 'Text', false, 'If provided, a pair variant is created'],
                   ['PAIR_DESCRIPTION', 'Text', false, 'Description for the pair variant'],
                   ['PAIR_STOCK', 'Number', false, 'Stock for pair variant'],
+                  ['PAIR_SILVER_WEIGHT_G', 'Number', false, 'Silver weight in grams for pair variant — e.g. 8.5'],
+                  ['PAIR_DISCOUNT_%', 'Number (0–100)', false, 'Discount percentage for pair variant'],
                   ['PAIR_MAKING_COST', 'Number', false, 'Making cost for pair variant in INR'],
                   ['PAIR_OTHER_CHARGES', 'Number', false, 'Other charges for pair variant in INR'],
                 ].map(([col, type, req, notes]) => (

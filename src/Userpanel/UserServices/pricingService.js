@@ -22,7 +22,7 @@ const pickVariantByKey = (product, variantKey) => {
   if (!key) return null
   const variants = Array.isArray(product?.variants) ? product.variants : []
   const v = variants.find(
-    (x) => String(x?.variantKey || x?.key || '').trim().toLowerCase() === key
+    (x) => String(x?.key || '').trim().toLowerCase() === key
   )
   if (!v) return null
   if (v?.isActive === false) return null
