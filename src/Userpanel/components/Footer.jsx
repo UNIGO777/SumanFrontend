@@ -72,7 +72,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gray-300" />
-                <span>+91 95277 72027</span>
+                <span>+91 86694 25365</span>
               </div>
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 text-gray-300" />

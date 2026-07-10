@@ -343,9 +343,9 @@ export default function ProductCard({
           </div>
 
           {displayTitle ? <div className="text-xs font-medium leading-snug text-gray-600 sm:text-base">{displayTitle}</div> : null}
-          {displayGrams ? (
+          {/* {displayGrams ? (
             <div className="text-[11px] font-semibold text-gray-500 sm:text-sm">{displayGrams} g</div>
-          ) : null}
+          ) : null} */}
 
           {couponText ? (
             <div className="text-[11px] font-semibold text-[#0f2e40] underline sm:text-sm">{couponText}</div>
