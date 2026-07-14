@@ -511,9 +511,9 @@ export default function Checkout() {
                     <div className="truncate text-sm font-semibold text-gray-900">{it.name || it.title}</div>
                     <div className="text-xs font-semibold text-gray-500">Qty: {it.quantity || it.qty}</div>
                   </div>
-                  <div className="text-sm font-bold text-gray-900">
+                  {/* <div className="text-sm font-bold text-gray-900">
                     ₹{formatter.format((Number(it?.price) || 0) * (Number(it?.quantity) || Number(it?.qty) || 1))}
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
@@ -760,9 +760,9 @@ export default function Checkout() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-gray-900">{it.title}</div>
                       <div className="mt-1 text-xs font-semibold text-gray-500">Qty: {qty}</div>
-                      {Number(it.silverWeightGrams) > 0 ? (
+                      {/* {Number(it.silverWeightGrams) > 0 ? (
                         <div className="mt-1 text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
-                      ) : null}
+                      ) : null} */}
                       <div className="mt-1 flex items-end gap-2">
                         <div className="text-sm font-bold text-gray-900">₹{formatter.format(Number(it?.price) || 0)}</div>
                         {showOriginal ? (

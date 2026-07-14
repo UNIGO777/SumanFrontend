@@ -12,7 +12,7 @@ export default function Footer() {
               
               <div className="leading-tight">
                 <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">SUMAN</div>
-                <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">9.25</div>
+                <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">92.5</div>
               </div>
             </div>
             <div className="max-w-xs text-sm leading-relaxed text-gray-400">

@@ -233,9 +233,9 @@ export default function CartPage() {
                                 {String(it.variantTitle || it.variantKey).trim()}
                               </div>
                             ) : null}
-                            {Number(it.silverWeightGrams) > 0 ? (
+                            {/* {Number(it.silverWeightGrams) > 0 ? (
                               <div className="mt-1 text-xs font-semibold text-gray-500">{Number(it.silverWeightGrams)} g</div>
-                            ) : null}
+                            ) : null} */}
                             <div className="mt-1 flex items-end gap-2">
                               <div className="text-lg font-bold text-gray-900">₹{formatter.format(it.price || 0)}</div>
                               {Number.isFinite(it.originalPrice) && it.originalPrice > it.price ? (
