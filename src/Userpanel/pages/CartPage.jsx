@@ -300,10 +300,10 @@ export default function CartPage() {
                     <span>Subtotal</span>
                     <span>₹{formatter.format(subtotal)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-gray-700">
+                  {/* <div className="flex items-center justify-between text-gray-700">
                     <span>92.5 Silver Rate</span>
                     <span>{silverRatePerGram ? `₹${formatter.format(silverRatePerGram)}/g` : '—'}</span>
-                  </div>
+                  </div> */}
                   <div className="flex items-center justify-between text-gray-700">
                     <span>Shipping</span>
                     <span className="text-emerald-700">FREE</span>

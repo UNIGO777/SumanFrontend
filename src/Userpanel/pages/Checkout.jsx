@@ -522,12 +522,12 @@ export default function Checkout() {
                 <span>Subtotal</span>
                 <span>₹{formatter.format(Number(placedOrder.subtotal || placedOrder.totals?.subtotal || 0))}</span>
               </div>
-              <div className="mt-1 flex items-center justify-between">
+              {/* <div className="mt-1 flex items-center justify-between">
                 <span>92.5 Silver Rate</span>
                 <span>
                   {placedOrder.silverRatePerGram ? `₹${formatter.format(placedOrder.silverRatePerGram)}/g` : '—'}
                 </span>
-              </div>
+              </div> */}
               <div className="mt-1 flex items-center justify-between">
                 <span>GST (18%)</span>
                 <span>₹{formatter.format(Number(placedOrder.gst || placedOrder.totals?.gst || 0))}</span>

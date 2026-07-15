@@ -9,7 +9,6 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-4">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              
               <div className="leading-tight">
                 <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">SUMAN</div>
                 <div className="text-lg font-semibold tracking-wide text-white sm:text-xl">92.5</div>
@@ -23,7 +22,6 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="text-sm font-semibold text-white">Customer Services</div>
             <div className="space-y-2 text-sm text-gray-400">
-             
               <Link to="/terms-and-conditions" className="block hover:text-white">
                 Terms &amp; Conditions
               </Link>
@@ -77,7 +75,7 @@ export default function Footer() {
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 text-gray-300" />
                 <span>
-                  Shop No 04, 911, Ravi Apartment,<br/> 859,Road: Near Manik Lodge, Laxmi Road, Raviwar Peth,<br/> Raviwar Peth, Pune, Maharashtra, 411002
+                  Shop No 04, 911, Ravi Apartment,<br /> 859,Road: Near Manik Lodge, Laxmi Road, Raviwar Peth,<br /> Raviwar Peth, Pune, Maharashtra, 411002
                 </span>
               </div>
             </div>
