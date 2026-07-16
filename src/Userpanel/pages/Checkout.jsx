@@ -275,7 +275,7 @@ export default function Checkout() {
     return subtotal >= 999 ? 0 : 49
   }, [items?.length, subtotal])
 
-  const gst = useMemo(() => subtotal * 0.18, [subtotal])
+  const gst = useMemo(() => subtotal * 0.03, [subtotal])
   const total = useMemo(() => subtotal + gst + shippingFee, [gst, shippingFee, subtotal])
 
   const validate = () => {
@@ -529,7 +529,7 @@ export default function Checkout() {
                 </span>
               </div> */}
               <div className="mt-1 flex items-center justify-between">
-                <span>GST (18%)</span>
+                <span>GST (3%)</span>
                 <span>₹{formatter.format(Number(placedOrder.gst || placedOrder.totals?.gst || 0))}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
