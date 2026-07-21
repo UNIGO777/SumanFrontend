@@ -785,12 +785,12 @@ export default function Checkout() {
                 <span>Subtotal</span>
                 <span>₹{formatter.format(subtotal)}</span>
               </div>
-              <div className="mt-1 flex items-center justify-between">
+              {/* <div className="mt-1 flex items-center justify-between">
                 <span>92.5 Silver Rate</span>
                 <span>{silverRatePerGram ? `₹${formatter.format(silverRatePerGram)}/g` : '—'}</span>
-              </div>
+              </div> */}
               <div className="mt-1 flex items-center justify-between">
-                <span>GST (18%)</span>
+                <span>GST (3%)</span>
                 <span>₹{formatter.format(gst)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between">
